@@ -25,26 +25,36 @@ and his group. Live: https://bordingcode.github.io/grimoire/ · Repo: BordingCod
 - [x] PWA shell (manifest, offline SW, icon, theme), verified in browser
 - [x] Repo + GitHub Pages
 
-**Phase 1 — Working sheet (next)**
+**Phase 1 — Working sheet (next)**  *(priority reordered per research)*
 - [ ] New character flow: pick edition → class, level, abilities, name
-- [ ] Auto: modifiers, proficiency bonus, skills, saves
-- [ ] Combat: AC, HP (current/max/temp), hit dice, death saves, initiative, speed
-- [ ] Dice roller on every check/save/attack (advantage/disadvantage, crit)
-- [ ] Spellbook: slots by class+level, prepared toggle, concentration flag, spell cards, cast = spend slot + roll
-- [ ] Class resource trackers (Rage, Ki, etc.)
-- [ ] Inventory, currency, conditions, notes
-- [ ] Short/Long Rest buttons; multiple characters; autosave (localStorage)
-- [ ] Fast hand-add spell form (+ paste/import)
-- [ ] Export/import a character file
+- [ ] Auto: modifiers, proficiency bonus, skills, saves — **each with a manual override/"flat" toggle** (research: #1 complaint is auto-calc being *wrong* for magic items/edge cases)
+- [ ] Combat block: AC (auto-adjusts with equipped armor), HP (current/max/**temp**), hit dice, death saves, initiative, speed
+- [ ] Spellbook: slots by class+level, **three lists per character — known / prepared / favorites**, spell cards, cast = spend slot + roll **spell** attack/damage **with upcasting**
+- [ ] **One-tap Long Rest = regain all slots + reset all daily-use trackers**; Short Rest too
+- [ ] **Concentration**: single "C" marker that blocks a 2nd concentration spell; on taking damage, prompt a CON save at **DC = max(10, ½ damage)**
+- [ ] Class resource trackers (Rage, Ki, etc.), reset on rest
+- [ ] Inventory + currency (equipped gear adjusts AC), notes
+- [ ] **Export/import a character file — early & robust** (research: data-loss-with-no-backup is the #1 quit driver; export MUST include homebrew)
+- [ ] Multiple characters; autosave (localStorage)
 
-**Phase 2 — Linking (cloud sync)**
+**Phase 2 — At-the-table combat (promoted by research)**
+- [ ] Conditions tracker **with round durations/timers** that count down
+- [ ] Initiative / turn tracker (HP, temp HP, death saves visible)
+
+**Phase 3 — Homebrew authoring (promoted by research)**
+- [ ] Fast hand-add spell form **+ a "source/citation" field** (label where a non-SRD spell came from)
+- [ ] Add unofficial classes/subclasses
+- [ ] Homebrew survives export/import faithfully
+
+**Phase 4 — Linking (cloud sync)**
 - [ ] Cloudflare Worker + storage (D1/KV) keyed by link code
 - [ ] Pair via link code; choose linked parameter groups
 - [ ] Push on change / pull on open; "last updated by … at …"; newest-wins
 
-**Phase 3 — Delight & at-table** (informed by player-feature deep research)
-- [ ] (fold in research findings: combat/at-table helpers, reminders, quick reference, etc.)
-- [ ] Subclass auto-spells, multiclass slot math, leveling helper
+**Phase 5 — Polish**
+- [ ] Subclass auto-spells; basic multiclass slot math; leveling helper; printable cheat-sheet
 
-## Open inputs
-- Deep-research report on what players actually want (running) → feeds Phase 1 priorities & Phase 3.
+## What the research changed (cited findings)
+- **Validated:** offline PWA, bundled SRD + hand-add, per-character 2014/2024 choice (D&D Beyond's *forced* 2024 migration in Aug 2024 caused real backlash — per-character choice is the differentiator), auto-calc, all-in-one sheet+spellbook.
+- **Added:** manual override on every auto-calc; favorites list; concentration auto-CON-save (DC = max(10,½ dmg)) + double-concentration block; condition *durations*; homebrew *source citation* field; AC auto-adjusts with gear; export-includes-homebrew.
+- **De-prioritised (refuted in fact-check):** a fancy *general* dice roller (generic check/save rolling was *not* a loved feature — only spell/attack damage rolling is); deep multiclass support (not a v1 must-have — basic correctness is enough).
