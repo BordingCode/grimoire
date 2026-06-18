@@ -39,8 +39,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=2").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=2").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=3").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=3").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -519,7 +519,8 @@ function openSpell(ch, id) {
   const s = findSpell(ch, id); if (!s) return;
   const comp = [s.components?.v && "V", s.components?.s && "S", s.components?.m && "M"].filter(Boolean).join(", ") || "—";
   const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch);
-  const remembered = dmgMemory()[id] || "";
+  const prefill = dmgMemory()[id] || s.damage || "";
+  ui.openSpellId = id;
   modal(s.name, `
     <div class="sp-detail">
       <p class="sp-line">${s.level === 0 ? "Cantrip" : "Level " + s.level} · ${esc(s.school)}${s.ritual ? " · ritual" : ""}${s.concentration ? " · concentration" : ""}</p>
@@ -538,9 +539,10 @@ function openSpell(ch, id) {
           ${s.save ? `<span class="save-pill">Save: ${esc(s.save.toUpperCase())} vs DC ${dc}</span>` : ""}
         </div>
         <div class="dmg-roll">
-          <input id="dmg-expr" placeholder="damage e.g. 8d6" value="${esc(remembered)}">
+          <input id="dmg-expr" placeholder="damage e.g. 8d6" value="${esc(prefill)}">
           <button class="btn" data-act="castDamage" data-id="${esc(id)}">Roll</button>
         </div>
+        ${s.damageType ? `<p class="muted small dmg-type">${esc(s.damageType)} damage${s.upcast ? " · upcasts automatically" : ""}</p>` : ""}
         <div id="roll-out" class="roll-out"></div>
         ${s.level > 0 && Calc.isCaster(ch) ? `<button class="btn primary" data-act="castSpell" data-id="${esc(id)}" data-lvl="${s.level}">Cast (spend a slot)</button>` : ""}
         ${s.concentration ? `<button class="btn ghost" data-act="startConc" data-id="${esc(id)}">Concentrate</button>` : ""}
@@ -559,7 +561,16 @@ actions.castSpell = (el) => {
   out.innerHTML = `Cast at: ${avail.map((i) => `<button class="btn mini2" data-act="spend" data-lvl="${i}">L${i}</button>`).join(" ")}`;
 };
 actions.spend = (el) => spendSlot(+el.dataset.lvl);
-function spendSlot(lvl) { const ch = Store.active(); ch.spells.slots[lvl].used++; Store.touch(); const out = $("#roll-out"); if (out) out.innerHTML = `Cast — spent a level ${lvl} slot.${lvl > 1 ? " (upcast)" : ""}`; toast(`Spent a level ${lvl} slot.`); }
+function spendSlot(lvl) {
+  const ch = Store.active(); ch.spells.slots[lvl].used++; Store.touch();
+  // auto-swap the damage field to the upcast value for this slot level, if known
+  const s = ui.openSpellId ? findSpell(ch, ui.openSpellId) : null;
+  const dmgIn = $("#dmg-expr");
+  if (s && s.upcast && s.upcast[lvl] && dmgIn) dmgIn.value = s.upcast[lvl];
+  const out = $("#roll-out");
+  if (out) out.innerHTML = `Cast — spent a level ${lvl} slot.${s && s.upcast && s.upcast[lvl] ? ` Damage set to <b>${esc(s.upcast[lvl])}</b>.` : (lvl > 1 ? " (upcast)" : "")}`;
+  toast(`Spent a level ${lvl} slot.`);
+}
 actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage, a CON save (DC = max(10, half damage)) is prompted in Combat."); };
 
 /* ===================================================================== */
@@ -585,7 +596,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=2").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }

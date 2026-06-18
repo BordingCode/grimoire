@@ -49,6 +49,17 @@ def norm(s, edition):
     classes = sorted({c.get("name", "") for c in (s.get("classes") or []) if c.get("name")})
     # higher_level text may live on the spell or inside casting_options
     higher = (s.get("higher_level") or "").strip()
+    # damage: base roll + per-slot-level upcast rolls (for auto-filling the dice roller)
+    base_dmg = (s.get("damage_roll") or "").strip() or None
+    dmg_type = (s.get("damage_types") or [None])[0]
+    upcast = {}
+    for o in (s.get("casting_options") or []):
+        t = o.get("type", "")
+        if t.startswith("slot_level_") and o.get("damage_roll"):
+            try:
+                upcast[int(t.rsplit("_", 1)[1])] = o["damage_roll"].strip()
+            except (ValueError, AttributeError):
+                pass
     return {
         "id": s.get("key") or s.get("name", "").lower().replace(" ", "-"),
         "name": s.get("name", "").strip(),
@@ -68,6 +79,9 @@ def norm(s, edition):
         "classes": classes,
         "save": (s.get("saving_throw_ability") or "").strip() or None,
         "attack": bool(s.get("attack_roll")),
+        "damage": base_dmg,
+        "damageType": dmg_type,
+        "upcast": upcast or None,
         "desc": (s.get("desc") or "").strip(),
         "higher_level": higher,
         "edition": edition,

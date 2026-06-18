@@ -30,10 +30,15 @@
 - [x] Export/import character (JSON, includes homebrew); char menu (export/rename/level/delete)
 - [x] Hand-add spell form WITH source/citation field
 
-## NOT yet done / next steps
-- [ ] **VERIFY IN BROWSER** — was mid-test when writing this. Create a Wizard lvl5, check slots/DC, cast a spell, long rest, add condition w/ timer, export/import. Screenshot.
-- [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins.
-- [ ] Add Grimoire to Bording Hub (~/cc/bording-hub/index.html SECTIONS array) — per standing instruction.
+## VERIFIED ✅ (Phase 1 complete, live)
+- Browser-tested local + live. Wizard L5/INT18: prof +3, DC 15, atk +7, slots 4/3/2, prepared 9, HP 32 — all correct.
+- Interactions pass: fav/prepare/known toggles, slot spend, condition timer tick, AC override, dice parse, long rest full restore, export round-trip, spell detail/cast/concentrate modal.
+- Live https://bordingcode.github.io/grimoire/ boots clean (0 errors, 319+339 spells). Files serve v=2.
+- Added to Bording Hub (Apps section, 'book' icon). Hub SW bumped v2→v3.
+
+## NOT yet done / next steps (in priority order)
+- [ ] **Spell damage auto-fill** (IN PROGRESS): enhance tools/build_spells.py to capture base damage from Open5e `casting_options[].damage_roll`, store as spell.damage; pre-fill cast modal damage field from it. Addresses the main known limitation.
+- [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present.
 - [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet.
 
 ## Known limitations / decisions to remember
