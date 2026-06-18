@@ -39,8 +39,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=5").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=5").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=6").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=6").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -188,7 +188,7 @@ function tabStats(ch) {
 function tabCombat(ch) {
   const c = ch.combat;
   const cond = (ch.conditions || []).map((x, i) => `
-    <span class="cond">${esc(x.name)}${x.rounds != null ? ` <b>${x.rounds}r</b>` : ""}
+    <span class="cond"><button class="cond-name" data-act="condInfo" data-name="${esc(x.name)}">${esc(x.name)}</button>${x.rounds != null ? ` <b>${x.rounds}r</b>` : ""}
       <button data-act="condTick" data-i="${i}" title="-1 round">−</button>
       <button data-act="condRemove" data-i="${i}">✕</button></span>`).join("") || `<span class="muted">none</span>`;
   const res = (ch.resources || []).map((r) => `
@@ -407,9 +407,15 @@ const actions = {
     const opts = RULES.CONDITIONS.map((c) => `<option>${c}</option>`).join("");
     modal("Add condition", `
       <label class="fld"><span>Condition</span><select id="cond-name">${opts}</select></label>
+      <p id="cond-desc" class="muted small"></p>
       <label class="fld"><span>Duration (rounds, optional)</span><input id="cond-rounds" type="number" min="1" placeholder="∞"></label>
-      <div class="modal-btns"><button class="btn primary" data-act="condAdd">Add</button></div>`);
+      <div class="modal-btns"><button class="btn primary" data-act="condAdd">Add</button></div>`, (wrap) => {
+        const sel = wrap.querySelector("#cond-name"), desc = wrap.querySelector("#cond-desc");
+        const upd = () => (desc.textContent = RULES.CONDITION_INFO[sel.value] || "");
+        sel.addEventListener("change", upd); upd();
+      });
   },
+  condInfo(el) { const name = el.dataset.name; modal(name, `<p>${esc(RULES.CONDITION_INFO[name] || "No description.")}</p>`); },
   condAdd() { const ch = Store.active(); const r = $("#cond-rounds").value; ch.conditions.push({ name: $("#cond-name").value, rounds: r ? +r : null }); closeModal(); commit(); },
   condTick(el) { const ch = Store.active(); const i = +el.dataset.i; const c = ch.conditions[i]; if (c.rounds != null) { c.rounds -= 1; if (c.rounds <= 0) ch.conditions.splice(i, 1); } commit(); },
   condRemove(el) { const ch = Store.active(); ch.conditions.splice(+el.dataset.i, 1); commit(); },
@@ -625,7 +631,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=5").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=6").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }

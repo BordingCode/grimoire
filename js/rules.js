@@ -62,5 +62,24 @@ const CONDITIONS = [
   "Invisible","Paralyzed","Petrified","Poisoned","Prone","Restrained","Stunned","Unconscious",
 ];
 
+// Short SRD-accurate reminders of what each condition does (free SRD text, summarised).
+const CONDITION_INFO = {
+  "Blinded": "Can't see; auto-fail sight checks. Attacks against you have advantage; your attacks have disadvantage.",
+  "Charmed": "Can't attack the charmer or target them with harmful effects. The charmer has advantage on social checks with you.",
+  "Deafened": "Can't hear; auto-fail any check that needs hearing.",
+  "Exhaustion": "Tracked in 6 levels: 1 disadvantage on ability checks · 2 speed halved · 3 disadvantage on attacks & saves · 4 HP max halved · 5 speed 0 · 6 death.",
+  "Frightened": "Disadvantage on checks & attacks while the source is in sight; can't willingly move closer to it.",
+  "Grappled": "Speed becomes 0. Ends if the grappler is incapacitated or you're moved away.",
+  "Incapacitated": "Can't take actions or reactions.",
+  "Invisible": "Can't be seen without magic/special sense. Attacks against you have disadvantage; your attacks have advantage.",
+  "Paralyzed": "Incapacitated, can't move or speak. Auto-fail STR & DEX saves. Attacks against you have advantage; any hit from within 5 ft is a crit.",
+  "Petrified": "Turned to stone: incapacitated, unaware. Resistance to all damage; immune to poison/disease. Auto-fail STR & DEX saves; attacks have advantage.",
+  "Poisoned": "Disadvantage on attack rolls and ability checks.",
+  "Prone": "Can only crawl. Disadvantage on attacks. Attacks against you: advantage if attacker within 5 ft, else disadvantage.",
+  "Restrained": "Speed 0. Attacks against you have advantage; your attacks have disadvantage. Disadvantage on DEX saves.",
+  "Stunned": "Incapacitated, can't move, can barely speak. Auto-fail STR & DEX saves. Attacks against you have advantage.",
+  "Unconscious": "Incapacitated, unaware, drop what you hold and fall prone. Auto-fail STR & DEX saves. Attacks have advantage; hits from within 5 ft are crits.",
+};
+
 // expose
-window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };
+window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };
