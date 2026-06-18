@@ -36,10 +36,16 @@
 - Live https://bordingcode.github.io/grimoire/ boots clean (0 errors, 319+339 spells). Files serve v=2.
 - Added to Bording Hub (Apps section, 'book' icon). Hub SW bumped v2→v3.
 
+## ALSO done & verified (this session, post-Phase-1)
+- [x] Spell damage auto-fill: build_spells.py captures damage/damageType/upcast; cast box pre-fills damage + auto-swaps to upcast value at higher slot (Fireball L5→10d6). Verified.
+- [x] Concentration CON-save prompt fires on damage (DC max(10,½dmg), adv/dis, fail drops concentration). Verified DC 10 for 5 dmg.
+- [x] Advantage/disadvantage buttons on spell attack rolls. Verified.
+- [x] Class-aware unarmored AC (Barbarian 10+Dex+Con, Monk 10+Dex+Wis). Verified.
+- Current cache: **v4** (index.html css/js ?v=4, data ?v=4, sw CACHE=grimoire-v4).
+
 ## NOT yet done / next steps (in priority order)
-- [ ] **Spell damage auto-fill** (IN PROGRESS): enhance tools/build_spells.py to capture base damage from Open5e `casting_options[].damage_roll`, store as spell.damage; pre-fill cast modal damage field from it. Addresses the main known limitation.
-- [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present.
-- [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet.
+- [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present/approves.
+- [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet, hit-dice spend UI on short rest.
 
 ## Known limitations / decisions to remember
 - Spell damage dice aren't in SRD data cleanly → cast modal has a damage field that REMEMBERS what you type per spell (localStorage `grimoire.dmg.v1`). Not auto-filled first time. (Could enhance build_spells to capture casting_options damage later.)
