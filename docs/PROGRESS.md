@@ -42,8 +42,13 @@
 - [x] Advantage/disadvantage buttons on spell attack rolls. Verified.
 - [x] Class-aware unarmored AC (Barbarian 10+Dex+Con, Monk 10+Dex+Wis). Verified.
 - [x] Hit dice tracker + Spend-to-heal (rolls die+CON). Verified Wizard L5 d6.
-- Current cache: **v5** (index.html css/js ?v=5, data ?v=5, sw CACHE=grimoire-v5).
+- [x] Condition effect descriptions (tap a condition / shown in add-picker) — 15 SRD reminders in RULES.CONDITION_INFO.
+- Current cache: **v6** (index.html css/js ?v=6, data ?v=6, sw CACHE=grimoire-v6).
 - **Multi-class verification passed** (Barbarian AC15/non-caster, Cleric DC14/slots4-3-2/prep8/wis, Warlock pact 2@L3) — math correct across class types.
+
+## Session end-state (2026-06-19)
+Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots clean (0 errors, 658 spells). Grimoire is in the Bording Hub.
+**Next collaborative session:** Phase 4 cloud linking — see `docs/LINKING.md` (design ready; needs Mathias present to deploy the Cloudflare Worker + confirm the parameter-group UX). Then Phase 5 polish.
 
 ## NOT yet done / next steps (in priority order)
 - [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present/approves.
