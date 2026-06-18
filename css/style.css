@@ -148,6 +148,9 @@ input[type=checkbox] { width: auto; }
 .pip.on.good { background: var(--good); border-color: var(--good); }
 .pip.on.bad { background: var(--bad); border-color: var(--bad); }
 
+.hitdice { display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: .9rem; }
+.hitdice b { color: var(--gold); }
+.btn[disabled] { opacity: .4; }
 .rest-row { display: flex; gap: 10px; margin-bottom: 12px; }
 .rest-row .btn { flex: 1; }
 .conc-banner { background: rgba(109,74,255,.18); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: .9rem; }

@@ -39,8 +39,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=4").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=4").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=5").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=5").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -225,6 +225,10 @@ function tabCombat(ch) {
       <span class="ds">✓ ${[0,1,2].map((i)=>`<button class="pip ${c.death.succ>i?"on good":""}" data-act="death" data-t="succ" data-i="${i}"></button>`).join("")}</span>
       <span class="ds">✗ ${[0,1,2].map((i)=>`<button class="pip ${c.death.fail>i?"on bad":""}" data-act="death" data-t="fail" data-i="${i}"></button>`).join("")}</span>
     </div>
+    <div class="hitdice">
+      <span>Hit dice <b>${Math.max(0, ch.level - c.hitDiceUsed)}/${ch.level}</b> d${(RULES.CLASSES[ch.cls]||{}).hitDie || 8}</span>
+      <button class="btn small-b" data-act="spendHitDie" ${ch.level - c.hitDiceUsed <= 0 ? "disabled" : ""}>Spend (heal)</button>
+    </div>
     <div class="rest-row">
       <button class="btn" data-act="shortRest">Short rest</button>
       <button class="btn primary" data-act="longRest">Long rest</button>
@@ -386,7 +390,8 @@ const actions = {
   hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(ch.combat.hpMax, +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
-  shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored."); },
+  shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
+  spendHitDie() { const ch = Store.active(); const c = ch.combat; if (ch.level - c.hitDiceUsed <= 0) { toast("No hit dice left."); return; } const die = (RULES.CLASSES[ch.cls] || {}).hitDie || 8; const con = Calc.abilityMod(ch, "con"); const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con); c.hitDiceUsed++; c.hpCur = Math.min(c.hpMax, c.hpCur + heal); commit(); toast(`Hit die: d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`); },
   longRest() { const ch = Store.active(); const c = ch.combat;
     c.hpCur = c.hpMax; c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
     c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(ch.level / 2)));
@@ -620,7 +625,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=4").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=5").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
