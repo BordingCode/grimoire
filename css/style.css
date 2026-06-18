@@ -255,6 +255,12 @@ input[type=checkbox] { width: auto; }
 .roll-out { min-height: 1.2em; font-size: 1rem; }
 .roll-out b { color: var(--gold); font-size: 1.3rem; }
 
+.atk-group { display: flex; gap: 6px; align-items: stretch; }
+.btn.small-b { padding: 8px 10px; font-size: .8rem; flex: 0 0 auto; }
+.dmg-type { margin: -2px 0 0; }
+.held { color: var(--good); font-weight: 700; }
+.lost { color: var(--bad); font-weight: 700; }
+
 /* toast */
 #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--accent); color: var(--ink); padding: 12px 18px; border-radius: 12px; max-width: 90%; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; font-size: .9rem; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }

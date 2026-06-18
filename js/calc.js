@@ -35,9 +35,17 @@ const Calc = {
 
   speed(ch) { return ov(ch, "speed", ch.combat.speed || 30); },
 
+  unarmoredAC(ch) {
+    // class unarmored defense: Barbarian 10+Dex+Con, Monk 10+Dex+Wis, else 10+Dex
+    const dex = this.abilityMod(ch, "dex");
+    if (ch.cls === "Barbarian") return 10 + dex + this.abilityMod(ch, "con");
+    if (ch.cls === "Monk") return 10 + dex + this.abilityMod(ch, "wis");
+    return 10 + dex;
+  },
+
   armorClass(ch) {
     const auto = (ch.combat.armorBaseAC == null)
-      ? 10 + this.abilityMod(ch, "dex")                 // unarmored
+      ? this.unarmoredAC(ch)                             // unarmored (class-aware)
       : ch.combat.armorBaseAC;                           // armor sets the base
     const shield = ch.combat.shield ? 2 : 0;
     const gear = (ch.inventory || []).filter((i) => i.equipped).reduce((s, i) => s + (+i.acBonus || 0), 0);

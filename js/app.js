@@ -39,8 +39,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=3").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=3").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=4").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=4").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -380,9 +380,10 @@ const actions = {
     if (d < 0 && c.hpTemp > 0) { const fromTemp = Math.min(c.hpTemp, -d); c.hpTemp -= fromTemp; const rest = -d - fromTemp; c.hpCur = Math.max(0, c.hpCur - rest); }
     else c.hpCur = Math.max(0, Math.min(c.hpMax, c.hpCur + d));
     commit();
+    if (d < 0) maybeConcentration(ch, -d);
   },
   hpEdit() { const ch = Store.active(); modal("Set current HP", `<input id="hp-in" type="number" value="${ch.combat.hpCur}"><div class="modal-btns"><button class="btn primary" data-act="hpSet">Set</button></div>`, () => $("#hp-in").focus()); },
-  hpSet() { const ch = Store.active(); ch.combat.hpCur = Math.max(0, Math.min(ch.combat.hpMax, +$("#hp-in").value || 0)); closeModal(); commit(); },
+  hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(ch.combat.hpMax, +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
   shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored."); },
@@ -535,7 +536,7 @@ function openSpell(ch, id) {
       ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
       <div class="cast-box">
         <div class="cast-roll">
-          ${s.attack && atk != null ? `<button class="btn" data-act="castAttack" data-atk="${atk}">🎲 Attack ${sign(atk)}</button>` : ""}
+          ${s.attack && atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="dis">dis</button><button class="btn" data-act="castAttack" data-atk="${atk}" data-mode="normal">🎲 Attack ${sign(atk)}</button><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="adv">adv</button></span>` : ""}
           ${s.save ? `<span class="save-pill">Save: ${esc(s.save.toUpperCase())} vs DC ${dc}</span>` : ""}
         </div>
         <div class="dmg-roll">
@@ -549,7 +550,30 @@ function openSpell(ch, id) {
       </div>
     </div>`);
 }
-actions.castAttack = (el) => { const r = d20(+el.dataset.atk); $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(d20 ${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; };
+actions.castAttack = (el) => { const r = d20(+el.dataset.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; };
+
+/* concentration: prompt a CON save when a concentrating caster takes damage (DC = max 10, half damage) */
+function maybeConcentration(ch, dmg) {
+  if (!dmg || !ch.spells.concentratingOn) return;
+  const dc = Math.max(10, Math.floor(dmg / 2));
+  const sp = findSpell(ch, ch.spells.concentratingOn);
+  const bonus = Calc.saveBonus(ch, "con");
+  modal("Concentration check", `
+    <p>Took <b>${dmg}</b> damage while concentrating on <b>${esc(sp?.name || "a spell")}</b>.</p>
+    <p>Constitution save vs <b>DC ${dc}</b>.</p>
+    <div id="conc-out" class="roll-out"></div>
+    <div class="modal-btns">
+      <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="dis">dis</button>
+      <button class="btn primary" data-act="concRoll" data-dc="${dc}" data-mode="normal">Roll CON ${sign(bonus)}</button>
+      <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="adv">adv</button>
+    </div>`);
+}
+actions.concRoll = (el) => {
+  const ch = Store.active(); const dc = +el.dataset.dc; const bonus = Calc.saveBonus(ch, "con");
+  const r = d20(bonus, el.dataset.mode); const pass = r.total >= dc;
+  $("#conc-out").innerHTML = `Rolled <b>${r.total}</b> (d20 ${r.nat} ${sign(bonus)}) vs DC ${dc} — ${pass ? '<span class="held">held!</span>' : '<span class="lost">concentration lost</span>'}`;
+  if (!pass) { ch.spells.concentratingOn = null; Store.touch(); render(); }
+};
 actions.castDamage = (el) => { const expr = $("#dmg-expr").value.trim(); if (!expr) return; const r = rollDice(expr); if (!r) { toast("Use a form like 8d6 or 2d6+3."); return; } setDmgMemory(el.dataset.id, expr); $("#roll-out").innerHTML = `Damage <b>${r.total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""}</small>`; };
 actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
@@ -596,7 +620,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=4").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
