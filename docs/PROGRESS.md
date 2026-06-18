@@ -41,7 +41,9 @@
 - [x] Concentration CON-save prompt fires on damage (DC max(10,½dmg), adv/dis, fail drops concentration). Verified DC 10 for 5 dmg.
 - [x] Advantage/disadvantage buttons on spell attack rolls. Verified.
 - [x] Class-aware unarmored AC (Barbarian 10+Dex+Con, Monk 10+Dex+Wis). Verified.
-- Current cache: **v4** (index.html css/js ?v=4, data ?v=4, sw CACHE=grimoire-v4).
+- [x] Hit dice tracker + Spend-to-heal (rolls die+CON). Verified Wizard L5 d6.
+- Current cache: **v5** (index.html css/js ?v=5, data ?v=5, sw CACHE=grimoire-v5).
+- **Multi-class verification passed** (Barbarian AC15/non-caster, Cleric DC14/slots4-3-2/prep8/wis, Warlock pact 2@L3) — math correct across class types.
 
 ## NOT yet done / next steps (in priority order)
 - [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present/approves.
