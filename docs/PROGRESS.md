@@ -11,11 +11,15 @@
 3. Local test: `python3 -m http.server 8765` then open http://localhost:8765 (or use Playwright at 390×844).
 4. Deploy = commit + push; bump `?v=` in index.html + `CACHE` in sw.js when css/js/data change. Verify live URL after (Pages lags 1–3 min).
 
-## Architecture (files)
-- `js/rules.js` — static 5e data: ABILITIES, SKILLS, CLASSES (hit die, saves, caster type, spell ability, prepare formula), FULL_SLOTS / halfSlots / PACT tables, profBonus(). → `window.RULES`
-- `js/state.js` — `Store` (characters[], activeId, localStorage autosave, CRUD), `Gx` (newCharacter, exportCharacter, importCharacter, uid). Keys: `grimoire.characters.v1`, `grimoire.active.v1`.
-- `js/calc.js` — `Calc`: all derived stats; every value passes through `ov(ch,key,auto)` so `ch.overrides[key]` wins (manual override feature).
-- `js/app.js` — screens (home/new/sheet), tabs (stats/combat/spells/gear/notes), spell library, dice, modals, all `actions{}`, event wiring (click delegation on [data-act], input on [data-bind]).
+## Architecture (files) — split into layers at v19
+Load order (index.html): rules → state → calc → util → views → app → link. All classic scripts share one global lexical scope (top-level const/function visible across files at runtime).
+- `js/rules.js` — static 5e data: ABILITIES, SKILLS, CLASSES, SUBCLASSES, CONDITIONS/CONDITION_INFO, FULL_SLOTS/halfSlots/PACT, profBonus(). → `window.RULES`
+- `js/state.js` — `Store` (characters[], activeId, localStorage autosave, CRUD), `Gx` (newCharacter/export/import/uid). Keys `grimoire.characters.v1`, `grimoire.active.v1`. `importCharacter` is a top-level fn (global).
+- `js/calc.js` — `Calc`: all derived stats; every value passes through `ov(ch,key,auto)` so `ch.overrides[key]` wins. featBonus(), classList/totalLevel/casterLevel, etc.
+- `js/util.js` — generic helpers: $/esc/mdToHtml/sign, dmgMemory, rollDice/d20, toast/modal/closeModal, get/setPath, DMG_KEY. No app state.
+- `js/views.js` — rendering only (pure): render(), viewHome/Party/New/Sheet, tab*, spellListSection/spellRow/spellListRowsHtml, read-only spell helpers (spellPool/findSpell/classSpells/subclassSpells/classSummary), FEAT_TARGETS/FEAT_TARGET_LABEL.
+- `js/app.js` — behaviour: Grimoire/ui/Party globals, loadSpells, commit, the `actions{}` object, all *Form helpers + optionsMenu/confirmDelete/openSpell/maybeConcentration/spendSlot, event wiring, boot.
+- `js/link.js` — cloud sync (Cloudflare worker).
 - `data/spells-2014.json` (319), `data/spells-2024.json` (339) — built by `tools/build_spells.py` from Open5e v2.
 
 ## Done (Phase 0 + most of Phase 1)
@@ -88,6 +92,10 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 ## Spell tab verified (v17)
 - Comprehensive class×level test vs official 5e tables: 0 failures. Full casters (Bard/Cleric/Druid/Sorcerer/Wizard) L1–20, half casters (Paladin/Ranger) L1–20, Artificer, Warlock pact, DC/attack, prepared counts, all-class render.
 - BUG FIXED: Paladin/Ranger showed 2 slots at level 1; they have no spellcasting until L2. casterLevel single-class half non-Artificer now contributes 0 below level 2 (Artificer still casts at L1; multiclass uses floor).
+
+## v18–v19: rules audit + modular split
+- Full rules-audit harness passes 0 failures (mods, prof, skills+expertise+feat, saves, passive perc, AC variants, init, maxHP, hit-dice pool, short/long rest, export/import, concentration DC, full spell matrix). Bugs fixed: Paladin/Ranger L1 slots (v17), long-rest hit-dice uses total level (v18).
+- app.js split into util.js + views.js + app.js (v19); verified 0 console errors + audit/UI smoke clean, live.
 
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet. (Subclass auto-spells limited to SRD by design.)
