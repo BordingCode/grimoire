@@ -100,6 +100,39 @@ input, select, textarea, button { font: inherit; color: inherit; }
 .theme-card .theme-swatch i { width: 16px; height: 16px; border-radius: 50%; background: var(--tc-accent); display: block; }
 .theme-card .theme-name { font-size: .72rem; font-weight: 600; line-height: 1.1; text-align: center; }
 
+/* ---- decorative class/alignment frames (opt-in, chosen in Appearance) ---- */
+.frame { position: relative; --frame-bg: var(--bg); }
+.frame-lawful { border: 3px double var(--frame-color, var(--accent)); border-radius: 4px; }
+.frame-neutral { border: 2px solid var(--frame-color, var(--accent)); border-radius: 14px; }
+.frame-evil { border: 3px solid var(--frame-color, var(--accent)); border-radius: 0; }
+.frame-corner { position: absolute; width: 15px; height: 15px; color: var(--frame-color, var(--accent)); fill: currentColor; pointer-events: none; z-index: 2; }
+.frame-corner.tl { top: -4px; left: -4px; }
+.frame-corner.tr { top: -4px; right: -4px; transform: scaleX(-1); }
+.frame-corner.bl { bottom: -4px; left: -4px; transform: scaleY(-1); }
+.frame-corner.br { bottom: -4px; right: -4px; transform: scale(-1, -1); }
+.frame-crest { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); border: 2px solid var(--frame-color, var(--accent)); border-radius: 50%; z-index: 3; --frame-bg: var(--bg); color: var(--frame-color, var(--accent)); }
+.frame-crest svg { width: 19px; height: 19px; fill: currentColor; }
+/* nameplate (framed name/class in the sheet header) */
+.nameplate { padding: 9px 12px 7px; margin-top: 9px; background: color-mix(in srgb, var(--frame-color, var(--accent)) 8%, transparent); }
+/* whole-sheet border */
+.screen.sheet-framed { margin: 14px 8px; padding: 16px 12px 12px; }
+/* portrait crest ring around the header avatar */
+.portrait-frame { position: relative; display: inline-flex; padding: 3px; flex: 0 0 auto; }
+.portrait-frame.frame-neutral { border-radius: 50%; }
+/* home-card crest in place of the chevron */
+.cc-crest { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; --frame-bg: var(--panel); color: var(--frame-color, var(--accent)); }
+.cc-crest svg { width: 22px; height: 22px; fill: currentColor; }
+.char-card.frame { padding-top: 14px; overflow: visible; }
+.crest-hole { fill: var(--frame-bg, var(--bg)); }
+/* appearance: frame toggles + alignment picker */
+.frame-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sub-h { font-size: .82rem; margin: 16px 0 6px; color: var(--muted); font-weight: 600; }
+.sub-h small { font-weight: 400; margin-left: 6px; }
+.align-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.align-row .btn { flex-direction: column; line-height: 1.2; padding: 8px 4px; }
+.align-note { display: block; font-size: .62rem; opacity: .8; font-weight: 400; margin-top: 2px; }
+
 /* buttons */
 .btn {
   background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);

@@ -3,6 +3,69 @@
    Behaviour (actions, forms, wiring) lives in app.js. */
 "use strict";
 
+/* ==================================================================== */
+/*  DECORATIVE FRAMES — opt-in per character (chosen in Appearance).     */
+/*  A frame = an alignment-styled border + corner ornaments (Lawful /    */
+/*  Neutral / Evil personality) + the class crest. SVGs use currentColor */
+/*  so they pick up the per-character accent we set via --frame-color.   */
+/* ==================================================================== */
+const ALIGNMENTS = [
+  { key: "lawful", label: "Lawful", note: "orderly · symmetric" },
+  { key: "neutral", label: "Neutral", note: "balanced · simple" },
+  { key: "evil", label: "Evil", note: "jagged · menacing" },
+];
+const FRAME_PLACES = [
+  { key: "header", label: "Header nameplate" },
+  { key: "cards", label: "Home cards" },
+  { key: "sheet", label: "Whole-sheet border" },
+  { key: "portrait", label: "Portrait crest" },
+];
+// class crest art (24-unit viewBox, single-colour silhouettes)
+const CLASS_CREST = {
+  Wizard: '<path d="M12 1l2.4 8L22 12l-7.6 3L12 23l-2.4-8L2 12l7.6-3z"/><circle cx="4.6" cy="5" r="1.1"/><circle cx="19.3" cy="6" r=".9"/>',
+  Sorcerer: '<path d="M12.5 2c.4 4 4 5.2 4 9.2a4.5 4.5 0 0 1-9 0c0-1.8.9-3 2-3.8-.2 1.6.7 2.7 1.6 2.7 1.1 0 1.5-1.2 1-2.9C11.5 5.8 11.8 3.8 12.5 2z"/>',
+  Cleric: '<path d="M12 2l1.5 3.8 3.8-1.5-1.5 3.8L19.6 12l-3.8 1.5 1.5 3.8-3.8-1.5L12 22l-1.5-3.7-3.8 1.5 1.5-3.8L4.4 12l3.8-1.4-1.5-3.8 3.8 1.5z"/><circle cx="12" cy="12" r="2.8" class="crest-hole"/>',
+  Druid: '<path d="M12 2C7 7 7 15 12 22 17 15 17 7 12 2z"/><path d="M12 6v13" stroke="var(--frame-bg,#000)" stroke-width="1" fill="none"/>',
+  Barbarian: '<path d="M11.2 5h1.6V22h-1.6z"/><circle cx="12" cy="3" r="1.5"/><path d="M12.4 4.4l6.8 1.5c.5 1.6.5 3.3 0 5l-6.8 1.5z"/><path d="M11.6 4.4L4.8 5.9c-.5 1.6-.5 3.3 0 5l6.8 1.5z"/>',
+  Fighter: '<g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5.5 18.5 18.5 5.5"/><path d="M5.5 5.5l13 13"/><path d="M3.4 16.6l4 4"/><path d="M16.6 3.4l4 4"/></g>',
+  Paladin: '<path d="M12 2l8 3v6.5c0 5-3.6 8.8-8 10.5-4.4-1.7-8-5.5-8-10.5V5z"/><path d="M12 6.5v9M8 11h8" stroke="var(--frame-bg,#000)" stroke-width="1.6" fill="none"/>',
+  Ranger: '<path d="M5 19L18.5 5.5" stroke="currentColor" stroke-width="2"/><path d="M18.5 5.5l-4.5.6 3.9 3.9z"/><path d="M5 19l3.3-1.1-2.2-2.2z"/>',
+  Rogue: '<path d="M12 22.5l-2.6-5.2h5.2z"/><path d="M9 16h6v1.6H9z"/><path d="M11.1 3.5h1.8V16h-1.8z"/><circle cx="12" cy="2.6" r="1.6"/>',
+  Monk: '<path d="M12 3.5c2.2 3.2 2.2 6.5 0 9.8-2.2-3.3-2.2-6.6 0-9.8z"/><path d="M12 13.8c-3.2-1-5.4-3.2-6.4-6.4 3.2 0 5.4 2.2 6.4 5.4z"/><path d="M12 13.8c3.2-1 5.4-3.2 6.4-6.4-3.2 0-5.4 2.2-6.4 5.4z"/><path d="M12 14c-2.4.8-4 2.6-4.8 5.4 2.6 0 4-1.6 4.8-4z"/><path d="M12 14c2.4.8 4 2.6 4.8 5.4-2.6 0-4-1.6-4.8-4z"/>',
+  Bard: '<ellipse cx="8" cy="18.2" rx="3.2" ry="2.5"/><path d="M11 18.2V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M11 4.5c3.2 1 4.6 3 4.6 6.2-1.1-2.2-2.5-3.2-4.6-3.4z"/>',
+  Warlock: '<path d="M2 12c4-6.5 16-6.5 20 0-4 6.5-16 6.5-20 0z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3.4"/>',
+  Artificer: '<path d="M12 1.2l1.7 2.6 3-1 .5 3.1 3.1.5-1 3 2.6 1.7-2.6 1.7 1 3-3.1.5-.5 3.1-3-1-1.7 2.6-1.7-2.6-3 1-.5-3.1-3.1-.5 1-3L2.6 12l2.6-1.7-1-3 3.1-.5.5-3.1 3 1z"/><circle cx="12" cy="12" r="3.3" class="crest-hole"/>',
+};
+const CORNER_ORN = {
+  lawful: '<path d="M1 1h8.5v2.2H3.2V9.5H1z"/><rect x="3.4" y="3.4" width="2" height="2"/>',
+  neutral: '<path d="M2 2.4c5.4 0 9.6 4.2 9.6 9.6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="2.2" cy="2.2" r="1.9"/>',
+  evil: '<path d="M.6.6l7.4 2-4.6 1.4 5.2 3.4-4.4-1L11 12 .6 4.2z"/>',
+};
+// hex accent for a character (mirrors applyTheme so home cards tint per-character)
+function charAccent(ch) {
+  const mode = localStorage.getItem("grimoire.mode") || "dark";
+  if (ch.accent && RULES.ACCENTS[ch.accent]) return RULES.ACCENTS[ch.accent][0];
+  const themeCls = ch.theme || ch.cls;
+  const t = Grimoire.themes && Grimoire.themes[themeCls] && Grimoire.themes[themeCls][mode];
+  if (t && t.accent) return t.accent;
+  const ca = RULES.CLASS_ACCENT[ch.cls];
+  return (ca && RULES.ACCENTS[ca] && RULES.ACCENTS[ca][0]) || "#8b6dff";
+}
+function frameOn(ch, place) { return !!(ch && ch.frames && ch.frames[place]); }
+function crestSvg(cls) { const p = CLASS_CREST[cls]; return p ? `<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>` : ""; }
+// the decoration injected INSIDE a `.frame` box: 4 corner ornaments + (optionally) the class crest
+function frameDecor(ch, opts = {}) {
+  const al = (ch && ch.alignment) || "neutral";
+  const o = CORNER_ORN[al] || CORNER_ORN.neutral;
+  const corner = (pos) => `<svg class="frame-corner ${pos}" viewBox="0 0 12 12" aria-hidden="true">${o}</svg>`;
+  const crest = (opts.crest !== false && CLASS_CREST[ch && ch.cls]) ? `<span class="frame-crest">${crestSvg(ch.cls)}</span>` : "";
+  return corner("tl") + corner("tr") + corner("bl") + corner("br") + crest;
+}
+// class list for a framed box: `frame frame-<alignment>`
+function frameClass(ch) { return "frame frame-" + ((ch && ch.alignment) || "neutral"); }
+// inline style that tints the frame to this character's accent
+function frameStyle(ch) { return `--frame-color:${charAccent(ch)}`; }
+
 /* ---------- read-only spell helpers ---------- */
 function spellPool(ch) { return [...(Grimoire.spells[ch.edition] || []), ...(ch.customSpells || [])]; }
 function findSpell(ch, id) { return spellPool(ch).find((s) => s.id === id); }
@@ -123,13 +186,17 @@ function handle() { return ui.reorder ? '<button class="drag-handle" title="drag
 
 /* ---- Home ---- */
 function viewHome() {
-  const list = Store.characters.map((c) => `
-    <button class="char-card" data-act="open" data-id="${c.id}">
+  const list = Store.characters.map((c) => {
+    const fr = frameOn(c, "cards");
+    return `
+    <button class="char-card ${fr ? frameClass(c) : ""}" data-act="open" data-id="${c.id}"${fr ? ` style="${frameStyle(c)}"` : ""}>
+      ${fr ? frameDecor(c, { crest: false }) : ""}
       ${c.portrait ? `<img class="avatar" src="${c.portrait}" alt="">` : `<span class="avatar avatar-blank">${esc((c.name || "?").trim().charAt(0).toUpperCase())}</span>`}
       <div class="cc-main"><span class="cc-name">${esc(c.name)}</span>
         <span class="cc-sub">${esc(classSummary(c))} · level ${Calc.totalLevel(c)} · ${c.edition}</span></div>
-      <span class="cc-go">›</span>
-    </button>`).join("");
+      ${fr && CLASS_CREST[c.cls] ? `<span class="cc-crest">${crestSvg(c.cls)}</span>` : `<span class="cc-go">›</span>`}
+    </button>`;
+  }).join("");
   return `
     <header class="topbar"><img src="icons/icon-192.png" class="logo" alt=""><h1>Grimoire</h1></header>
     <div class="screen">
@@ -204,16 +271,21 @@ function viewSheet(ch) {
   else if (ui.tab === "spells") body = tabSpells(ch);
   else if (ui.tab === "gear") body = tabGear(ch);
   else if (ui.tab === "notes") body = tabNotes(ch);
+  const avatarInner = ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`;
+  const avatar = frameOn(ch, "portrait") ? `<span class="portrait-frame ${frameClass(ch)}" style="${frameStyle(ch)}">${frameDecor(ch, { crest: false })}${avatarInner}</span>` : avatarInner;
+  const idInner = `<span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span>`;
+  const nameplate = frameOn(ch, "header") ? `<div class="sheet-id nameplate ${frameClass(ch)}" style="${frameStyle(ch)}">${frameDecor(ch)}${idInner}</div>` : `<div class="sheet-id">${idInner}</div>`;
+  const sheetFr = frameOn(ch, "sheet");
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
-      ${ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`}
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      ${avatar}
+      ${nameplate}
       <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
     ${ui.reorder ? `<div class="arrange-banner">Arrange mode — drag the ⠿ handles to reorder. <button data-act="toggleReorder">Done</button></div>` : ""}
-    <div class="screen tabbed">${body}</div>
+    <div class="screen tabbed ${sheetFr ? frameClass(ch) + " sheet-framed" : ""}"${sheetFr ? ` style="${frameStyle(ch)}"` : ""}>${sheetFr ? frameDecor(ch, { crest: false }) : ""}${body}</div>
     <nav class="tabbar">${tabs.map(([k, l]) => `<button class="tab ${ui.tab === k ? "on" : ""}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</nav>`;
 }
 

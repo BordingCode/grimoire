@@ -1202,11 +1202,18 @@ actions.appearance = () => {
     ${ch.theme && ch.theme !== ch.cls ? `<button class="btn ghost" data-act="resetTheme">Use ${esc(ch.cls)} theme</button>` : ""}
     <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "theme default"}</small></h3>
     <div class="swatches">${swatches}</div>
-    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use theme default</button>` : ""}`);
+    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use theme default</button>` : ""}
+    <h3 class="sec">Decorative frame <small>optional</small></h3>
+    <p class="muted small">Turn on a class-crest frame in any of these spots. Its style follows the character's alignment.</p>
+    <div class="frame-toggles">${FRAME_PLACES.map((p) => `<button class="btn ${frameOn(ch, p.key) ? "primary" : "ghost"} small-b" data-act="toggleFrame" data-place="${p.key}">${frameOn(ch, p.key) ? "✓ " : ""}${esc(p.label)}</button>`).join("")}</div>
+    <h4 class="sub-h">Alignment <small>shapes the frame</small></h4>
+    <div class="align-row">${ALIGNMENTS.map((a) => `<button class="btn ${((ch.alignment || "neutral") === a.key) ? "primary" : "ghost"} small-b" data-act="setAlignment" data-key="${a.key}">${esc(a.label)}<span class="align-note">${esc(a.note)}</span></button>`).join("")}</div>`);
 };
 actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mode); render(); actions.appearance(); };
 actions.setTheme = (el) => { const ch = Store.active(); ch.theme = el.dataset.theme; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetTheme = () => { const ch = Store.active(); ch.theme = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+actions.toggleFrame = (el) => { const ch = Store.active(); if (!ch.frames) ch.frames = {}; const k = el.dataset.place; ch.frames[k] = !ch.frames[k]; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+actions.setAlignment = (el) => { const ch = Store.active(); ch.alignment = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 
