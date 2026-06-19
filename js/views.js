@@ -150,7 +150,7 @@ function viewSheet(ch) {
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
     <div class="screen tabbed">${body}</div>

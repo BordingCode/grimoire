@@ -81,18 +81,19 @@ const CONDITION_INFO = {
   "Unconscious": "Incapacitated, unaware, drop what you hold and fall prone. Auto-fail STR & DEX saves. Attacks have advantage; hits from within 5 ft are crits.",
 };
 
-// Subclass always-prepared / expanded spells (SRD only — these are the SRD subclasses
-// that grant spells). Keyed by class -> subclass name -> { classLevel: [spell names] }.
-// Spells become available once the class reaches that level. Names resolve per edition.
+// Subclasses, keyed by class -> subclass name -> spell table OR null.
+// A spell table { classLevel: [spell names] } gives AUTO-SPELLS (SRD subclasses only — the
+// only spell lists free to bundle). null = name-only (selectable & shown; add spells via the
+// "All" tab). Subclass NAMES are titles (not copyrightable); their mechanics are NOT bundled.
+// This is the Player's Handbook (2014) subclass roster.
 const SUBCLASSES = {
+  Artificer: { "Alchemist": null, "Armorer": null, "Artillerist": null, "Battle Smith": null },
+  Barbarian: { "Path of the Berserker": null, "Path of the Totem Warrior": null },
+  Bard: { "College of Lore": null, "College of Valor": null },
   Cleric: {
+    "Knowledge Domain": null,
     "Life Domain": { 1: ["Bless", "Cure Wounds"], 3: ["Lesser Restoration", "Spiritual Weapon"], 5: ["Beacon of Hope", "Revivify"], 7: ["Death Ward", "Guardian of Faith"], 9: ["Mass Cure Wounds", "Raise Dead"] },
-  },
-  Paladin: {
-    "Oath of Devotion": { 3: ["Protection from Evil and Good", "Sanctuary"], 5: ["Lesser Restoration", "Zone of Truth"], 9: ["Beacon of Hope", "Dispel Magic"], 13: ["Freedom of Movement", "Guardian of Faith"], 17: ["Commune", "Flame Strike"] },
-  },
-  Warlock: {
-    "The Fiend": { 1: ["Burning Hands", "Command"], 3: ["Blindness/Deafness", "Scorching Ray"], 5: ["Fireball", "Stinking Cloud"], 7: ["Fire Shield", "Wall of Fire"], 9: ["Flame Strike", "Hallow"] },
+    "Light Domain": null, "Nature Domain": null, "Tempest Domain": null, "Trickery Domain": null, "War Domain": null,
   },
   Druid: {
     "Circle of the Land (Arctic)": { 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"], 7: ["Freedom of Movement", "Ice Storm"], 9: ["Commune with Nature", "Cone of Cold"] },
@@ -103,6 +104,25 @@ const SUBCLASSES = {
     "Circle of the Land (Mountain)": { 3: ["Spider Climb", "Spike Growth"], 5: ["Lightning Bolt", "Meld into Stone"], 7: ["Stone Shape", "Stoneskin"], 9: ["Passwall", "Wall of Stone"] },
     "Circle of the Land (Swamp)": { 3: ["Acid Arrow", "Darkness"], 5: ["Water Walk", "Stinking Cloud"], 7: ["Freedom of Movement", "Locate Creature"], 9: ["Insect Plague", "Scrying"] },
     "Circle of the Land (Underdark)": { 3: ["Spider Climb", "Web"], 5: ["Gaseous Form", "Stinking Cloud"], 7: ["Greater Invisibility", "Stone Shape"], 9: ["Cloudkill", "Insect Plague"] },
+    "Circle of the Moon": null,
+  },
+  Fighter: { "Champion": null, "Battle Master": null, "Eldritch Knight": null },
+  Monk: { "Way of the Open Hand": null, "Way of Shadow": null, "Way of the Four Elements": null },
+  Paladin: {
+    "Oath of Devotion": { 3: ["Protection from Evil and Good", "Sanctuary"], 5: ["Lesser Restoration", "Zone of Truth"], 9: ["Beacon of Hope", "Dispel Magic"], 13: ["Freedom of Movement", "Guardian of Faith"], 17: ["Commune", "Flame Strike"] },
+    "Oath of the Ancients": null, "Oath of Vengeance": null,
+  },
+  Ranger: { "Hunter": null, "Beast Master": null },
+  Rogue: { "Thief": null, "Assassin": null, "Arcane Trickster": null },
+  Sorcerer: { "Draconic Bloodline": null, "Wild Magic": null },
+  Warlock: {
+    "The Archfey": null,
+    "The Fiend": { 1: ["Burning Hands", "Command"], 3: ["Blindness/Deafness", "Scorching Ray"], 5: ["Fireball", "Stinking Cloud"], 7: ["Fire Shield", "Wall of Fire"], 9: ["Flame Strike", "Hallow"] },
+    "The Great Old One": null,
+  },
+  Wizard: {
+    "School of Abjuration": null, "School of Conjuration": null, "School of Divination": null, "School of Enchantment": null,
+    "School of Evocation": null, "School of Illusion": null, "School of Necromancy": null, "School of Transmutation": null,
   },
 };
 

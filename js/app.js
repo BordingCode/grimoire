@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=21").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=21").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=23").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=23").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -292,16 +292,16 @@ const actions = {
       </div>`).join("");
     const avail = Object.keys(RULES.CLASSES).filter((c) => !taken.includes(c));
     const subOpts = [];
-    list.forEach((c) => { const m = RULES.SUBCLASSES[c.cls]; if (m) Object.keys(m).forEach((sc) => subOpts.push(sc)); });
+    list.forEach((c) => { const m = RULES.SUBCLASSES[c.cls]; if (m) Object.keys(m).forEach((sc) => subOpts.push({ name: sc, spells: !!m[sc] })); });
     modal("Classes & levels", `
       <p class="muted small">Total level ${Calc.totalLevel(ch)}. Proficiency bonus & spell slots combine across classes; saving-throw proficiencies come from your <b>first</b> class only. Set HP yourself on the Combat tab after changing classes.</p>
       <div class="cls-list">${rows}</div>
-      ${subOpts.length ? `<h3 class="sec">Subclass <small>auto-adds its spells</small></h3>
+      ${subOpts.length ? `<h3 class="sec">Subclass</h3>
       <select id="mc-sub" data-act="subSelect">
         <option value="">— none —</option>
-        ${subOpts.map((sc) => `<option ${ch.subclass === sc ? "selected" : ""}>${sc}</option>`).join("")}
+        ${subOpts.map((sc) => `<option value="${esc(sc.name)}" ${ch.subclass === sc.name ? "selected" : ""}>${esc(sc.name)}${sc.spells ? " ✦" : ""}</option>`).join("")}
       </select>
-      <p class="muted small">Only SRD subclasses that grant spells are listed. Others: add their spells from the spellbook's “All” tab.</p>` : `<p class="muted small">No SRD auto-spell subclass for your class — add any subclass spells from the spellbook's “All” tab.</p>`}
+      <p class="muted small">✦ = spells auto-fill (SRD subclasses). For any other subclass the name is recorded — add its spells from the spellbook's “All” tab.</p>` : ""}
       ${avail.length ? `<h3 class="sec">Add a class</h3>` : ""}
       ${avail.length ? `
       <div class="cls-add">
@@ -581,7 +581,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=21").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=23").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
