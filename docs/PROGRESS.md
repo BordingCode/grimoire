@@ -165,10 +165,15 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - v43 Summons MVP + delete session logs + kill count on Notes tab.
 - v44 Summons: 334 SRD creatures full stats (data/summons.json) + 214 non-SRD stubs (data/creature-index.json, D&D Beyond look-up + add-as-custom) + type icons (icons/types/*.svg). Summons UI = Combat→Manage summons sub-screen (`viewSummons`/`summonCard`, `ch.summons`); per-instance HP, edit (Mighty Summoner via "set all to full"), custom, dismiss-all.
 
+## v45–v47 (current = cache v47 LIVE)
+- v45 **All dice rolling removed** (Mathias always rolls IRL): spell/weapon attack & damage now info pills (show bonus+dice); hit-die spend → type the HP you rolled (CON added); level-up HP → type your roll (blank=average); concentration on damage → "Kept it / Lost it" (no auto CON roll). Slot-spending kept (no dice). Deleted rollDice/d20/dmgMemory + castAttack/castDamage/wpnAtk/wpnDmg/concRoll/rollCheck/checkRoll/rollSave/rollSkill. Summons moved to a square icon button next to Speed (creature icon + count badge).
+- v46 **Per-class themes** (light+dark): `data/themes.json` (13 classes, full palette incl. tinted neutrals); `applyTheme` reads `themes[cls][mode]`, sets CSS vars, clears off-character. Appearance accent picker still overrides accent only. (Also fixed the v45 oversized summons button → fixed 64px square.)
+- v47 **Summons full stat blocks + boost buttons.** `data/summons.json` upgraded to full SRD stat blocks (abilities/saves/skills/senses/resist/immune/traits/all actions/reactions/`hd`), 334 creatures, OGL. Tap a summon's name → full stat-block modal (`summonStat`/`openStatBlock` lookup by `ref`). ⋯ menu boost toggles (researched, accurate, reversible): **Mighty Summoner** (+2 HP/Hit Die from `s.hd`, marks attacks magical) and **Undead Thralls** (+wizard level HP, +PB to each attack's damage via `adjustDamage`). Rebuild script: `tools/build_summons_rich.py`.
+
 ## NOT yet done / next steps
-- [ ] **Dice removal** (Mathias always rolls IRL): remove spell attack/damage rolls, weapon attack/damage rolls; hit-die spend → type rolled HP; level-up HP → type rolled; concentration → "Kept it / Lost it". (Stats save/skill roll buttons already removed in v41.)
-- [ ] **Themes redesign** (per-class light+dark, tint whole palette): research done; deliver concrete palettes doc → pick favourites → implement.
 - [ ] Phase 5 polish: printable sheet (leveling helper DONE).
+- [ ] Optional summon templates: Beast Master/Primal Companion, Steel Defender, Drake Companion (whole stat blocks generated from level/PB — research in transcript; deliberately NOT boost buttons). Tasha's Summon-X spell-level scaling could be a per-spell picker.
+- [ ] Optional: extend spell index with PHB-2024 names; Artificer spell-list (index has none).
 - [ ] Optional: extend the spell index with Tasha's / PHB-2024 names (need a source with reliable class lists — current index is ~2018-era); add Artificer.
 - [ ] Optional: a "show all classes" toggle on Find more (currently filtered to the character's classes).
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
