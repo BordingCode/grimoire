@@ -580,6 +580,30 @@ function viewSession(ch) {
 /* ---- Summons manager (per-character; SRD library + custom; manages HP in/out of combat) ---- */
 const CREATURE_TYPES = new Set(["beast", "undead", "elemental", "fey", "fiend", "dragon", "construct", "monstrosity", "plant", "ooze", "aberration", "celestial", "giant", "humanoid"]);
 function creatureIcon(type) { return `<img class="type-ic" src="icons/types/${CREATURE_TYPES.has(type) ? type : "beast"}.svg" alt="" aria-hidden="true">`; }
+/* resolve a summon instance to its full bundled stat block (by ref name) */
+function creatureDef(s) { return (Grimoire.summonLib || []).find((d) => d.name === (s.ref || s.name)) || s; }
+function creatureHasDetail(def) { return !!(def && (def.abilities || (def.traits && def.traits.length) || (def.actions && def.actions.length) || (def.reactions && def.reactions.length) || def.senses)); }
+/* the full stat-block body (abilities, defences, traits/actions/reactions) — shared by
+   the inline summon-card detail panel and the pop-up stat-block modal */
+function statBlockBody(def, s) {
+  const ab = def.abilities;
+  const abLine = ab ? `<div class="stat-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<div><b>${k.toUpperCase()}</b><span>${ab[k]} (${sign(Calc.mod(ab[k]))})</span></div>`).join("")}</div>` : "";
+  const row = (label, val) => val ? `<p class="stat-row"><b>${label}</b> ${esc(val)}</p>` : "";
+  const blocks = (title, arr) => (arr && arr.length) ? `<h4 class="stat-sec">${title}</h4>${arr.map((a) => `<p class="stat-block-item"><b>${esc(a.name)}.</b> ${esc(a.desc)}</p>`).join("")}` : "";
+  return `${abLine}
+    ${row("Saving Throws", def.saves)}
+    ${row("Skills", def.skills)}
+    ${row("Damage Resistances", def.resist)}
+    ${row("Damage Immunities", def.immune)}
+    ${row("Damage Vulnerabilities", def.vuln)}
+    ${row("Condition Immunities", def.condImmune)}
+    ${row("Senses", def.senses)}
+    ${row("Languages", def.languages)}
+    ${blocks("Traits", def.traits)}
+    ${blocks("Actions", def.actions)}
+    ${blocks("Reactions", def.reactions)}
+    ${s && s.attacksMagical ? `<p class="muted small">Attacks count as magical (Mighty Summoner).</p>` : ""}`;
+}
 function summonCard(ch, s) {
   const n = (s.hps || []).length;
   const atks = (s.attacks || []).map((a) => `<div class="sm-atk"><b>${esc(a.name)}</b> ${a.atk >= 0 ? "+" : ""}${a.atk} · ${esc(a.damage)} ${esc(a.type || "")}${a.notes ? ` <span class="muted">— ${esc(a.notes)}</span>` : ""}</div>`).join("");
@@ -590,11 +614,14 @@ function summonCard(ch, s) {
       <button data-act="summonStep" data-id="${esc(s.id)}" data-i="${i}" data-d="1" title="+1">+</button>
       <button class="del" data-act="summonKill" data-id="${esc(s.id)}" data-i="${i}" title="remove this one">✕</button>
     </div>`).join("");
+  const def = creatureDef(s);
+  const hasDetail = creatureHasDetail(def);
+  const open = !(ui.sumCollapsed && ui.sumCollapsed.has(s.id)); // details shown by default
   return `<div class="summon-card">
     <div class="sm-head">
       ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}" title="add a picture">${creatureIcon(s.icon)}</button>`}
       <div class="sm-title">
-        <button class="sm-name" data-act="summonStat" data-id="${esc(s.id)}" title="full stat block">${esc(s.name)}${n > 1 ? ` ×${n}` : ""} <em class="sm-info">ⓘ</em></button>
+        <span class="sm-name">${esc(s.name)}${n > 1 ? ` ×${n}` : ""}</span>
         <span class="sm-meta">AC ${s.ac} · ${esc(s.speed || "")}${s.conc ? " · concentration" : ""}</span>
         ${s.mighty || s.thralls || s.attacksMagical ? `<span class="sm-badges">${s.mighty ? '<em class="sm-badge">Mighty Summoner</em>' : ""}${s.thralls ? '<em class="sm-badge">Undead Thralls</em>' : ""}${s.attacksMagical && !s.mighty ? '<em class="sm-badge">magical</em>' : ""}</span>` : ""}
       </div>
@@ -602,6 +629,8 @@ function summonCard(ch, s) {
     </div>
     ${atks ? `<div class="sm-atks">${atks}</div>` : ""}
     ${s.notes ? `<div class="sm-notes muted">${esc(s.notes)}</div>` : ""}
+    ${hasDetail ? `<button class="sm-detail-toggle" data-act="summonToggle" data-id="${esc(s.id)}">${open ? "▾ Hide stat block" : "▸ Show stat block & actions"}</button>` : ""}
+    ${hasDetail && open ? `<div class="sm-detail">${statBlockBody(def, s)}</div>` : ""}
     <div class="sm-insts">${insts || '<span class="muted small">all defeated</span>'}<button class="btn small-b sm-addone" data-act="summonAddOne" data-id="${esc(s.id)}">+1</button></div>
   </div>`;
 }

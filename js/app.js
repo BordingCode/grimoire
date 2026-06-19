@@ -4,7 +4,7 @@
 "use strict";
 
 const Grimoire = { spells: { "2014": [], "2024": [] } };
-const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" } };
+const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" }, sumCollapsed: new Set() };
 
 /* team kill-count tracker (local to this device, separate from characters) */
 const Party = {
@@ -1076,31 +1076,17 @@ actions.summonThralls = (el) => {
 // full SRD stat block (from the library by ref, falling back to what the summon stores)
 actions.summonStat = (el) => {
   const s = activeSummon(el.dataset.id); if (!s) return;
-  const def = (Grimoire.summonLib || []).find((d) => d.name === (s.ref || s.name)) || s;
-  const ab = def.abilities;
-  const abLine = ab ? `<div class="stat-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<div><b>${k.toUpperCase()}</b><span>${ab[k]} (${sign(Calc.mod(ab[k]))})</span></div>`).join("")}</div>` : "";
-  const row = (label, val) => val ? `<p class="stat-row"><b>${label}</b> ${esc(val)}</p>` : "";
-  const blocks = (title, arr) => (arr && arr.length) ? `<h3 class="sec">${title}</h3>${arr.map((a) => `<p class="stat-block-item"><b>${esc(a.name)}.</b> ${esc(a.desc)}</p>`).join("")}` : "";
+  const def = creatureDef(s);
   modal(def.name, `
     <p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p>
     <div class="stat-top">
       <span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp ?? s.hpMax}</b>${def.hd ? ` (${def.hd} HD)` : ""}</span><span>${esc(def.speed || "")}</span>
     </div>
-    ${abLine}
-    ${row("Saving Throws", def.saves)}
-    ${row("Skills", def.skills)}
-    ${row("Damage Resistances", def.resist)}
-    ${row("Damage Immunities", def.immune)}
-    ${row("Damage Vulnerabilities", def.vuln)}
-    ${row("Condition Immunities", def.condImmune)}
-    ${row("Senses", def.senses)}
-    ${row("Languages", def.languages)}
-    ${blocks("Traits", def.traits)}
-    ${blocks("Actions", def.actions)}
-    ${blocks("Reactions", def.reactions)}
-    ${s.attacksMagical ? `<p class="muted small">Attacks count as magical (Mighty Summoner).</p>` : ""}
+    ${statBlockBody(def, s)}
     <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`);
 };
+/* toggle the inline stat block on a summon card (details show by default) */
+actions.summonToggle = (el) => { const id = el.dataset.id; if (ui.sumCollapsed.has(id)) ui.sumCollapsed.delete(id); else ui.sumCollapsed.add(id); render(); };
 actions.summonRemove = (el) => { const id = el.dataset.id; confirmDelete("Remove this summon?", async () => { const ch = Store.active(); const s = (ch.summons || []).find((x) => x.id === id); if (s && s.photo) { try { await Media.del(s.photo); } catch (e) {} } ch.summons = (ch.summons || []).filter((x) => x.id !== id); commit(); }); };
 actions.summonEdit = (el) => {
   const s = activeSummon(el.dataset.id); if (!s) return; actions._sumEditId = s.id;
