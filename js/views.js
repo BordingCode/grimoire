@@ -593,7 +593,11 @@ function summonCard(ch, s) {
   return `<div class="summon-card">
     <div class="sm-head">
       ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}" title="add a picture">${creatureIcon(s.icon)}</button>`}
-      <div class="sm-title"><span class="sm-name">${esc(s.name)}${n > 1 ? ` ×${n}` : ""}</span><span class="sm-meta">AC ${s.ac} · ${esc(s.speed || "")}${s.conc ? " · concentration" : ""}</span></div>
+      <div class="sm-title">
+        <button class="sm-name" data-act="summonStat" data-id="${esc(s.id)}" title="full stat block">${esc(s.name)}${n > 1 ? ` ×${n}` : ""} <em class="sm-info">ⓘ</em></button>
+        <span class="sm-meta">AC ${s.ac} · ${esc(s.speed || "")}${s.conc ? " · concentration" : ""}</span>
+        ${s.mighty || s.thralls || s.attacksMagical ? `<span class="sm-badges">${s.mighty ? '<em class="sm-badge">Mighty Summoner</em>' : ""}${s.thralls ? '<em class="sm-badge">Undead Thralls</em>' : ""}${s.attacksMagical && !s.mighty ? '<em class="sm-badge">magical</em>' : ""}</span>` : ""}
+      </div>
       <button class="opt-btn" data-act="summonOptions" data-id="${esc(s.id)}">⋯</button>
     </div>
     ${atks ? `<div class="sm-atks">${atks}</div>` : ""}

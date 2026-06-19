@@ -19,7 +19,7 @@ async function loadSpells() {
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
     fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
-    fetch("data/summons.json?v=44").then((r) => r.json()).catch(() => []),
+    fetch("data/summons.json?v=47").then((r) => r.json()).catch(() => []),
     fetch("data/creature-index.json?v=44").then((r) => r.json()).catch(() => []),
   ]);
   Grimoire.summonLib = sl || [];        // bundled SRD creature stat library (full stats)
@@ -981,7 +981,14 @@ function openDrawPad(onSave) {
 /* ===================================================================== */
 function activeSummon(id) { const ch = Store.active(); return ch && (ch.summons || []).find((s) => s.id === id); }
 function makeSummon(def, count) {
-  return { id: "sm" + Gx.uid(), name: def.name, ac: def.ac, speed: def.speed || "", attacks: JSON.parse(JSON.stringify(def.attacks || [])), hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), notes: def.notes || "", icon: def.icon || "", photo: null, conc: false };
+  return { id: "sm" + Gx.uid(), name: def.name, ref: def.name, ac: def.ac, speed: def.speed || "", attacks: JSON.parse(JSON.stringify(def.attacks || [])), hpMax: def.hp, hd: def.hd || null, hps: Array(Math.max(1, count | 0)).fill(def.hp), notes: def.notes || "", icon: def.icon || "", photo: null, conc: false };
+}
+// adjust a damage string's flat modifier by delta (e.g. Undead Thralls +PB to damage)
+function adjustDamage(dmg, delta) {
+  if (!dmg || !delta) return dmg;
+  const m = String(dmg).match(/^(\d*d\d+)\s*([+-]\s*\d+)?(.*)$/i);
+  if (m) { const mod = (m[2] ? parseInt(m[2].replace(/\s/g, ""), 10) : 0) + delta; return m[1] + (mod ? (mod > 0 ? "+" : "") + mod : "") + (m[3] || ""); }
+  const n = parseInt(dmg, 10); return isNaN(n) ? dmg : String(n + delta);
 }
 function summonLibRows(q) {
   const lib = Grimoire.summonLib || [], idx = Grimoire.creatureIndex || [];
@@ -1022,11 +1029,75 @@ actions.summonDismissAll = () => { confirmDelete("Dismiss ALL summons?", async (
 actions.summonOptions = (el) => {
   const s = activeSummon(el.dataset.id); if (!s) return;
   modal(s.name, `<div class="menu-list">
+    <button class="btn ghost" data-act="summonStat" data-id="${esc(s.id)}">View full stat block</button>
     <button class="btn ghost" data-act="summonEdit" data-id="${esc(s.id)}">Edit stats / count</button>
     <button class="btn ghost" data-act="summonPhoto" data-id="${esc(s.id)}">${s.photo ? "Change picture" : "Add picture"}</button>
     ${s.photo ? `<button class="btn ghost" data-act="summonPhotoRemove" data-id="${esc(s.id)}">Remove picture</button>` : ""}
+    <h3 class="sec">Feature boosts</h3>
+    <button class="btn ${s.mighty ? "primary" : "ghost"}" data-act="summonMighty" data-id="${esc(s.id)}">${s.mighty ? "✓ " : ""}Mighty Summoner (+2 HP/Hit Die)</button>
+    <button class="btn ${s.thralls ? "primary" : "ghost"}" data-act="summonThralls" data-id="${esc(s.id)}">${s.thralls ? "✓ " : ""}Undead Thralls (+level HP, +PB dmg)</button>
     <button class="btn danger" data-act="summonRemove" data-id="${esc(s.id)}">Remove summon</button>
   </div>`);
+};
+// Mighty Summoner (Druid Shepherd L6): +2 HP per Hit Die; attacks count as magical. Toggle.
+actions.summonMighty = (el) => {
+  const s = activeSummon(el.dataset.id); if (!s) return;
+  const apply = (hd) => {
+    const delta = 2 * hd;
+    if (!s.mighty) { s.hpMax += delta; s.hps = s.hps.map((h) => h + delta); s.mighty = true; s.attacksMagical = true; s._mightyDelta = delta; }
+    else { const d = s._mightyDelta || delta; s.hpMax = Math.max(1, s.hpMax - d); s.hps = s.hps.map((h) => Math.max(0, Math.min(s.hpMax, h - d))); s.mighty = false; s.attacksMagical = false; s._mightyDelta = null; }
+    commit(); actions.summonOptions(el);
+  };
+  if (s.mighty) return apply(0); // toggling off uses stored delta
+  if (s.hd) return apply(s.hd);
+  amountPrompt("Mighty Summoner", "How many Hit Dice does this creature have?", (n) => { s.hd = Math.max(1, n || 1); apply(s.hd); });
+};
+// Undead Thralls (Wizard Necromancy L6): +your level HP; +proficiency to damage rolls. Toggle.
+actions.summonThralls = (el) => {
+  const s = activeSummon(el.dataset.id); if (!s) return;
+  const ch = Store.active();
+  if (!s.thralls) {
+    const wiz = Calc.classList(ch).find((c) => c.cls === "Wizard");
+    const lvl = wiz ? wiz.level : Calc.totalLevel(ch);
+    const pb = Calc.prof(ch);
+    s.hpMax += lvl; s.hps = s.hps.map((h) => h + lvl);
+    s.attacks = (s.attacks || []).map((a) => ({ ...a, damage: adjustDamage(a.damage, pb) }));
+    s.thralls = true; s._thrallHp = lvl; s._thrallDmg = pb;
+  } else {
+    const lvl = s._thrallHp || 0, pb = s._thrallDmg || 0;
+    s.hpMax = Math.max(1, s.hpMax - lvl); s.hps = s.hps.map((h) => Math.max(0, Math.min(s.hpMax, h - lvl)));
+    s.attacks = (s.attacks || []).map((a) => ({ ...a, damage: adjustDamage(a.damage, -pb) }));
+    s.thralls = false; s._thrallHp = null; s._thrallDmg = null;
+  }
+  commit(); actions.summonOptions(el);
+};
+// full SRD stat block (from the library by ref, falling back to what the summon stores)
+actions.summonStat = (el) => {
+  const s = activeSummon(el.dataset.id); if (!s) return;
+  const def = (Grimoire.summonLib || []).find((d) => d.name === (s.ref || s.name)) || s;
+  const ab = def.abilities;
+  const abLine = ab ? `<div class="stat-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<div><b>${k.toUpperCase()}</b><span>${ab[k]} (${sign(Calc.mod(ab[k]))})</span></div>`).join("")}</div>` : "";
+  const row = (label, val) => val ? `<p class="stat-row"><b>${label}</b> ${esc(val)}</p>` : "";
+  const blocks = (title, arr) => (arr && arr.length) ? `<h3 class="sec">${title}</h3>${arr.map((a) => `<p class="stat-block-item"><b>${esc(a.name)}.</b> ${esc(a.desc)}</p>`).join("")}` : "";
+  modal(def.name, `
+    <p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p>
+    <div class="stat-top">
+      <span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp ?? s.hpMax}</b>${def.hd ? ` (${def.hd} HD)` : ""}</span><span>${esc(def.speed || "")}</span>
+    </div>
+    ${abLine}
+    ${row("Saving Throws", def.saves)}
+    ${row("Skills", def.skills)}
+    ${row("Damage Resistances", def.resist)}
+    ${row("Damage Immunities", def.immune)}
+    ${row("Damage Vulnerabilities", def.vuln)}
+    ${row("Condition Immunities", def.condImmune)}
+    ${row("Senses", def.senses)}
+    ${row("Languages", def.languages)}
+    ${blocks("Traits", def.traits)}
+    ${blocks("Actions", def.actions)}
+    ${blocks("Reactions", def.reactions)}
+    ${s.attacksMagical ? `<p class="muted small">Attacks count as magical (Mighty Summoner).</p>` : ""}
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`);
 };
 actions.summonRemove = (el) => { const id = el.dataset.id; confirmDelete("Remove this summon?", async () => { const ch = Store.active(); const s = (ch.summons || []).find((x) => x.id === id); if (s && s.photo) { try { await Media.del(s.photo); } catch (e) {} } ch.summons = (ch.summons || []).filter((x) => x.id !== id); commit(); }); };
 actions.summonEdit = (el) => {
@@ -1244,7 +1315,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=46");
+      const reg = await navigator.serviceWorker.register("sw.js?v=47");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
