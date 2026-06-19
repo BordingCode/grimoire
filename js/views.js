@@ -92,9 +92,9 @@ function viewHome() {
       ${Store.characters.length ? `<div class="char-list">${list}</div>` : `<p class="empty">No characters yet. Create your first adventurer.</p>`}
       <div class="home-actions">
         <button class="btn primary" data-act="goNew">+ New character</button>
-        <button class="btn ghost" data-act="goParty">⚔ Kill count</button>
-        <button class="btn ghost" data-act="importFile">⬆ Import from file</button>
-        <button class="btn ghost" data-act="forceUpdate">↻ Update app (keeps characters)</button>
+        <button class="btn ghost" data-act="goParty">Kill count</button>
+        <button class="btn ghost" data-act="importFile">Import from file</button>
+        <button class="btn ghost" data-act="forceUpdate">Update app (keeps characters)</button>
       </div>
     </div>`;
 }
@@ -104,7 +104,7 @@ function viewParty() {
   const sorted = [...Party.members].sort((a, b) => b.kills - a.kills);
   const rows = sorted.map((m, idx) => `
     <div class="kill-row">
-      <span class="kill-rank">${idx === 0 && m.kills > 0 ? "👑" : "#" + (idx + 1)}</span>
+      <span class="kill-rank">${idx === 0 && m.kills > 0 ? "★" : "#" + (idx + 1)}</span>
       <span class="kill-name">${esc(m.name)}</span>
       <span class="kill-count">${m.kills}</span>
       <div class="kill-btns">
@@ -162,7 +162,7 @@ function viewSheet(ch) {
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
       ${ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`}
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub"><span class="cls-glyph">${RULES.CLASS_GLYPH[ch.cls] || ""}</span>${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
@@ -175,7 +175,7 @@ function viewSheet(ch) {
 function statChip(ch, key, label, value, opts = {}) {
   const overridden = ch.overrides && ch.overrides[key] != null && ch.overrides[key] !== "";
   return `<button class="chip ${overridden ? "ovr" : ""}" data-act="override" data-key="${key}" data-label="${esc(label)}" data-auto="${opts.auto ?? ""}">
-      <span class="chip-v">${esc(value)}</span><span class="chip-l">${esc(label)}</span>${overridden ? '<span class="ov-dot" title="manual override">✎</span>' : ""}
+      <span class="chip-v">${esc(value)}</span><span class="chip-l">${esc(label)}</span>${overridden ? '<span class="ov-dot" title="manual override">•</span>' : ""}
     </button>`;
 }
 
@@ -192,7 +192,7 @@ function tabStats(ch) {
       <button class="dot ${ch.saveProf[a] ? "on" : ""}" data-act="toggleSave" data-ab="${a}" title="proficient"></button>
       <span class="line-l">${RULES.ABILITY_NAMES[a]}${adv ? ' <em class="adv-mark" title="advantage from a feature">ADV</em>' : ""}</span>
       <span class="line-v" data-act="override" data-key="save.${a}" data-label="${RULES.ABILITY_NAMES[a]} save" data-auto="${Calc.saveBonus(ch, a)}">${sign(Calc.saveBonus(ch, a))}</span>
-      <button class="line-roll" data-act="rollSave" data-ab="${a}" title="roll">🎲</button>
+      <button class="line-roll" data-act="rollSave" data-ab="${a}" title="roll">roll</button>
     </div>`;
   }).join("");
   const skills = Object.keys(RULES.SKILLS).map((s) => {
@@ -202,7 +202,7 @@ function tabStats(ch) {
       <button class="dot ${p === 1 ? "on" : ""} ${p === 2 ? "exp" : ""}" data-act="cycleSkill" data-skill="${esc(s)}" title="none → proficient → expertise"></button>
       <span class="line-l">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em>${adv ? ' <em class="adv-mark">ADV</em>' : ""}</span>
       <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span>
-      <button class="line-roll" data-act="rollSkill" data-skill="${esc(s)}" title="roll">🎲</button>
+      <button class="line-roll" data-act="rollSkill" data-skill="${esc(s)}" title="roll">roll</button>
     </div>`;
   }).join("");
   return `
@@ -250,7 +250,7 @@ function tabCombat(ch) {
       <button class="weapon-main" data-act="weaponOpen" data-i="${i}">
         <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
           <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
-        <span class="wpn-go">🎲</span>
+        <span class="wpn-go">roll</span>
       </button>
     </div>`;
   }).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
@@ -354,7 +354,7 @@ function spellListSection(ch) {
   if (!["prepared", "known", "favorites"].includes(f.list)) pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   const levels = `<option value="all">All levels</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(f.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrips" : "Level " + i}</option>`).join("");
   const subEditBanner = (f.list === "subclass" && ch.subclass && !subclassHasBuiltin(ch))
-    ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">✎ Set subclass spells</button></div>`
+    ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">Set subclass spells</button></div>`
     : "";
   const rows = subEditBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}</p>`);
   return `
@@ -434,7 +434,7 @@ function tabGear(ch) {
     <p class="muted small">Tick an item's box to <b>equip</b> it — its bonuses &amp; advantage then apply automatically (AC now ${Calc.armorClass(ch)}).</p>
     <h3 class="sec">Coins</h3>
     <div class="coins">${coin("pp", "PP")}${coin("gp", "GP")}${coin("ep", "EP")}${coin("sp", "SP")}${coin("cp", "CP")}</div>
-    <h3 class="sec">Inventory <span class="hdr-btns"><button class="mini" data-act="itemReceive">⬇ receive</button><button class="mini" data-act="addItem">+ add</button></span></h3>
+    <h3 class="sec">Inventory <span class="hdr-btns"><button class="mini" data-act="partyOpen">transfer</button><button class="mini" data-act="addItem">+ add</button></span></h3>
     <div class="items" ${ui.reorder ? 'data-sortlist="inventory"' : ""}>${itemRowsHtml(ch, ch.inventory, "inventory")}</div>
     <h3 class="sec">Bag of Holding <button class="mini" data-act="addBagItem">+ add</button></h3>
     <div class="items" ${ui.reorder ? 'data-sortlist="bag"' : ""}>${itemRowsHtml(ch, ch.bag, "bag")}</div>`;
@@ -443,6 +443,6 @@ function tabGear(ch) {
 function tabNotes(ch) {
   const photo = ch.portrait
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
-    : `<button class="btn ghost notes-addphoto" data-act="charPhoto">📷 Add a character photo</button>`;
+    : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
   return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests, session notes…">${esc(ch.notes)}</textarea>`;
 }

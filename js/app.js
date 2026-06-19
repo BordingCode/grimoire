@@ -253,10 +253,9 @@ const actions = {
     const other = list === "inventory" ? "Bag of Holding" : "carried";
     const da = `data-id="${id}" data-list="${list}"`;
     modal(it ? it.name : "Item", `<div class="menu-list">
-      <button class="btn ghost" data-act="itemEdit" ${da}>✎ Edit</button>
-      <button class="btn ghost" data-act="itemMove" ${da}>↔ Move to ${other}</button>
-      <button class="btn ghost" data-act="itemGive" ${da}>🎁 Give to a player</button>
-      <button class="btn danger" data-act="itemDel" ${da}>🗑 Delete</button>
+      <button class="btn ghost" data-act="itemEdit" ${da}>Edit</button>
+      <button class="btn ghost" data-act="itemMove" ${da}>Move to ${other}</button>
+      <button class="btn danger" data-act="itemDel" ${da}>Delete</button>
     </div>`);
   },
   itemEdit(el) { const list = el.dataset.list || "inventory"; itemForm((Store.active()[list] || []).find((x) => x.id === el.dataset.id), list); },
@@ -285,24 +284,6 @@ const actions = {
   },
   equip(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; const it = (ch[list] || []).find((x) => x.id === el.dataset.id); if (it) { it.equipped = !it.equipped; commit(); } },
   itemDel(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; ch[list] = (ch[list] || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item deleted."); },
-  itemGive(el) {
-    const ch = Store.active(); const list = el.dataset.list || "inventory"; const it = (ch[list] || []).find((x) => x.id === el.dataset.id); if (!it) return;
-    const code = "GRIM1:" + btoa(encodeURIComponent(JSON.stringify({ name: it.name, qty: it.qty, notes: it.notes || "", acBonus: it.acBonus || 0, bonuses: it.bonuses || [], adv: it.adv || [] })));
-    modal("Give “" + it.name + "”", `
-      <p class="muted small">Send this code to the other player — they tap “⬇ receive” on their Gear tab and paste it.</p>
-      <textarea id="give-code" rows="4" readonly>${esc(code)}</textarea>
-      <div class="modal-btns"><button class="btn" data-act="giveCopy">Copy code</button><button class="btn danger" data-act="giveRemove" data-id="${it.id}" data-list="${list}">I gave it away (remove)</button></div>`);
-  },
-  giveCopy() { const t = $("#give-code"); if (t && navigator.clipboard) navigator.clipboard.writeText(t.value).then(() => toast("Code copied — send it to the other player.")).catch(() => { t.select(); }); else if (t) { t.select(); toast("Select and copy the code."); } },
-  giveRemove(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; ch[list] = (ch[list] || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item removed (given away)."); },
-  itemReceive() { modal("Receive an item", `<p class="muted small">Paste the code another player sent you.</p><textarea id="recv-code" rows="4" placeholder="GRIM1:…"></textarea><div class="modal-btns"><button class="btn primary" data-act="recvAdd">Add to inventory</button></div>`, () => $("#recv-code").focus()); },
-  recvAdd() {
-    const code = ($("#recv-code").value || "").trim(); let o = null;
-    try { if (code.startsWith("GRIM1:")) o = JSON.parse(decodeURIComponent(atob(code.slice(6)))); } catch {}
-    if (!o || !o.name) { toast("That code isn't valid."); return; }
-    const ch = Store.active(); ch.inventory.push({ id: Gx.uid(), name: o.name, qty: +o.qty || 1, equipped: false, acBonus: +o.acBonus || 0, notes: o.notes || "", bonuses: o.bonuses || [], adv: o.adv || [] });
-    closeModal(); commit(); toast(`Received ${o.name}.`);
-  },
 
   /* weapons & attacks */
   addWeapon() { weaponForm(null); },
@@ -314,7 +295,7 @@ const actions = {
       <p class="muted small">${w.damage ? esc(w.damage) + (wDmgBon ? " " + sign(wDmgBon) : "") + (w.damageType ? " " + esc(w.damageType) : "") + " damage" : "no damage set"}${w.notes ? " · " + esc(w.notes) : ""}${(wAtkBon || wDmgBon) ? ` <span class="feat-incl">(incl. features)</span>` : ""}</p>
       <div class="cast-box">
         <div class="cast-roll">
-          ${atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="dis">dis</button><button class="btn" data-act="wpnAtk" data-i="${i}" data-mode="normal">🎲 Attack ${sign(atk)}</button><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="adv">adv</button></span>` : '<span class="muted small">no to-hit set</span>'}
+          ${atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="dis">dis</button><button class="btn" data-act="wpnAtk" data-i="${i}" data-mode="normal">Attack ${sign(atk)}</button><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="adv">adv</button></span>` : '<span class="muted small">no to-hit set</span>'}
         </div>
         ${w.damage ? `<button class="btn primary" data-act="wpnDmg" data-i="${i}">Roll damage (${esc(w.damage)})</button>` : ""}
         <div id="roll-out" class="roll-out"></div>
@@ -342,13 +323,14 @@ const actions = {
     const ch = Store.active();
     modal(ch.name, `
       <div class="menu-list">
-        <button class="btn ghost" data-act="charPhoto">📷 Character photo</button>
-        <button class="btn ghost" data-act="appearance">🎨 Appearance (theme)</button>
-        <button class="btn ghost" data-act="linkOpen">${ch.link ? "🔗 Linked — manage sharing" : "🔗 Link with another player"}</button>
-        <button class="btn ghost" data-act="exportChar">⬇ Export character (backup / share)</button>
-        <button class="btn ghost" data-act="renameChar">✎ Rename</button>
-        <button class="btn ghost" data-act="manageClasses">⚔ Classes &amp; levels</button>
-        <button class="btn danger" data-act="deleteChar">🗑 Delete character</button>
+        <button class="btn ghost" data-act="charPhoto">Character photo</button>
+        <button class="btn ghost" data-act="appearance">Appearance (theme)</button>
+        <button class="btn ghost" data-act="manageClasses">Classes &amp; levels</button>
+        <button class="btn ghost" data-act="linkOpen">${ch.link ? "Linked — manage sharing" : "Link with another player"}</button>
+        <button class="btn ghost" data-act="partyOpen">Party — transfer items${ch.party ? " (joined)" : ""}</button>
+        <button class="btn ghost" data-act="exportChar">Export character (backup / share)</button>
+        <button class="btn ghost" data-act="renameChar">Rename</button>
+        <button class="btn danger" data-act="deleteChar">Delete character</button>
       </div>`);
   },
   exportChar() { Gx.exportCharacter(Store.active()); closeModal(); toast("Exported. Keep it as a backup or send it to share."); },
@@ -414,8 +396,8 @@ actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModa
 /* small Edit/Delete menu behind the ⋯ options button (kind = res|item|weapon|feature) */
 function optionsMenu(title, kind, dataAttr) {
   modal(title, `<div class="menu-list">
-    <button class="btn ghost" data-act="${kind}Edit" ${dataAttr}>✎ Edit</button>
-    <button class="btn danger" data-act="${kind}Del" ${dataAttr}>🗑 Delete</button>
+    <button class="btn ghost" data-act="${kind}Edit" ${dataAttr}>Edit</button>
+    <button class="btn danger" data-act="${kind}Del" ${dataAttr}>Delete</button>
   </div>`);
 }
 
@@ -542,7 +524,7 @@ function openSpell(ch, id) {
       ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
       <div class="cast-box">
         <div class="cast-roll">
-          ${s.attack && atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="dis">dis</button><button class="btn" data-act="castAttack" data-atk="${atk}" data-mode="normal">🎲 Attack ${sign(atk)}</button><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="adv">adv</button></span>` : ""}
+          ${s.attack && atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="dis">dis</button><button class="btn" data-act="castAttack" data-atk="${atk}" data-mode="normal">Attack ${sign(atk)}</button><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="adv">adv</button></span>` : ""}
           ${s.save ? `<span class="save-pill">Save: ${esc(s.save.toUpperCase())} vs DC ${dc}</span>` : ""}
         </div>
         <div class="dmg-roll">
@@ -592,7 +574,7 @@ function maybeConcentration(ch, dmg) {
   modal("Concentration check", `
     <p>Took <b>${dmg}</b> damage while concentrating on <b>${esc(sp?.name || "a spell")}</b>.</p>
     <p>Constitution save vs <b>DC ${dc}</b>.</p>
-    ${hasAdv ? `<p class="muted small">✨ Advantage from: ${[...new Set(adv)].map(esc).join(", ")}</p>` : ""}
+    ${hasAdv ? `<p class="muted small">Advantage from: ${[...new Set(adv)].map(esc).join(", ")}</p>` : ""}
     <div id="conc-out" class="roll-out"></div>
     <div class="modal-btns">
       <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="dis">dis</button>
@@ -633,7 +615,7 @@ actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.i
 function rollCheck(label, bonus, advList) {
   const hasAdv = advList && advList.length;
   modal(label, `
-    ${hasAdv ? `<p class="muted small">✨ Advantage from: ${advList.map(esc).join(", ")}</p>` : ""}
+    ${hasAdv ? `<p class="muted small">Advantage from: ${advList.map(esc).join(", ")}</p>` : ""}
     <div id="roll-out" class="roll-out">Roll ${esc(label)} (${sign(bonus)})</div>
     <div class="modal-btns">
       <button class="btn small-b" data-act="checkRoll" data-bonus="${bonus}" data-mode="dis" data-label="${esc(label)}">Disadv</button>
@@ -707,8 +689,8 @@ actions.appearance = () => {
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
-      <button class="btn ${mode === "dark" ? "primary" : "ghost"}" data-act="setMode" data-mode="dark">🌙 Dark</button>
-      <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">☀️ Light</button>
+      <button class="btn ${mode === "dark" ? "primary" : "ghost"}" data-act="setMode" data-mode="dark">Dark</button>
+      <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">Light</button>
     </div>
     <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
     <div class="swatches">${swatches}</div>
@@ -842,4 +824,5 @@ if ("serviceWorker" in navigator) {
   if (Store.active()) { ui.screen = "sheet"; }
   render();
   if (window.LINK) LINK.afterBoot();
+  if (window.PARTY) PARTY.afterBoot();
 })();
