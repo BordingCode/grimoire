@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=10").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=10").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=11").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=11").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -235,13 +235,13 @@ function tabCombat(ch) {
       <button data-act="condRemove" data-i="${i}">✕</button></span>`).join("") || `<span class="muted">none</span>`;
   const res = (ch.resources || []).map((r) => `
     <div class="res">
-      <div class="res-top"><span>${esc(r.name)}</span><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn} rest</span></div>
+      <div class="res-top"><span>${esc(r.name)}</span>
+        <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn} rest</span>
+          <button class="opt-btn" data-act="resOptions" data-id="${r.id}">⋯</button></span></div>
       ${r.note ? `<div class="res-note">${esc(r.note)}</div>` : ""}
       <div class="res-btns">
         <button data-act="resUse" data-id="${r.id}">Use</button>
         <button data-act="resRestore" data-id="${r.id}">+</button>
-        <button data-act="resEdit" data-id="${r.id}">edit</button>
-        <button class="del" data-act="resDel" data-id="${r.id}">✕</button>
       </div>
     </div>`).join("");
   const weapons = (ch.weapons || []).map((w, i) => `
@@ -379,7 +379,7 @@ function tabGear(ch) {
     <div class="item">
       <button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" title="equipped (counts AC)">${it.equipped ? "✓" : ""}</button>
       <span class="it-name">${esc(it.name)}${it.acBonus ? ` <em>AC ${sign(+it.acBonus)}</em>` : ""}${it.qty > 1 ? ` ×${it.qty}` : ""}</span>
-      <button class="del" data-act="itemDel" data-id="${it.id}">✕</button>
+      <button class="opt-btn" data-act="itemOptions" data-id="${it.id}">⋯</button>
     </div>`).join("") || `<span class="muted">empty</span>`;
   return `
     <div class="armor-row">
@@ -508,7 +508,8 @@ const actions = {
   },
   resUse(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used < r.max) r.used++; commit(); },
   resRestore(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used > 0) r.used--; commit(); },
-  resDel(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); confirmDelete(`Delete the “${r ? r.name : "resource"}” tracker?`, () => { ch.resources = ch.resources.filter((x) => x.id !== el.dataset.id); commit(); }); },
+  resOptions(el) { const r = Store.active().resources.find((x) => x.id === el.dataset.id); optionsMenu(r ? r.name : "Resource", "res", `data-id="${el.dataset.id}"`); },
+  resDel(el) { const ch = Store.active(); ch.resources = ch.resources.filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Tracker deleted."); },
 
   /* spells */
   spellList(el) { ui.spellFilter.list = el.dataset.list; render(); },
@@ -557,17 +558,18 @@ const actions = {
   },
 
   /* gear */
-  addItem() { modal("Add item", `
-      <label class="fld"><span>Name *</span><input id="it-name"></label>
-      <div class="grid2">
-        <label class="fld"><span>Quantity</span><input id="it-qty" type="number" min="1" value="1"></label>
-        <label class="fld"><span>AC bonus (if any)</span><input id="it-ac" type="number" placeholder="0"></label>
-      </div>
-      <label class="chk"><input type="checkbox" id="it-eq"> Equipped (count AC bonus)</label>
-      <div class="modal-btns"><button class="btn primary" data-act="itemSave">Add</button></div>`, () => $("#it-name").focus()); },
-  itemSave() { const ch = Store.active(); const name = $("#it-name").value.trim(); if (!name) return closeModal(); ch.inventory.push({ id: Gx.uid(), name, qty: +$("#it-qty").value || 1, acBonus: +$("#it-ac").value || 0, equipped: $("#it-eq").checked, notes: "" }); closeModal(); commit(); },
+  addItem() { itemForm(null); },
+  itemOptions(el) { const it = Store.active().inventory.find((x) => x.id === el.dataset.id); optionsMenu(it ? it.name : "Item", "item", `data-id="${el.dataset.id}"`); },
+  itemEdit(el) { itemForm(Store.active().inventory.find((x) => x.id === el.dataset.id)); },
+  itemSave() {
+    const ch = Store.active(); const name = $("#it-name").value.trim(); if (!name) { toast("Name required."); return; }
+    const data = { name, qty: +$("#it-qty").value || 1, acBonus: +$("#it-ac").value || 0, equipped: $("#it-eq").checked };
+    const ed = actions._itemEditId ? ch.inventory.find((x) => x.id === actions._itemEditId) : null;
+    if (ed) Object.assign(ed, data); else ch.inventory.push({ id: Gx.uid(), notes: "", ...data });
+    actions._itemEditId = null; closeModal(); commit();
+  },
   equip(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); it.equipped = !it.equipped; commit(); },
-  itemDel(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); confirmDelete(`Delete “${it ? it.name : "item"}”?`, () => { ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); commit(); }); },
+  itemDel(el) { const ch = Store.active(); ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item deleted."); },
 
   /* weapons & attacks */
   addWeapon() { weaponForm(null); },
@@ -582,13 +584,14 @@ const actions = {
         </div>
         ${w.damage ? `<button class="btn primary" data-act="wpnDmg" data-i="${i}">Roll damage (${esc(w.damage)})</button>` : ""}
         <div id="roll-out" class="roll-out"></div>
-        <div class="modal-btns"><button class="btn" data-act="weaponEdit" data-i="${i}">Edit</button><button class="btn danger" data-act="weaponDel" data-i="${i}">Delete</button></div>
+        <div class="wpn-opts-row"><button class="opt-btn" data-act="weaponOptions" data-i="${i}">⋯ Edit / Delete</button></div>
       </div>`);
   },
+  weaponOptions(el) { const w = Store.active().weapons[+el.dataset.i]; optionsMenu(w ? w.name : "Weapon", "weapon", `data-i="${el.dataset.i}"`); },
   wpnAtk(el) { const w = Store.active().weapons[+el.dataset.i]; const r = d20(+w.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; },
   wpnDmg(el) { const w = Store.active().weapons[+el.dataset.i]; const r = rollDice(w.damage); if (!r) { toast("Damage like 1d8+3."); return; } $("#roll-out").innerHTML = `Damage <b>${r.total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""} ${esc(w.damageType || "")}</small>`; },
   weaponEdit(el) { weaponForm(Store.active().weapons[+el.dataset.i], +el.dataset.i); },
-  weaponDel(el) { const ch = Store.active(); const i = +el.dataset.i; const w = ch.weapons[i]; confirmDelete(`Delete “${w ? w.name : "weapon"}”?`, () => { ch.weapons.splice(i, 1); closeModal(); commit(); }); },
+  weaponDel(el) { const ch = Store.active(); ch.weapons.splice(+el.dataset.i, 1); closeModal(); commit(); toast("Weapon deleted."); },
   weaponSave() {
     const ch = Store.active(); const name = $("#wp-name").value.trim(); if (!name) { toast("Name required."); return; }
     const data = { name, atk: $("#wp-atk").value.trim(), damage: $("#wp-dmg").value.trim(), damageType: $("#wp-type").value.trim(), notes: $("#wp-notes").value.trim() };
@@ -662,6 +665,14 @@ function confirmDelete(msg, onYes) {
 }
 actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModal(); if (cb) cb(); };
 
+/* small Edit/Delete menu behind the ⋯ options button (kind = res|item|weapon) */
+function optionsMenu(title, kind, dataAttr) {
+  modal(title, `<div class="menu-list">
+    <button class="btn ghost" data-act="${kind}Edit" ${dataAttr}>✎ Edit</button>
+    <button class="btn danger" data-act="${kind}Del" ${dataAttr}>🗑 Delete</button>
+  </div>`);
+}
+
 function resForm(r) {
   actions._resEditId = r ? r.id : null;
   modal(r ? "Edit resource" : "Add resource tracker", `
@@ -670,6 +681,18 @@ function resForm(r) {
     <label class="fld"><span>Resets on</span><select id="res-reset"><option value="long"${r && r.resetOn === "long" ? " selected" : ""}>Long rest</option><option value="short"${r && r.resetOn === "short" ? " selected" : ""}>Short rest</option></select></label>
     <label class="fld"><span>Note (optional)</span><textarea id="res-note" rows="2" placeholder="what it does, reminders…">${r && r.note ? esc(r.note) : ""}</textarea></label>
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
+}
+
+function itemForm(it) {
+  actions._itemEditId = it ? it.id : null;
+  modal(it ? "Edit item" : "Add item", `
+    <label class="fld"><span>Name *</span><input id="it-name" value="${it ? esc(it.name) : ""}"></label>
+    <div class="grid2">
+      <label class="fld"><span>Quantity</span><input id="it-qty" type="number" min="1" value="${it ? it.qty : 1}"></label>
+      <label class="fld"><span>AC bonus (if any)</span><input id="it-ac" type="number" value="${it ? (it.acBonus || 0) : 0}"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="it-eq" ${it && it.equipped ? "checked" : ""}> Equipped (count AC bonus)</label>
+    <div class="modal-btns"><button class="btn primary" data-act="itemSave">${it ? "Save" : "Add"}</button></div>`, () => $("#it-name").focus());
 }
 
 function weaponForm(w, idx) {
@@ -803,7 +826,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=10").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=11").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

@@ -265,6 +265,13 @@ input[type=checkbox] { width: auto; }
 .held { color: var(--good); font-weight: 700; }
 .lost { color: var(--bad); font-weight: 700; }
 
+/* small options (⋯) button — secondary to the real function buttons */
+.opt-btn { background: none; border: none; color: var(--muted); font-size: 1.15rem; line-height: 1; padding: 2px 8px; cursor: pointer; border-radius: 6px; flex: none; }
+.opt-btn:active { background: var(--panel-2); }
+.res-meta { display: inline-flex; align-items: center; gap: 4px; }
+.wpn-opts-row { display: flex; justify-content: center; border-top: 1px solid var(--line); padding-top: 8px; }
+.wpn-opts-row .opt-btn { font-size: .85rem; }
+
 /* weapons */
 .weapons { display: flex; flex-direction: column; }
 .weapon { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
