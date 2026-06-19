@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=19").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=19").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=20").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=20").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -84,17 +84,20 @@ const actions = {
   featureDel(el) { const ch = Store.active(); ch.features = (ch.features || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Feature deleted."); },
   featBonusAdd() { const meta = featCapture(); actions._featBonuses.push({ target: "ac", value: "" }); renderFeatureForm(meta.name, meta.desc); },
   featBonusRemove(el) { const meta = featCapture(); actions._featBonuses.splice(+el.dataset.i, 1); renderFeatureForm(meta.name, meta.desc); },
+  featAdvAdd() { const meta = featCapture(); actions._featAdv.push("save.all"); renderFeatureForm(meta.name, meta.desc); },
+  featAdvRemove(el) { const meta = featCapture(); actions._featAdv.splice(+el.dataset.i, 1); renderFeatureForm(meta.name, meta.desc); },
   featureSave() {
     const ch = Store.active(); const name = $("#ft-name").value.trim(); if (!name) { toast("Name required."); return; }
     featCapture();
     const bonuses = actions._featBonuses
       .filter((b) => b.target && b.value !== "" && b.value != null && !isNaN(+b.value))
       .map((b) => ({ target: b.target, value: +b.value }));
+    const adv = [...new Set(actions._featAdv.filter(Boolean))];
     const desc = $("#ft-desc").value.trim();
     if (!ch.features) ch.features = [];
     const ed = actions._featEditId ? ch.features.find((x) => x.id === actions._featEditId) : null;
-    if (ed) { ed.name = name; ed.desc = desc; ed.bonuses = bonuses; } else ch.features.push({ id: Gx.uid(), name, desc, bonuses });
-    actions._featEditId = null; actions._featBonuses = []; closeModal(); commit();
+    if (ed) { ed.name = name; ed.desc = desc; ed.bonuses = bonuses; ed.adv = adv; } else ch.features.push({ id: Gx.uid(), name, desc, bonuses, adv });
+    actions._featEditId = null; actions._featBonuses = []; actions._featAdv = []; closeModal(); commit();
   },
 
   /* combat */
@@ -347,10 +350,12 @@ function resForm(r) {
 function featureForm(f) {
   actions._featEditId = f ? f.id : null;
   actions._featBonuses = f && f.bonuses ? f.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
+  actions._featAdv = f && f.adv ? [...f.adv] : [];
   renderFeatureForm(f ? f.name : "", f ? f.desc : "");
 }
 function featCapture() {
   actions._featBonuses = [...document.querySelectorAll(".bonus-row")].map((r) => ({ target: r.querySelector("select").value, value: r.querySelector("input").value }));
+  actions._featAdv = [...document.querySelectorAll(".adv-row select")].map((s) => s.value);
   return { name: $("#ft-name") ? $("#ft-name").value : "", desc: $("#ft-desc") ? $("#ft-desc").value : "" };
 }
 function renderFeatureForm(name, desc) {
@@ -360,13 +365,21 @@ function renderFeatureForm(name, desc) {
       <input type="number" inputmode="numeric" placeholder="+/–" value="${b.value ?? ""}">
       <button class="opt-btn" data-act="featBonusRemove" data-i="${i}">✕</button>
     </div>`).join("");
+  const advRows = actions._featAdv.map((t, i) => `
+    <div class="adv-row">
+      <select>${ADV_TARGETS.map(([v, l]) => `<option value="${v}" ${t === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <button class="opt-btn" data-act="featAdvRemove" data-i="${i}">✕</button>
+    </div>`).join("");
   modal(actions._featEditId ? "Edit feature" : "Add feature / trait", `
     <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${esc(name)}"></label>
     <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="3" placeholder="description / reminder…">${esc(desc)}</textarea></label>
     <h3 class="sec">Auto bonuses <small>added to your sheet automatically</small></h3>
     <div class="bonus-list">${rows || '<span class="muted small">none yet — e.g. +1 Armor Class, +2 all weapon damage</span>'}</div>
     <button class="btn small-b add-bonus" data-act="featBonusAdd">+ add a bonus</button>
-    <p class="muted small">Tip: Archery (ranged only) or Dueling (one-handed only)? Put those on the specific weapon instead, since these apply to <i>all</i> weapons.</p>
+    <h3 class="sec">Grants advantage on <small>rolls default to advantage</small></h3>
+    <div class="adv-list">${advRows || '<span class="muted small">none — e.g. advantage on CON saves, or all saving throws</span>'}</div>
+    <button class="btn small-b add-bonus" data-act="featAdvAdd">+ add advantage</button>
+    <p class="muted small">Tip: conditional advantage (e.g. only vs poison) is best left as a note — but a tap still lets you choose advantage on any save/skill roll.</p>
     <div class="modal-btns"><button class="btn primary" data-act="featureSave">${actions._featEditId ? "Save" : "Add"}</button></div>`, () => $("#ft-name").focus());
 }
 
@@ -438,14 +451,17 @@ function maybeConcentration(ch, dmg) {
   const dc = Math.max(10, Math.floor(dmg / 2));
   const sp = findSpell(ch, ch.spells.concentratingOn);
   const bonus = Calc.saveBonus(ch, "con");
+  const adv = [...Calc.advSources(ch, "save.con"), ...Calc.advSources(ch, "save.concentration")];
+  const hasAdv = adv.length > 0;
   modal("Concentration check", `
     <p>Took <b>${dmg}</b> damage while concentrating on <b>${esc(sp?.name || "a spell")}</b>.</p>
     <p>Constitution save vs <b>DC ${dc}</b>.</p>
+    ${hasAdv ? `<p class="muted small">✨ Advantage from: ${[...new Set(adv)].map(esc).join(", ")}</p>` : ""}
     <div id="conc-out" class="roll-out"></div>
     <div class="modal-btns">
       <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="dis">dis</button>
-      <button class="btn primary" data-act="concRoll" data-dc="${dc}" data-mode="normal">Roll CON ${sign(bonus)}</button>
-      <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="adv">adv</button>
+      <button class="btn ${hasAdv ? "" : "primary"}" data-act="concRoll" data-dc="${dc}" data-mode="normal">Roll CON ${sign(bonus)}</button>
+      <button class="btn ${hasAdv ? "primary" : "small-b"}" data-act="concRoll" data-dc="${dc}" data-mode="adv">adv</button>
     </div>`);
 }
 actions.concRoll = (el) => {
@@ -476,6 +492,25 @@ function spendSlot(lvl) {
   toast(`Spent a level ${lvl} slot.`);
 }
 actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage, a CON save (DC = max(10, half damage)) is prompted in Combat."); };
+
+/* ---------- ability/save/skill check roller (with adv from features) ---------- */
+function rollCheck(label, bonus, advList) {
+  const hasAdv = advList && advList.length;
+  modal(label, `
+    ${hasAdv ? `<p class="muted small">✨ Advantage from: ${advList.map(esc).join(", ")}</p>` : ""}
+    <div id="roll-out" class="roll-out">Roll ${esc(label)} (${sign(bonus)})</div>
+    <div class="modal-btns">
+      <button class="btn small-b" data-act="checkRoll" data-bonus="${bonus}" data-mode="dis" data-label="${esc(label)}">Disadv</button>
+      <button class="btn ${hasAdv ? "" : "primary"}" data-act="checkRoll" data-bonus="${bonus}" data-mode="normal" data-label="${esc(label)}">Roll ${sign(bonus)}</button>
+      <button class="btn ${hasAdv ? "primary" : ""}" data-act="checkRoll" data-bonus="${bonus}" data-mode="adv" data-label="${esc(label)}">Advantage</button>
+    </div>`);
+}
+actions.checkRoll = (el) => {
+  const r = d20(+el.dataset.bonus, el.dataset.mode); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : "";
+  $("#roll-out").innerHTML = `${esc(el.dataset.label)}: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — 20!" : r.fumble ? " — 1" : ""} ${sign(r.mod)})</small>`;
+};
+actions.rollSave = (el) => { const ch = Store.active(); const ab = el.dataset.ab; rollCheck(RULES.ABILITY_NAMES[ab] + " save", Calc.saveBonus(ch, ab), Calc.advSources(ch, "save." + ab)); };
+actions.rollSkill = (el) => { const ch = Store.active(); const s = el.dataset.skill; rollCheck(s + " check", Calc.skillBonus(ch, s), Calc.advSources(ch, "skill." + s)); };
 
 /* ===================================================================== */
 /*  WIRING                                                               */
@@ -508,7 +543,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=19").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=20").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

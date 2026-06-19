@@ -26,6 +26,17 @@ const Calc = {
     return sum;
   },
 
+  // names of features granting ADVANTAGE on a roll target (e.g. "save.con", "skill.Stealth").
+  // matches exact target, plus "save.all"/"skill.all" wildcards.
+  advSources(ch, target) {
+    const out = [];
+    const wild = target.startsWith("save.") ? "save.all" : target.startsWith("skill.") ? "skill.all" : null;
+    for (const f of (ch.features || [])) for (const t of (f.adv || [])) {
+      if (t === target || (wild && t === wild)) out.push(f.name);
+    }
+    return [...new Set(out)];
+  },
+
   // [{cls, level}] across primary + multiclass, skipping blanks.
   classList(ch) {
     return [{ cls: ch.cls, level: ch.level }, ...(ch.multiclass || [])].filter((c) => c.cls && c.level > 0);

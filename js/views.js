@@ -45,6 +45,18 @@ const FEAT_TARGETS = [
 ];
 const FEAT_TARGET_LABEL = Object.fromEntries(FEAT_TARGETS);
 
+/* advantage targets a feature can grant (non-numeric — they change how you roll) */
+const ADV_TARGETS = [
+  ["save.all", "All saving throws"],
+  ["save.str", "STR saves"], ["save.dex", "DEX saves"], ["save.con", "CON saves"],
+  ["save.int", "INT saves"], ["save.wis", "WIS saves"], ["save.cha", "CHA saves"],
+  ["save.concentration", "Concentration saves"],
+  ["skill.all", "All ability checks"],
+  ...Object.keys(RULES.SKILLS).map((s) => ["skill." + s, s + " (skill)"]),
+  ["initiative", "Initiative"],
+];
+const ADV_LABEL = Object.fromEntries(ADV_TARGETS);
+
 /* ===================================================================== */
 /*  SCREENS                                                              */
 /* ===================================================================== */
@@ -160,18 +172,24 @@ function tabStats(ch) {
       <input class="ab-score" type="number" min="1" max="30" data-bind="abilities.${a}" value="${ch.abilities[a]}">
       <span class="ab-mod">${sign(Calc.abilityMod(ch, a))}</span>
     </div>`).join("");
-  const saves = RULES.ABILITIES.map((a) => `
-    <button class="line" data-act="toggleSave" data-ab="${a}">
-      <span class="dot ${ch.saveProf[a] ? "on" : ""}"></span>
-      <span class="line-l">${RULES.ABILITY_NAMES[a]}</span>
+  const saves = RULES.ABILITIES.map((a) => {
+    const adv = Calc.advSources(ch, "save." + a).length > 0;
+    return `<div class="line">
+      <button class="dot ${ch.saveProf[a] ? "on" : ""}" data-act="toggleSave" data-ab="${a}" title="proficient"></button>
+      <span class="line-l">${RULES.ABILITY_NAMES[a]}${adv ? ' <em class="adv-mark" title="advantage from a feature">ADV</em>' : ""}</span>
       <span class="line-v" data-act="override" data-key="save.${a}" data-label="${RULES.ABILITY_NAMES[a]} save" data-auto="${Calc.saveBonus(ch, a)}">${sign(Calc.saveBonus(ch, a))}</span>
-    </button>`).join("");
+      <button class="line-roll" data-act="rollSave" data-ab="${a}" title="roll">🎲</button>
+    </div>`;
+  }).join("");
   const skills = Object.keys(RULES.SKILLS).map((s) => {
     const p = ch.skillProf[s] || 0;
-    return `<button class="line" data-act="cycleSkill" data-skill="${esc(s)}">
-      <span class="dot ${p === 1 ? "on" : ""} ${p === 2 ? "exp" : ""}"></span>
-      <span class="line-l">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em></span>
-      <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span></button>`;
+    const adv = Calc.advSources(ch, "skill." + s).length > 0;
+    return `<div class="line">
+      <button class="dot ${p === 1 ? "on" : ""} ${p === 2 ? "exp" : ""}" data-act="cycleSkill" data-skill="${esc(s)}" title="none → proficient → expertise"></button>
+      <span class="line-l">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em>${adv ? ' <em class="adv-mark">ADV</em>' : ""}</span>
+      <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span>
+      <button class="line-roll" data-act="rollSkill" data-skill="${esc(s)}" title="roll">🎲</button>
+    </div>`;
   }).join("");
   return `
     <div class="row-chips">
@@ -190,7 +208,7 @@ function tabStats(ch) {
         <div class="feat-top"><span class="feat-name">${esc(f.name)}</span>
           <button class="opt-btn" data-act="featureOptions" data-id="${f.id}">⋯</button></div>
         ${f.desc ? `<div class="feat-desc">${esc(f.desc)}</div>` : ""}
-        ${(f.bonuses && f.bonuses.length) ? `<div class="feat-tags">${f.bonuses.map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}</div>` : ""}
+        ${(f.bonuses && f.bonuses.length) || (f.adv && f.adv.length) ? `<div class="feat-tags">${(f.bonuses || []).map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}${(f.adv || []).map((t) => `<span class="feat-tag adv-tag">ADV ${esc(ADV_LABEL[t] || t)}</span>`).join("")}</div>` : ""}
       </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>`;
 }
 

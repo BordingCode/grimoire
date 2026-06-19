@@ -120,6 +120,13 @@ input[type=checkbox] { width: auto; }
 .line-l { flex: 1; }
 .line-l em { color: var(--muted); font-style: normal; font-size: .7rem; margin-left: 4px; }
 .line-v { font-weight: 700; min-width: 34px; text-align: right; }
+.line-roll { background: none; border: none; font-size: 1rem; padding: 2px 4px 2px 10px; cursor: pointer; opacity: .7; }
+.line-roll:active { opacity: 1; }
+.adv-mark { color: var(--good); font-style: normal; font-size: .6rem; font-weight: 700; border: 1px solid var(--good); border-radius: 4px; padding: 0 3px; margin-left: 5px; vertical-align: middle; }
+.feat-tag.adv-tag { color: var(--good); background: rgba(95,211,138,.12); border-color: rgba(95,211,138,.4); }
+.adv-list { display: flex; flex-direction: column; gap: 8px; }
+.adv-row { display: flex; gap: 8px; align-items: center; }
+.adv-row select { flex: 1; }
 .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); flex: none; }
 .dot.on { background: var(--accent); border-color: var(--accent); }
 .dot.exp { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 2px rgba(255,216,107,.3); }
