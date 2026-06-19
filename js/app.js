@@ -4,7 +4,7 @@
 "use strict";
 
 const Grimoire = { spells: { "2014": [], "2024": [] } };
-const ui = { screen: "home", tab: "stats", spellFilter: { q: "", level: "all", list: "available" } };
+const ui = { screen: "home", tab: "stats", reorder: false, spellFilter: { q: "", level: "all", list: "available" } };
 
 /* team kill-count tracker (local to this device, separate from characters) */
 const Party = {
@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=27").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=27").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=28").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=28").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -340,19 +340,10 @@ actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModa
 /* small Edit/Delete menu behind the ⋯ options button (kind = res|item|weapon|feature) */
 function optionsMenu(title, kind, dataAttr) {
   modal(title, `<div class="menu-list">
-    <div class="move-row">
-      <button class="btn ghost" data-act="${kind}MoveUp" ${dataAttr}>↑ Move up</button>
-      <button class="btn ghost" data-act="${kind}MoveDown" ${dataAttr}>↓ Move down</button>
-    </div>
     <button class="btn ghost" data-act="${kind}Edit" ${dataAttr}>✎ Edit</button>
     <button class="btn danger" data-act="${kind}Del" ${dataAttr}>🗑 Delete</button>
   </div>`);
 }
-
-/* reorder helpers */
-function moveAt(arr, i, dir) { const j = i + dir; if (i < 0 || j < 0 || j >= arr.length) return; const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
-function moveById(arr, id, dir) { moveAt(arr, arr.findIndex((x) => x.id === id), dir); }
-function moveStrId(arr, id, dir) { moveAt(arr, arr.indexOf(id), dir); }
 
 function resForm(r) {
   actions._resEditId = r ? r.id : null;
@@ -587,17 +578,64 @@ actions.ssToggle = (el) => {
 };
 actions.ssDone = () => { closeModal(); render(); };
 
-/* ---------- reordering ---------- */
-actions.resMoveUp = (el) => { moveById(Store.active().resources, el.dataset.id, -1); closeModal(); commit(); };
-actions.resMoveDown = (el) => { moveById(Store.active().resources, el.dataset.id, 1); closeModal(); commit(); };
-actions.itemMoveUp = (el) => { moveById(Store.active().inventory, el.dataset.id, -1); closeModal(); commit(); };
-actions.itemMoveDown = (el) => { moveById(Store.active().inventory, el.dataset.id, 1); closeModal(); commit(); };
-actions.featureMoveUp = (el) => { moveById(Store.active().features || [], el.dataset.id, -1); closeModal(); commit(); };
-actions.featureMoveDown = (el) => { moveById(Store.active().features || [], el.dataset.id, 1); closeModal(); commit(); };
-actions.weaponMoveUp = (el) => { moveAt(Store.active().weapons, +el.dataset.i, -1); closeModal(); commit(); };
-actions.weaponMoveDown = (el) => { moveAt(Store.active().weapons, +el.dataset.i, 1); closeModal(); commit(); };
-actions.spMoveUp = (el) => { const ch = Store.active(); moveStrId(ch.spells[ui.spellFilter.list], el.dataset.id, -1); commit(); };
-actions.spMoveDown = (el) => { const ch = Store.active(); moveStrId(ch.spells[ui.spellFilter.list], el.dataset.id, 1); commit(); };
+/* ---------- drag-to-reorder (only active in Arrange mode) ---------- */
+actions.toggleReorder = () => { ui.reorder = !ui.reorder; render(); };
+
+let _drag = null;
+function initSortables() {
+  if (!ui.reorder) return;
+  document.querySelectorAll(".drag-handle").forEach((h) => h.addEventListener("pointerdown", dragStart));
+}
+function dragStart(e) {
+  const handle = e.currentTarget;
+  const row = handle.closest("[data-sortid]"), container = handle.closest("[data-sortlist]");
+  if (!row || !container) return;
+  e.preventDefault();
+  _drag = { row, container, moved: false };
+  try { handle.setPointerCapture(e.pointerId); } catch {}
+  handle.addEventListener("pointermove", dragMove);
+  handle.addEventListener("pointerup", dragEnd);
+  handle.addEventListener("pointercancel", dragEnd);
+  row.classList.add("dragging");
+}
+function dragMove(e) {
+  if (!_drag) return;
+  _drag.moved = true;
+  const { container, row } = _drag;
+  const others = [...container.querySelectorAll("[data-sortid]")].filter((r) => r !== row);
+  let before = null;
+  for (const r of others) { const rect = r.getBoundingClientRect(); if (e.clientY < rect.top + rect.height / 2) { before = r; break; } }
+  if (before) { if (before.previousElementSibling !== row) container.insertBefore(row, before); }
+  else if (others.length && others[others.length - 1] !== row.previousElementSibling) { container.appendChild(row); }
+}
+function dragEnd(e) {
+  if (!_drag) return;
+  const { container, row, moved } = _drag; const handle = e.currentTarget;
+  row.classList.remove("dragging");
+  try { handle.releasePointerCapture(e.pointerId); } catch {}
+  handle.removeEventListener("pointermove", dragMove);
+  handle.removeEventListener("pointerup", dragEnd);
+  handle.removeEventListener("pointercancel", dragEnd);
+  const listName = container.dataset.sortlist; _drag = null;
+  if (moved) applySortOrder(listName);
+}
+function applySortOrder(listName) {
+  const ch = Store.active(); if (!ch) return;
+  const container = document.querySelector(`[data-sortlist="${listName}"]`); if (!container) return;
+  const ids = [...container.querySelectorAll("[data-sortid]")].map((el) => el.dataset.sortid);
+  if (listName.startsWith("spell:")) {
+    const key = listName.slice(6); const set = new Set(ids);
+    const out = ids.filter((id) => ch.spells[key].includes(id));
+    ch.spells[key].forEach((id) => { if (!set.has(id)) out.push(id); });
+    ch.spells[key] = out;
+  } else {
+    const arr = ch[listName] || []; const map = new Map(arr.map((x) => [x.id, x]));
+    const out = ids.map((id) => map.get(id)).filter(Boolean);
+    arr.forEach((x) => { if (!ids.includes(x.id)) out.push(x); });
+    ch[listName] = out;
+  }
+  commit();
+}
 
 /* ===================================================================== */
 /*  WIRING                                                               */
@@ -630,7 +668,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=27").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=28").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

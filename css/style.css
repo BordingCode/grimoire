@@ -310,7 +310,16 @@ input[type=checkbox] { width: auto; }
 
 /* weapons */
 .weapons { display: flex; flex-direction: column; }
-.weapon { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+.weapon { display: flex; align-items: center; gap: 4px; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+.weapon-main { flex: 1; display: flex; align-items: center; gap: 10px; background: none; border: none; text-align: left; cursor: pointer; color: inherit; padding: 0; }
+
+/* drag-to-reorder (Arrange mode) */
+.reorder-toggle.on { color: var(--gold); }
+.arrange-banner { background: rgba(255,216,107,.12); border-bottom: 1px solid var(--gold); color: var(--ink); font-size: .85rem; padding: 8px 14px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 4; }
+.arrange-banner button { margin-left: auto; background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 4px 12px; font-weight: 700; cursor: pointer; }
+.drag-handle { flex: none; background: none; border: none; color: var(--muted); font-size: 1.2rem; line-height: 1; padding: 4px 6px; cursor: grab; touch-action: none; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+.dragging { opacity: .65; background: var(--panel-2); border-radius: 10px; }
 .wpn-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .wpn-name { font-weight: 700; }
 .wpn-sub { font-size: .78rem; color: var(--muted); }

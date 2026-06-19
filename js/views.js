@@ -71,7 +71,10 @@ function render() {
   else if (ui.screen === "new") app.innerHTML = viewNew();
   else if (ui.screen === "party") app.innerHTML = viewParty();
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
+  if (typeof initSortables === "function") initSortables();
 }
+// drag-handle markup, shown only in Arrange mode (ui.reorder)
+function handle() { return ui.reorder ? '<button class="drag-handle" title="drag to reorder">⠿</button>' : ""; }
 
 /* ---- Home ---- */
 function viewHome() {
@@ -156,8 +159,10 @@ function viewSheet(ch) {
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
       <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
+    ${ui.reorder ? `<div class="arrange-banner">Arrange mode — drag the ⠿ handles to reorder. <button data-act="toggleReorder">Done</button></div>` : ""}
     <div class="screen tabbed">${body}</div>
     <nav class="tabbar">${tabs.map(([k, l]) => `<button class="tab ${ui.tab === k ? "on" : ""}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</nav>`;
 }
@@ -208,9 +213,9 @@ function tabStats(ch) {
     <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
     <div class="lines">${skills}</div>
     <h3 class="sec">Features &amp; traits <button class="mini" data-act="addFeature">+ add</button></h3>
-    <div class="features">${(ch.features || []).map((f) => `
-      <div class="feat">
-        <div class="feat-top"><span class="feat-name">${esc(f.name)}</span>
+    <div class="features" ${ui.reorder ? 'data-sortlist="features"' : ""}>${(ch.features || []).map((f) => `
+      <div class="feat" ${ui.reorder ? `data-sortid="${esc(f.id)}"` : ""}>
+        <div class="feat-top">${handle()}<span class="feat-name">${esc(f.name)}</span>
           <button class="opt-btn" data-act="featureOptions" data-id="${f.id}">⋯</button></div>
         ${f.desc ? `<div class="feat-desc">${esc(f.desc)}</div>` : ""}
         ${(f.bonuses && f.bonuses.length) || (f.adv && f.adv.length) ? `<div class="feat-tags">${(f.bonuses || []).map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}${(f.adv || []).map((t) => `<span class="feat-tag adv-tag">ADV ${esc(ADV_LABEL[t] || t)}</span>`).join("")}</div>` : ""}
@@ -224,8 +229,8 @@ function tabCombat(ch) {
       <button data-act="condTick" data-i="${i}" title="-1 round">−</button>
       <button data-act="condRemove" data-i="${i}">✕</button></span>`).join("") || `<span class="muted">none</span>`;
   const res = (ch.resources || []).map((r) => `
-    <div class="res">
-      <div class="res-top"><span>${esc(r.name)}</span>
+    <div class="res" ${ui.reorder ? `data-sortid="${esc(r.id)}"` : ""}>
+      <div class="res-top">${handle()}<span>${esc(r.name)}</span>
         <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn} rest</span>
           <button class="opt-btn" data-act="resOptions" data-id="${r.id}">⋯</button></span></div>
       ${r.note ? `<div class="res-note">${esc(r.note)}</div>` : ""}
@@ -237,11 +242,13 @@ function tabCombat(ch) {
   const wAtkBon = Calc.featBonus(ch, "weaponAttack"), wDmgBon = Calc.featBonus(ch, "weaponDamage");
   const weapons = (ch.weapons || []).map((w, i) => {
     const atk = (w.atk !== "" && w.atk != null) ? +w.atk + wAtkBon : null;
-    return `<button class="weapon" data-act="weaponOpen" data-i="${i}">
-      <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
-        <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
-      <span class="wpn-go">🎲</span>
-    </button>`;
+    return `<div class="weapon" ${ui.reorder ? `data-sortid="${esc(w.id)}"` : ""}>${handle()}
+      <button class="weapon-main" data-act="weaponOpen" data-i="${i}">
+        <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
+          <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
+        <span class="wpn-go">🎲</span>
+      </button>
+    </div>`;
   }).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
   const conc = ch.spells.concentratingOn ? (findSpell(ch, ch.spells.concentratingOn)?.name || "a spell") : null;
   return `
@@ -264,7 +271,7 @@ function tabCombat(ch) {
       </div>
     </div>
     <h3 class="sec">Weapons &amp; attacks <button class="mini" data-act="addWeapon">+ add</button></h3>
-    <div class="weapons">${weapons}</div>
+    <div class="weapons" ${ui.reorder ? 'data-sortlist="weapons"' : ""}>${weapons}</div>
     <div class="death">
       <span>Death saves</span>
       <span class="ds">✓ ${[0,1,2].map((i)=>`<button class="pip ${c.death.succ>i?"on good":""}" data-act="death" data-t="succ" data-i="${i}"></button>`).join("")}</span>
@@ -282,7 +289,7 @@ function tabCombat(ch) {
     <h3 class="sec">Conditions <button class="mini" data-act="addCond">+ add</button></h3>
     <div class="conds">${cond}</div>
     <h3 class="sec">Resource trackers <button class="mini" data-act="addRes">+ add</button></h3>
-    <div class="reslist">${res || '<span class="muted">none — e.g. Rage, Ki, Channel Divinity</span>'}</div>`;
+    <div class="reslist" ${ui.reorder ? 'data-sortlist="resources"' : ""}>${res || '<span class="muted">none — e.g. Rage, Ki, Channel Divinity</span>'}</div>`;
 }
 
 function tabSpells(ch) {
@@ -355,7 +362,7 @@ function spellListSection(ch) {
         <select data-act="spellLevel">${levels}</select>
       </div>
     </div>
-    <div class="spell-rows">${rows}</div>`;
+    <div class="spell-rows" ${ui.reorder && ["prepared", "known", "favorites"].includes(f.list) ? `data-sortlist="spell:${f.list}"` : ""}>${rows}</div>`;
 }
 
 function spellRow(ch, s) {
@@ -365,13 +372,15 @@ function spellRow(ch, s) {
   const isKnown = ch.spells.known.includes(s.id);
   const lvl = s.level === 0 ? "Cantrip" : "L" + s.level;
   const tags = [s.concentration ? "C" : "", s.ritual ? "R" : ""].filter(Boolean).join(" ");
-  return `<div class="spell">
+  const curated = ["prepared", "known", "favorites"].includes(ui.spellFilter.list);
+  const draggable = ui.reorder && curated && (ch.spells[ui.spellFilter.list] || []).includes(s.id);
+  return `<div class="spell" ${draggable ? `data-sortid="${esc(s.id)}"` : ""}>
+    ${draggable ? handle() : ""}
     <button class="spell-main" data-act="spellDetail" data-id="${esc(s.id)}">
       <span class="sp-name">${esc(s.name)} ${s.custom ? '<em class="hb">homebrew</em>' : ""}${isSub ? '<em class="sub-badge">subclass</em>' : ""}</span>
       <span class="sp-meta">${lvl} · ${esc(s.school)}${tags ? " · " + tags : ""}</span>
     </button>
     <div class="spell-acts">
-      ${["prepared", "known", "favorites"].includes(ui.spellFilter.list) && !isSub ? `<button class="ic mv" data-act="spMoveUp" data-id="${esc(s.id)}" title="move up">↑</button><button class="ic mv" data-act="spMoveDown" data-id="${esc(s.id)}" title="move down">↓</button>` : ""}
       <button class="ic ${isFav ? "on" : ""}" data-act="fav" data-id="${esc(s.id)}" title="favorite">★</button>
       <button class="ic ${isPrep ? "on" : ""}" data-act="prep" data-id="${esc(s.id)}" title="prepared${isSub ? " (always, from subclass)" : ""}">P</button>
       <button class="ic ${isKnown ? "on" : ""}" data-act="know" data-id="${esc(s.id)}" title="known">K</button>
@@ -399,7 +408,7 @@ function tabGear(ch) {
     if (it.acBonus) tags.push(`AC ${sign(+it.acBonus)}`); // legacy field
     (it.bonuses || []).forEach((b) => tags.push(`${sign(b.value)} ${FEAT_TARGET_LABEL[b.target] || b.target}`));
     (it.adv || []).forEach((t) => tags.push(`ADV ${ADV_LABEL[t] || t}`));
-    return `<div class="item">
+    return `<div class="item" ${ui.reorder ? `data-sortid="${esc(it.id)}"` : ""}>${handle()}
       <button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" title="equipped — applies its bonuses">${it.equipped ? "✓" : ""}</button>
       <div class="it-main">
         <span class="it-name">${esc(it.name)}${it.qty > 1 ? ` ×${it.qty}` : ""}${!it.equipped && tags.length ? ' <em class="it-off">(unequipped)</em>' : ""}</span>
@@ -415,7 +424,7 @@ function tabGear(ch) {
     </div>
     <p class="muted small">Tick an item's box to <b>equip</b> it — its bonuses &amp; advantage then apply automatically (AC now ${Calc.armorClass(ch)}).</p>
     <h3 class="sec">Inventory <button class="mini" data-act="addItem">+ add</button></h3>
-    <div class="items">${inv}</div>`;
+    <div class="items" ${ui.reorder ? 'data-sortlist="inventory"' : ""}>${inv}</div>`;
 }
 
 function tabNotes(ch) {
