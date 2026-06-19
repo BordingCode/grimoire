@@ -94,6 +94,7 @@ function viewHome() {
         <button class="btn primary" data-act="goNew">+ New character</button>
         <button class="btn ghost" data-act="goParty">⚔ Kill count</button>
         <button class="btn ghost" data-act="importFile">⬆ Import from file</button>
+        <button class="btn ghost" data-act="forceUpdate">↻ Update app (keeps characters)</button>
       </div>
     </div>`;
 }

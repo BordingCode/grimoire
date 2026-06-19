@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=31").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=31").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=32").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=32").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -56,6 +56,14 @@ const actions = {
   goHome() { ui.screen = "home"; render(); },
   goNew() { ui.screen = "new"; render(); },
   goParty() { ui.screen = "party"; render(); },
+  async forceUpdate() {
+    if (!confirm("Reload a fresh copy of the app? This clears the cached app files and reloads. Your characters are KEPT.")) return;
+    try {
+      if ("serviceWorker" in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); }
+      if ("caches" in window) { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); }
+    } catch {}
+    location.reload();
+  },
   partyAdd() { const n = ($("#party-name").value || "").trim(); if (!n) return; Party.members.push({ id: Gx.uid(), name: n, kills: 0 }); Party.save(); render(); },
   partyKill(el) { const m = Party.members.find((x) => x.id === el.dataset.id); if (m) { m.kills++; Party.save(); render(); } },
   partyUnkill(el) { const m = Party.members.find((x) => x.id === el.dataset.id); if (m && m.kills > 0) { m.kills--; Party.save(); render(); } },
@@ -775,7 +783,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=31");
+      const reg = await navigator.serviceWorker.register("sw.js?v=32");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
