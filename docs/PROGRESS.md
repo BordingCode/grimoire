@@ -115,8 +115,9 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Non-SRD subclasses get a Subclass tab + "Set subclass spells" picker (actions.editSubSpells/ssToggle/ssSearch/ssDone; subListHtml). Ticked spells → ch.subSpells → behave like always-prepared subclass spells (subclassSpells() falls back to ch.subSpells when no built-in table; subclassHasBuiltin() helper). Picker note = ownership attestation. LEGAL because the player enters content they own; Grimoire still bundles only SRD. subSpells synced via link mental group.
 - NOTE on the "ship-it-behind-a-checkbox" request: declined — distributing copyrighted text is infringement regardless of recipient ownership, and it'd sit in the public repo. The player-entry path achieves the same result legally.
 
-## v27: reordering
-- Move up/down for features, resource trackers, weapons, inventory items via the ⋯ options menu (moveAt/moveById/moveStrId in app.js). Spells in Prepared/Known/Favorites keep custom order (sort skipped for those lists in views) with compact ↑↓ per row; browse lists stay sorted. Order persists (saved arrays) & syncs via link.
+## v28: drag-to-reorder in Arrange mode (replaced v27 move buttons)
+- ⠿ Arrange toggle in sheet header (ui.reorder, off by default). When on: grip handles + data-sortlist/data-sortid render on rows. Pointer-based sortable (app.js: initSortables/dragStart/dragMove/dragEnd/applySortOrder) works touch+mouse; handle has touch-action:none. Live DOM reorder, commit on drop.
+- Reorderable: features, resources, weapons, inventory items, curated spell lists (spell:<list>). Curated spell lists still skip auto-sort to keep manual order. Weapon row = div + .drag-handle + .weapon-main.
 
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
