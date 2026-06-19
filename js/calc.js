@@ -101,7 +101,13 @@ const Calc = {
     for (const c of list) {
       const info = RULES.CLASSES[c.cls] || {};
       if (info.caster === "full") cl += c.level;
-      else if (info.caster === "half") cl += (c.cls === "Artificer") ? Math.ceil(c.level / 2) : (multi ? Math.floor(c.level / 2) : Math.ceil(c.level / 2));
+      else if (info.caster === "half") {
+        // Artificer casts from level 1 (round up). Paladin/Ranger have no spells at level 1;
+        // single-class rounds up from level 2, multiclass contributes floor(level/2).
+        if (c.cls === "Artificer") cl += Math.ceil(c.level / 2);
+        else if (multi) cl += Math.floor(c.level / 2);
+        else cl += c.level < 2 ? 0 : Math.ceil(c.level / 2);
+      }
     }
     return cl;
   },
