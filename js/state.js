@@ -48,6 +48,7 @@ function newCharacter({ name, edition, cls, level }) {
     level: Math.max(1, Math.min(20, level || 1)),
     multiclass: [],                // additional classes: [{cls, level}, ...]
     subclass: "",                  // primary-class subclass (for SRD auto-spells)
+    subSpells: [],                 // spell ids the player set for a non-SRD subclass (their owned content)
     abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     overrides: {},                 // keyed derived-stat overrides (null/undefined = auto)
     skillProf: {},                 // skill name -> 0 none, 1 proficient, 2 expertise

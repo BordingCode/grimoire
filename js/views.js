@@ -15,12 +15,17 @@ function classSummary(ch) {
   if (list.length <= 1) return ch.cls;
   return list.map((c) => `${c.cls} ${c.level}`).join(" / ");
 }
-// spells granted by the chosen subclass at the character's level (SRD subclasses only)
+// does the chosen subclass have a built-in (SRD) spell table?
+function subclassHasBuiltin(ch) {
+  if (!ch.subclass) return false;
+  return Calc.classList(ch).some((c) => { const m = RULES.SUBCLASSES[c.cls]; return m && m[ch.subclass]; });
+}
+// spells granted by the chosen subclass: built-in SRD table, else the player's own list (content they own)
 function subclassSpells(ch) {
   const sub = ch.subclass; if (!sub) return [];
   let table = null, lvl = 0;
   for (const c of Calc.classList(ch)) { const m = RULES.SUBCLASSES[c.cls]; if (m && m[sub]) { table = m[sub]; lvl = c.level; break; } }
-  if (!table) return [];
+  if (!table) return (ch.subSpells || []).map((id) => findSpell(ch, id)).filter(Boolean);
   const names = [];
   Object.keys(table).forEach((t) => { if (+t <= lvl) names.push(...table[t]); });
   const pool = spellPool(ch);
@@ -325,7 +330,7 @@ function spellListSection(ch) {
   const subSpells = subclassSpells(ch);
   Grimoire._subSet = new Set(subSpells.map((s) => s.id));
   const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
-  if (subSpells.length) lists.splice(2, 0, ["subclass", "Subclass"]);
+  if (ch.subclass) lists.splice(2, 0, ["subclass", "Subclass"]);
   let pool;
   if (f.list === "available") pool = classSpells(ch);
   else if (f.list === "all") pool = spellPool(ch);
@@ -336,7 +341,10 @@ function spellListSection(ch) {
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
   pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   const levels = `<option value="all">All levels</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(f.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrips" : "Level " + i}</option>`).join("");
-  const rows = pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells. ${f.list === "available" ? "" : "Add some from the Class list."}</p>`;
+  const subEditBanner = (f.list === "subclass" && ch.subclass && !subclassHasBuiltin(ch))
+    ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">✎ Set subclass spells</button></div>`
+    : "";
+  const rows = subEditBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}</p>`);
   return `
     <h3 class="sec">Spellbook <button class="mini" data-act="addCustom">+ hand-add</button></h3>
     <div class="spell-filters">

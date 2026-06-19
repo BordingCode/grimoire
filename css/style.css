@@ -202,6 +202,10 @@ input[type=checkbox] { width: auto; }
 .sp-name { font-weight: 600; }
 .sp-name .hb { color: var(--gold); font-style: normal; font-size: .65rem; border: 1px solid var(--gold); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
 .sp-name .sub-badge { color: var(--accent-2); font-style: normal; font-size: .65rem; border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+.sub-edit { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 2px 12px; }
+.pick-list { max-height: 60svh; overflow-y: auto; }
+.spell-main.pick { width: 100%; border-bottom: 1px solid var(--line); }
+.spell-main.pick.on .sp-name { color: var(--gold); font-weight: 700; }
 .sp-meta { font-size: .75rem; color: var(--muted); }
 .spell-acts { display: flex; gap: 4px; }
 .ic { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: .85rem; font-weight: 700; cursor: pointer; }

@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=24").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=24").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=25").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=25").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -550,6 +550,34 @@ actions.checkRoll = (el) => {
 actions.rollSave = (el) => { const ch = Store.active(); const ab = el.dataset.ab; rollCheck(RULES.ABILITY_NAMES[ab] + " save", Calc.saveBonus(ch, ab), Calc.advSources(ch, "save." + ab)); };
 actions.rollSkill = (el) => { const ch = Store.active(); const s = el.dataset.skill; rollCheck(s + " check", Calc.skillBonus(ch, s), Calc.advSources(ch, "skill." + s)); };
 
+/* ---------- subclass spell picker (player enters their own owned content) ---------- */
+function subListHtml(ch, q) {
+  const set = new Set(ch.subSpells || []);
+  let pool = spellPool(ch);
+  if (q) pool = pool.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
+  pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).slice(0, 250);
+  return pool.map((s) => `<button class="spell-main pick ${set.has(s.id) ? "on" : ""}" data-act="ssToggle" data-id="${esc(s.id)}">
+      <span class="sp-name">${set.has(s.id) ? "✓ " : ""}${esc(s.name)}</span>
+      <span class="sp-meta">${s.level === 0 ? "Cantrip" : "L" + s.level} · ${esc(s.school)}</span>
+    </button>`).join("") || `<p class="muted pad">No match.</p>`;
+}
+actions.editSubSpells = () => {
+  const ch = Store.active();
+  modal(`${ch.subclass} — spells`, `
+    <p class="muted small">Tick the spells your subclass grants. Adding them confirms you <b>own the source book</b>; they then behave like always-prepared subclass spells. (Grimoire bundles only the free SRD content.)</p>
+    <input id="ss-q" type="search" placeholder="Search spells…" data-act="ssSearch">
+    <div id="ss-list" class="spell-rows pick-list">${subListHtml(ch, "")}</div>
+    <div class="modal-btns"><button class="btn primary" data-act="ssDone">Done</button></div>`);
+};
+actions.ssSearch = (el) => { const l = $("#ss-list"); if (l) l.innerHTML = subListHtml(Store.active(), el.value); };
+actions.ssToggle = (el) => {
+  const ch = Store.active(); if (!ch.subSpells) ch.subSpells = []; const id = el.dataset.id;
+  const i = ch.subSpells.indexOf(id); if (i >= 0) ch.subSpells.splice(i, 1); else ch.subSpells.push(id);
+  Store.touch(); if (window.LINK) LINK.schedulePush(ch);
+  const l = $("#ss-list"); if (l) l.innerHTML = subListHtml(ch, $("#ss-q") ? $("#ss-q").value : "");
+};
+actions.ssDone = () => { closeModal(); render(); };
+
 /* ===================================================================== */
 /*  WIRING                                                               */
 /* ===================================================================== */
@@ -581,7 +609,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=24").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=25").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
