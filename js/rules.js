@@ -126,5 +126,26 @@ const SUBCLASSES = {
   },
 };
 
+// Expansion-book subclass NAMES (Xanathar's Guide + Tasha's Cauldron). Names only —
+// their spell lists/features are non-SRD WotC content, so these are name-only (no auto-spells).
+const EXTRA_SUBCLASSES = {
+  Barbarian: ["Path of the Ancestral Guardian", "Path of the Storm Herald", "Path of the Zealot", "Path of the Beast", "Path of Wild Magic"],
+  Bard: ["College of Glamour", "College of Swords", "College of Whispers", "College of Creation", "College of Eloquence"],
+  Cleric: ["Forge Domain", "Grave Domain", "Order Domain", "Peace Domain", "Twilight Domain"],
+  Druid: ["Circle of Dreams", "Circle of the Shepherd", "Circle of Spores", "Circle of Stars", "Circle of Wildfire"],
+  Fighter: ["Arcane Archer", "Cavalier", "Samurai", "Psi Warrior", "Rune Knight"],
+  Monk: ["Way of the Drunken Master", "Way of the Kensei", "Way of the Sun Soul", "Way of Mercy", "Way of the Astral Self"],
+  Paladin: ["Oath of Conquest", "Oath of Redemption", "Oath of Glory", "Oath of the Watchers"],
+  Ranger: ["Gloom Stalker", "Horizon Walker", "Monster Slayer", "Fey Wanderer", "Swarmkeeper"],
+  Rogue: ["Inquisitive", "Mastermind", "Scout", "Swashbuckler", "Phantom", "Soulknife"],
+  Sorcerer: ["Divine Soul", "Shadow Magic", "Storm Sorcery", "Aberrant Mind", "Clockwork Soul"],
+  Warlock: ["The Celestial", "The Hexblade", "The Fathomless", "The Genie"],
+  Wizard: ["War Magic", "Bladesinging", "Order of Scribes"],
+};
+for (const cls in EXTRA_SUBCLASSES) {
+  SUBCLASSES[cls] = SUBCLASSES[cls] || {};
+  for (const name of EXTRA_SUBCLASSES[cls]) if (!(name in SUBCLASSES[cls])) SUBCLASSES[cls][name] = null;
+}
+
 // expose
 window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };

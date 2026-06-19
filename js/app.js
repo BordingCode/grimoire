@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=23").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=23").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=24").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=24").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -581,7 +581,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=23").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=24").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
