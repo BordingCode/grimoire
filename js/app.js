@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=29").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=29").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=30").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=30").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -733,8 +733,34 @@ document.addEventListener("change", (e) => {
   if (["combat.hpMax", "combat.armorBaseAC", "combat.shield"].includes(t.dataset.bind)) render();
 });
 
-/* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=29").catch(() => {}));
+/* service worker + "new version available" prompt */
+let _swReg = null, _doReload = false;
+function showUpdatePrompt() {
+  toast(`New version available. <button class="toast-btn" data-act="doUpdate">Reload</button>`, 999999);
+}
+actions.doUpdate = () => {
+  _doReload = true;
+  const w = _swReg && (_swReg.waiting || _swReg.installing);
+  if (w) w.postMessage("skipWaiting"); else location.reload();
+};
+if ("serviceWorker" in navigator) {
+  // when the new SW takes control (after the user taps Reload), refresh once
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js?v=30");
+      _swReg = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdatePrompt();
+        });
+      });
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000); // hourly update check
+    } catch {}
+  });
+}
 (async function boot() {
   Store.load();
   Party.load();

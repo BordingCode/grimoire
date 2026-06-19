@@ -393,3 +393,4 @@ input[type=checkbox] { width: auto; }
 /* toast */
 #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--accent); color: var(--ink); padding: 12px 18px; border-radius: 12px; max-width: 90%; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; font-size: .9rem; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-btn { background: var(--accent); color: var(--on-accent); border: none; border-radius: 8px; padding: 5px 14px; margin-left: 10px; font-weight: 700; cursor: pointer; }

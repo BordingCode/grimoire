@@ -1,6 +1,6 @@
 /* Grimoire service worker — offline-first cache.
    Bump CACHE when any cached file changes, or phones serve stale copies. */
-const CACHE = "grimoire-v29";
+const CACHE = "grimoire-v30";
 const ASSETS = [
   "./",
   "./index.html",
@@ -20,8 +20,12 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // do NOT skipWaiting automatically — the page shows an update prompt and asks us to.
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
 });
+
+// page tells us to activate the new version when the user taps "Reload"
+self.addEventListener("message", (e) => { if (e.data === "skipWaiting") self.skipWaiting(); });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
@@ -44,3 +48,4 @@ self.addEventListener("fetch", (e) => {
     }).catch(() => hit))
   );
 });
+
