@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=20").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=20").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=21").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=21").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -214,12 +214,20 @@ const actions = {
   addItem() { itemForm(null); },
   itemOptions(el) { const it = Store.active().inventory.find((x) => x.id === el.dataset.id); optionsMenu(it ? it.name : "Item", "item", `data-id="${el.dataset.id}"`); },
   itemEdit(el) { itemForm(Store.active().inventory.find((x) => x.id === el.dataset.id)); },
+  itemBonusAdd() { const m = itemCapture(); actions._itemBonuses.push({ target: "ac", value: "" }); renderItemForm(m); },
+  itemBonusRemove(el) { const m = itemCapture(); actions._itemBonuses.splice(+el.dataset.i, 1); renderItemForm(m); },
+  itemAdvAdd() { const m = itemCapture(); actions._itemAdv.push("save.all"); renderItemForm(m); },
+  itemAdvRemove(el) { const m = itemCapture(); actions._itemAdv.splice(+el.dataset.i, 1); renderItemForm(m); },
   itemSave() {
-    const ch = Store.active(); const name = $("#it-name").value.trim(); if (!name) { toast("Name required."); return; }
-    const data = { name, qty: +$("#it-qty").value || 1, acBonus: +$("#it-ac").value || 0, equipped: $("#it-eq").checked };
+    const ch = Store.active(); const cap = itemCapture(); const name = (cap.name || "").trim(); if (!name) { toast("Name required."); return; }
+    const bonuses = actions._itemBonuses
+      .filter((b) => b.target && b.value !== "" && b.value != null && !isNaN(+b.value))
+      .map((b) => ({ target: b.target, value: +b.value }));
+    const adv = [...new Set(actions._itemAdv.filter(Boolean))];
+    const data = { name, qty: +cap.qty || 1, equipped: !!cap.equipped, bonuses, adv };
     const ed = actions._itemEditId ? ch.inventory.find((x) => x.id === actions._itemEditId) : null;
-    if (ed) Object.assign(ed, data); else ch.inventory.push({ id: Gx.uid(), notes: "", ...data });
-    actions._itemEditId = null; closeModal(); commit();
+    if (ed) Object.assign(ed, data); else ch.inventory.push({ id: Gx.uid(), notes: "", acBonus: 0, ...data });
+    actions._itemEditId = null; actions._itemBonuses = []; actions._itemAdv = []; closeModal(); commit();
   },
   equip(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); it.equipped = !it.equipped; commit(); },
   itemDel(el) { const ch = Store.active(); ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item deleted."); },
@@ -347,6 +355,29 @@ function resForm(r) {
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
 }
 
+/* shared bonus + advantage editor (used by feature and item forms). prefix = "featBonus"/"itemBonus" etc. */
+function captureBonusAdvRows() {
+  return {
+    bonuses: [...document.querySelectorAll(".bonus-row")].map((r) => ({ target: r.querySelector("select").value, value: r.querySelector("input").value })),
+    adv: [...document.querySelectorAll(".adv-row select")].map((s) => s.value),
+  };
+}
+function bonusRowsHtml(list, prefix) {
+  return list.map((b, i) => `
+    <div class="bonus-row">
+      <select>${FEAT_TARGETS.map(([v, l]) => `<option value="${v}" ${b.target === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <input type="number" inputmode="numeric" placeholder="+/–" value="${b.value ?? ""}">
+      <button class="opt-btn" data-act="${prefix}BonusRemove" data-i="${i}">✕</button>
+    </div>`).join("");
+}
+function advRowsHtml(list, prefix) {
+  return list.map((t, i) => `
+    <div class="adv-row">
+      <select>${ADV_TARGETS.map(([v, l]) => `<option value="${v}" ${t === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <button class="opt-btn" data-act="${prefix}AdvRemove" data-i="${i}">✕</button>
+    </div>`).join("");
+}
+
 function featureForm(f) {
   actions._featEditId = f ? f.id : null;
   actions._featBonuses = f && f.bonuses ? f.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
@@ -354,22 +385,13 @@ function featureForm(f) {
   renderFeatureForm(f ? f.name : "", f ? f.desc : "");
 }
 function featCapture() {
-  actions._featBonuses = [...document.querySelectorAll(".bonus-row")].map((r) => ({ target: r.querySelector("select").value, value: r.querySelector("input").value }));
-  actions._featAdv = [...document.querySelectorAll(".adv-row select")].map((s) => s.value);
+  const cap = captureBonusAdvRows();
+  actions._featBonuses = cap.bonuses; actions._featAdv = cap.adv;
   return { name: $("#ft-name") ? $("#ft-name").value : "", desc: $("#ft-desc") ? $("#ft-desc").value : "" };
 }
 function renderFeatureForm(name, desc) {
-  const rows = actions._featBonuses.map((b, i) => `
-    <div class="bonus-row">
-      <select>${FEAT_TARGETS.map(([v, l]) => `<option value="${v}" ${b.target === v ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <input type="number" inputmode="numeric" placeholder="+/–" value="${b.value ?? ""}">
-      <button class="opt-btn" data-act="featBonusRemove" data-i="${i}">✕</button>
-    </div>`).join("");
-  const advRows = actions._featAdv.map((t, i) => `
-    <div class="adv-row">
-      <select>${ADV_TARGETS.map(([v, l]) => `<option value="${v}" ${t === v ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <button class="opt-btn" data-act="featAdvRemove" data-i="${i}">✕</button>
-    </div>`).join("");
+  const rows = bonusRowsHtml(actions._featBonuses, "featBonus");
+  const advRows = advRowsHtml(actions._featAdv, "featAdv");
   modal(actions._featEditId ? "Edit feature" : "Add feature / trait", `
     <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${esc(name)}"></label>
     <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="3" placeholder="description / reminder…">${esc(desc)}</textarea></label>
@@ -385,14 +407,30 @@ function renderFeatureForm(name, desc) {
 
 function itemForm(it) {
   actions._itemEditId = it ? it.id : null;
-  modal(it ? "Edit item" : "Add item", `
-    <label class="fld"><span>Name *</span><input id="it-name" value="${it ? esc(it.name) : ""}"></label>
+  actions._itemBonuses = it && it.bonuses ? it.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
+  actions._itemAdv = it && it.adv ? [...it.adv] : [];
+  renderItemForm(it ? { name: it.name, qty: it.qty, equipped: it.equipped } : { name: "", qty: 1, equipped: false });
+}
+function itemCapture() {
+  const cap = captureBonusAdvRows();
+  actions._itemBonuses = cap.bonuses; actions._itemAdv = cap.adv;
+  return { name: $("#it-name") ? $("#it-name").value : "", qty: $("#it-qty") ? $("#it-qty").value : 1, equipped: $("#it-eq") ? $("#it-eq").checked : false };
+}
+function renderItemForm(d) {
+  modal(actions._itemEditId ? "Edit item" : "Add item", `
+    <label class="fld"><span>Name *</span><input id="it-name" value="${esc(d.name)}"></label>
     <div class="grid2">
-      <label class="fld"><span>Quantity</span><input id="it-qty" type="number" min="1" value="${it ? it.qty : 1}"></label>
-      <label class="fld"><span>AC bonus (if any)</span><input id="it-ac" type="number" value="${it ? (it.acBonus || 0) : 0}"></label>
+      <label class="fld"><span>Quantity</span><input id="it-qty" type="number" min="1" value="${d.qty || 1}"></label>
+      <label class="chk it-eq-chk"><input type="checkbox" id="it-eq" ${d.equipped ? "checked" : ""}> Equipped</label>
     </div>
-    <label class="chk"><input type="checkbox" id="it-eq" ${it && it.equipped ? "checked" : ""}> Equipped (count AC bonus)</label>
-    <div class="modal-btns"><button class="btn primary" data-act="itemSave">${it ? "Save" : "Add"}</button></div>`, () => $("#it-name").focus());
+    <p class="muted small">Bonuses &amp; advantage below apply only while the item is <b>equipped</b> (e.g. Cloak of Protection: +1 AC, +1 all saves).</p>
+    <h3 class="sec">Auto bonuses</h3>
+    <div class="bonus-list">${bonusRowsHtml(actions._itemBonuses, "itemBonus") || '<span class="muted small">none — e.g. +1 Armor Class, +1 all saving throws</span>'}</div>
+    <button class="btn small-b add-bonus" data-act="itemBonusAdd">+ add a bonus</button>
+    <h3 class="sec">Grants advantage on</h3>
+    <div class="adv-list">${advRowsHtml(actions._itemAdv, "itemAdv") || '<span class="muted small">none</span>'}</div>
+    <button class="btn small-b add-bonus" data-act="itemAdvAdd">+ add advantage</button>
+    <div class="modal-btns"><button class="btn primary" data-act="itemSave">${actions._itemEditId ? "Save" : "Add"}</button></div>`, () => $("#it-name").focus());
 }
 
 function weaponForm(w, idx) {
@@ -543,7 +581,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=20").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=21").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

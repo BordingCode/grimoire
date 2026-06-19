@@ -384,18 +384,26 @@ function spellListRowsHtml(ch) {
 }
 
 function tabGear(ch) {
-  const inv = (ch.inventory || []).map((it) => `
-    <div class="item">
-      <button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" title="equipped (counts AC)">${it.equipped ? "✓" : ""}</button>
-      <span class="it-name">${esc(it.name)}${it.acBonus ? ` <em>AC ${sign(+it.acBonus)}</em>` : ""}${it.qty > 1 ? ` ×${it.qty}` : ""}</span>
+  const inv = (ch.inventory || []).map((it) => {
+    const tags = [];
+    if (it.acBonus) tags.push(`AC ${sign(+it.acBonus)}`); // legacy field
+    (it.bonuses || []).forEach((b) => tags.push(`${sign(b.value)} ${FEAT_TARGET_LABEL[b.target] || b.target}`));
+    (it.adv || []).forEach((t) => tags.push(`ADV ${ADV_LABEL[t] || t}`));
+    return `<div class="item">
+      <button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" title="equipped — applies its bonuses">${it.equipped ? "✓" : ""}</button>
+      <div class="it-main">
+        <span class="it-name">${esc(it.name)}${it.qty > 1 ? ` ×${it.qty}` : ""}${!it.equipped && tags.length ? ' <em class="it-off">(unequipped)</em>' : ""}</span>
+        ${tags.length ? `<span class="it-tags">${tags.map((t) => `<span class="it-tag${it.equipped ? "" : " off"}">${esc(t)}</span>`).join("")}</span>` : ""}
+      </div>
       <button class="opt-btn" data-act="itemOptions" data-id="${it.id}">⋯</button>
-    </div>`).join("") || `<span class="muted">empty</span>`;
+    </div>`;
+  }).join("") || `<span class="muted">empty</span>`;
   return `
     <div class="armor-row">
       <label>Armor base AC <input type="number" placeholder="(unarmored)" data-bind="combat.armorBaseAC" value="${ch.combat.armorBaseAC ?? ""}"></label>
       <label class="chk"><input type="checkbox" data-bind="combat.shield" ${ch.combat.shield ? "checked" : ""}> Shield (+2)</label>
     </div>
-    <p class="muted small">Equipped items with an AC bonus add to your AC automatically (now ${Calc.armorClass(ch)}).</p>
+    <p class="muted small">Tick an item's box to <b>equip</b> it — its bonuses &amp; advantage then apply automatically (AC now ${Calc.armorClass(ch)}).</p>
     <h3 class="sec">Inventory <button class="mini" data-act="addItem">+ add</button></h3>
     <div class="items">${inv}</div>`;
 }

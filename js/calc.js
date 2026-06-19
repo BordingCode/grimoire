@@ -18,21 +18,28 @@ const Calc = {
   abilityMod(ch, ab) { return this.mod(ch.abilities[ab]); },
 
   // sum of all feature auto-bonuses for a given target (e.g. "ac", "save.dex", "weaponDamage")
+  // numeric auto-bonuses for a target, from features + EQUIPPED items.
   featBonus(ch, target) {
     let sum = 0;
     for (const f of (ch.features || [])) for (const b of (f.bonuses || [])) {
       if (b.target === target) sum += (+b.value || 0);
     }
+    for (const it of (ch.inventory || [])) if (it.equipped) for (const b of (it.bonuses || [])) {
+      if (b.target === target) sum += (+b.value || 0);
+    }
     return sum;
   },
 
-  // names of features granting ADVANTAGE on a roll target (e.g. "save.con", "skill.Stealth").
-  // matches exact target, plus "save.all"/"skill.all" wildcards.
+  // names of features / EQUIPPED items granting ADVANTAGE on a roll target
+  // (e.g. "save.con", "skill.Stealth"). Matches exact target plus save.all/skill.all wildcards.
   advSources(ch, target) {
     const out = [];
     const wild = target.startsWith("save.") ? "save.all" : target.startsWith("skill.") ? "skill.all" : null;
     for (const f of (ch.features || [])) for (const t of (f.adv || [])) {
       if (t === target || (wild && t === wild)) out.push(f.name);
+    }
+    for (const it of (ch.inventory || [])) if (it.equipped) for (const t of (it.adv || [])) {
+      if (t === target || (wild && t === wild)) out.push(it.name);
     }
     return [...new Set(out)];
   },
