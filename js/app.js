@@ -325,6 +325,7 @@ const actions = {
       <div class="menu-list">
         <button class="btn ghost" data-act="charPhoto">Character photo</button>
         <button class="btn ghost" data-act="appearance">Appearance (theme)</button>
+        <button class="btn ghost" data-act="levelUp">Level up</button>
         <button class="btn ghost" data-act="manageClasses">Classes &amp; levels</button>
         <button class="btn ghost" data-act="linkOpen">${ch.link ? "Linked — manage sharing" : "Link with another player"}</button>
         <button class="btn ghost" data-act="partyOpen">Party — transfer items${ch.party ? " (joined)" : ""}</button>
@@ -368,6 +369,81 @@ const actions = {
   },
   clsAdd() { const ch = Store.active(); const cls = $("#mc-cls").value; const lvl = Math.max(1, Math.min(20, +$("#mc-lvl").value || 1)); if (!cls) return; if (!ch.multiclass) ch.multiclass = []; ch.multiclass.push({ cls, level: lvl }); commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); },
   clsRemove(el) { const ch = Store.active(); ch.multiclass.splice(+el.dataset.i - 1, 1); commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); },
+
+  /* ---- Level-up helper: pick a class, choose HP, apply, then show what changed ---- */
+  levelUp() {
+    const ch = Store.active();
+    const list = Calc.classList(ch);
+    const opts = list.map((c, i) => {
+      const die = (RULES.CLASSES[c.cls] || {}).hitDie || 8;
+      return `<option value="${i}">${esc(c.cls)} ${c.level} → ${c.level + 1} (d${die})</option>`;
+    }).join("");
+    const con = Calc.abilityMod(ch, "con");
+    modal("Level up", `
+      <p class="muted small">Total level ${Calc.totalLevel(ch)}. Choose which class gains a level.</p>
+      <label class="fld"><span>Class</span><select id="lvl-cls">${opts}</select></label>
+      <label class="fld"><span>Hit points gained</span>
+        <select id="lvl-hp">
+          <option value="avg">Average (recommended)</option>
+          <option value="roll">Roll the hit die</option>
+        </select></label>
+      <p class="muted small">Your CON modifier (${sign(con)}) is added to the roll, minimum 1 HP per level.</p>
+      <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="levelApply">Level up</button></div>`);
+  },
+  levelApply() {
+    const ch = Store.active();
+    const idx = +$("#lvl-cls").value || 0;
+    const method = $("#lvl-hp").value;
+    const list = Calc.classList(ch);
+    const target = list[idx];
+    if (!target) { closeModal(); return; }
+    if (target.level >= 20) { toast("That class is already level 20."); return; }
+
+    // snapshot BEFORE so we can show the diff
+    const before = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
+
+    // apply the level to the right place (primary class or a multiclass entry)
+    if (idx === 0) ch.level += 1;
+    else { const m = (ch.multiclass || [])[idx - 1]; if (m) m.level += 1; }
+    const newClsLevel = idx === 0 ? ch.level : ch.multiclass[idx - 1].level;
+
+    // hit points
+    const die = (RULES.CLASSES[target.cls] || {}).hitDie || 8;
+    const con = Calc.abilityMod(ch, "con");
+    const rolled = method === "roll" ? rollDice(`1d${die}`).total : Math.floor(die / 2) + 1;
+    const gain = Math.max(1, rolled + con);
+    ch.combat.hpMax = (ch.combat.hpMax || 0) + gain;
+    ch.combat.hpCur = Math.min(Calc.maxHP(ch), (ch.combat.hpCur || 0) + gain);
+
+    commit(); if (window.LINK) LINK.schedulePush(ch);
+
+    // build the "what changed" summary
+    const after = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
+    const lines = [];
+    const hpHow = method === "roll" ? `rolled ${rolled}` : `average ${rolled}`;
+    lines.push(`<b>+${gain} HP</b> (${hpHow} ${sign(con)} CON) — max HP now ${Calc.maxHP(ch)}.`);
+    if (after.prof > before.prof) lines.push(`<b>Proficiency bonus</b> rises to ${sign(after.prof)}.`);
+    const slotGains = [];
+    for (let i = 1; i <= 9; i++) { const d = after.slots[i].max - before.slots[i].max; if (d > 0) slotGains.push(`${d}× level-${i}`); }
+    if (slotGains.length) lines.push(`<b>New spell slots:</b> ${slotGains.join(", ")}.`);
+    if (after.pact && (!before.pact || after.pact.max > before.pact.max || after.pact.level > before.pact.level))
+      lines.push(`<b>Pact magic:</b> ${after.pact.max} slot${after.pact.max === 1 ? "" : "s"} at level ${after.pact.level}.`);
+
+    const ASI = { Fighter: [4, 6, 8, 12, 14, 16, 19], Rogue: [4, 8, 10, 12, 16, 19] };
+    const asiLevels = ASI[target.cls] || [4, 8, 12, 16, 19];
+    if (asiLevels.includes(newClsLevel)) lines.push(`<b>Ability Score Improvement / feat</b> available — edit your abilities or add a feature.`);
+
+    const reminders = [`Check the <b>${esc(target.cls)}</b> class for new features at level ${newClsLevel} and add them under Features & traits.`];
+    if (Calc.isCaster(ch)) reminders.push(`Review your spellbook — newly available spell levels can now be learned/prepared.`);
+
+    modal("Leveled up", `
+      <p>${esc(target.cls)} is now <b>level ${newClsLevel}</b> (total ${Calc.totalLevel(ch)}).</p>
+      <ul class="lvl-sum">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+      <h3 class="sec">Don't forget</h3>
+      <ul class="lvl-sum muted">${reminders.map((r) => `<li>${r}</li>`).join("")}</ul>
+      <div class="modal-btns"><button class="btn primary" data-act="closeModal">Done</button></div>`,
+      () => render());
+  },
   deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
   importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); toast("Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
