@@ -119,8 +119,17 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - ⠿ Arrange toggle in sheet header (ui.reorder, off by default). When on: grip handles + data-sortlist/data-sortid render on rows. Pointer-based sortable (app.js: initSortables/dragStart/dragMove/dragEnd/applySortOrder) works touch+mouse; handle has touch-action:none. Live DOM reorder, commit on drop.
 - Reorderable: features, resources, weapons, inventory items, curated spell lists (spell:<list>). Curated spell lists still skip auto-sort to keep manual order. Weapon row = div + .drag-handle + .weapon-main.
 
+## v29: character photo + Appearance (dark/light + per-class accent)
+- Photo: ch.portrait (downscaled ~320px JPEG data-URL via downscaleImage); char menu → "Character photo"; avatar in header (tap=change) + home card. Synced (identity group).
+- Appearance: global Dark/Light (localStorage grimoire.mode) + per-character accent (ch.accent, default RULES.CLASS_ACCENT[cls]). applyTheme() (called in render) sets --accent/--accent-2 + luminance-based --on-accent. Light theme = :root[data-theme=light] vars. Char menu → "Appearance".
+- Each class has a signature accent (RULES.ACCENTS + CLASS_ACCENT in rules.js).
+
+## STALE-CACHE NOTE (recurring)
+- A user report of "L5 Paladin only 3 L1 slots" was a stale cached build (pre-v17 floor bug). Current code verified correct (L5 Paladin = 4/2). PWA serves old SW until update; tell users to refresh twice / reopen. Consider adding an auto "new version available → reload" prompt in sw registration.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
+- [ ] Consider SW auto-update reload prompt (avoids stale-cache confusion).
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
