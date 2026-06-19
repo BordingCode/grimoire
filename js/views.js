@@ -358,7 +358,7 @@ function spellListSection(ch) {
     : "";
   const rows = subEditBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}</p>`);
   return `
-    <h3 class="sec">Spellbook <button class="mini" data-act="addCustom">+ hand-add</button></h3>
+    <h3 class="sec">Spellbook <button class="mini" data-act="addCustom">+ hand-add</button> <button class="mini" data-act="pasteSpells">paste</button></h3>
     <div class="spell-filters">
       <div class="seg">${lists.map(([k, l]) => `<button class="${f.list === k ? "on" : ""}" data-act="spellList" data-list="${k}">${l}</button>`).join("")}</div>
       <div class="filter-row">

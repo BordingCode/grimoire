@@ -228,6 +228,7 @@ const actions = {
       <label class="chk"><input type="checkbox" id="cs-conc"> Concentration</label>
       <label class="fld"><span>Description</span><textarea id="cs-desc" rows="4"></textarea></label>
       <label class="fld"><span>Source (where it's from)</span><input id="cs-source" placeholder="e.g. Xanathar's, or homebrew doc"></label>
+      <p class="muted small">Got the full text? <a href="#" data-act="pasteSpells">Paste it instead ↧</a> and it’ll be parsed for you.</p>
       <div class="modal-btns"><button class="btn primary" data-act="customSave">Add spell</button></div>`, () => $("#cs-name").focus());
   },
   customSave() {
@@ -242,6 +243,31 @@ const actions = {
       custom: true, sourceNote: $("#cs-source").value.trim(), source: "Homebrew",
     };
     ch.customSpells.push(sp); ch.spells.known.push(sp.id); closeModal(); commit(); toast("Spell added & marked known.");
+  },
+
+  /* Paste-and-parse: YOU copy spell text from a source you own (book/PDF/your D&D
+     Beyond page) and paste it; we parse it into local spells. Nothing is fetched or
+     published — it only lives on this device, same as hand-add. */
+  pasteSpells() {
+    modal("Paste spells", `
+      <p class="muted small">Copy one or more spells from a source you own (your book, PDF, or your D&amp;D Beyond page) and paste below. Include the “<i>3rd-level Evocation</i>” / “<i>Evocation cantrip</i>” line so each spell is recognised. Saved only on this phone — never uploaded.</p>
+      <label class="fld"><span>Pasted text</span><textarea id="ps-text" rows="10" placeholder="Fireball\n3rd-level Evocation\nCasting Time: 1 action\nRange: 150 feet\nComponents: V, S, M (a tiny ball of bat guano and sulfur)\nDuration: Instantaneous\nA bright streak flashes from your pointing finger…\nAt Higher Levels. When you cast this spell using a slot of 4th level or higher…"></textarea></label>
+      <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="pasteImport">Import</button></div>`,
+      () => $("#ps-text").focus());
+  },
+  pasteImport() {
+    const ch = Store.active();
+    const text = $("#ps-text").value;
+    const parsed = parseSpellsText(text, ch.edition, ch.cls);
+    if (!parsed.length) { toast("Couldn't find a spell. Include the level/school line, e.g. “3rd-level Evocation”."); return; }
+    const existing = new Set((ch.customSpells || []).map((s) => s.name.toLowerCase()));
+    let added = 0, skipped = 0;
+    for (const sp of parsed) {
+      if (existing.has(sp.name.toLowerCase())) { skipped++; continue; }
+      ch.customSpells.push(sp); ch.spells.known.push(sp.id); existing.add(sp.name.toLowerCase()); added++;
+    }
+    closeModal(); commit();
+    toast(`Imported ${added} spell${added === 1 ? "" : "s"}${skipped ? ` (${skipped} already added)` : ""}, marked known.`);
   },
 
   /* gear */
@@ -460,6 +486,56 @@ function rollHitDie(die) {
   toast(`Hit die d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`);
 }
 
+/* Parse pasted spell text → spell objects. Tolerant of D&D Beyond / PHB / 2024
+   layouts. A spell is anchored by its level/school line ("3rd-level Evocation",
+   "Level 3 Evocation", or "Evocation cantrip"); the line above it is the name. */
+function parseSpellsText(text, edition, defaultClass) {
+  const LEVELED = /^(?:(\d+)(?:st|nd|rd|th)[\s-]*level|level\s+(\d+))\s+([a-zA-Z]+)/i;
+  const CANTRIP = /^([a-zA-Z]+)\s+cantrip\b/i;
+  const isHeader = (l) => LEVELED.test(l) || CANTRIP.test(l);
+  const isMeta = (l) => l === "" || /^source\s*:/i.test(l);
+  const lines = text.replace(/\r/g, "").split("\n").map((l) => l.trim());
+  const heads = [];
+  for (let i = 0; i < lines.length; i++) if (isHeader(lines[i])) heads.push(i);
+  if (!heads.length) return [];
+  const nameIdx = heads.map((h) => { let j = h - 1; while (j >= 0 && isMeta(lines[j])) j--; return j; });
+  const out = [];
+  for (let k = 0; k < heads.length; k++) {
+    const h = heads[k], ni = nameIdx[k];
+    const name = ni >= 0 ? lines[ni].replace(/\s*\([^)]*\)\s*$/, "").trim() : "";
+    if (!name) continue;
+    const end = (k + 1 < heads.length) ? nameIdx[k + 1] : lines.length;
+    const lm = lines[h].match(LEVELED), cm = lines[h].match(CANTRIP);
+    const level = lm ? +(lm[1] || lm[2]) : 0;
+    const school = lm ? lm[3] : (cm ? cm[1] : "");
+    let ct = "", range = "", comp = "", dur = "", material = "";
+    const descLines = [];
+    for (let i = h + 1; i < end; i++) {
+      const l = lines[i]; let m;
+      if (l === "") { if (descLines.length) descLines.push(""); continue; }
+      if (m = l.match(/^casting time\s*[:.]?\s*(.+)/i)) ct = m[1];
+      else if (m = l.match(/^range(?:\/area)?\s*[:.]?\s*(.+)/i)) range = m[1];
+      else if (m = l.match(/^components?\s*[:.]?\s*(.+)/i)) { comp = m[1]; const pm = comp.match(/\(([^)]+)\)/); if (pm) material = pm[1]; }
+      else if (m = l.match(/^duration\s*[:.]?\s*(.+)/i)) dur = m[1];
+      else descLines.push(l);
+    }
+    let desc = descLines.join("\n").trim(), higher = "";
+    const hm = desc.match(/\b(?:at higher levels?|using a (?:higher[- ]level spell slot|spell slot of level)|cantrip upgrade)\b\s*[:.]?\s*/i);
+    if (hm) { higher = desc.slice(hm.index + hm[0].length).trim(); desc = desc.slice(0, hm.index).trim(); }
+    const cu = comp.toUpperCase();
+    out.push({
+      id: "hb-" + Gx.uid(), name, level, school,
+      casting_time: ct, range, duration: dur,
+      components: { v: /\bV\b/.test(cu), s: /\bS\b/.test(cu), m: /\bM\b/.test(cu) }, material,
+      classes: [defaultClass], concentration: /concentration/i.test(dur),
+      ritual: /\britual\b/i.test(lines[h]), save: null, attack: false,
+      desc, higher_level: higher, edition,
+      custom: true, sourceNote: "Pasted (local copy)", source: "Homebrew",
+    });
+  }
+  return out;
+}
+
 /* two-step delete guard so a single tap never destroys data */
 let _confirmCb = null;
 function confirmDelete(msg, onYes) {
@@ -596,6 +672,7 @@ function openSpell(ch, id) {
         <div><b>Components</b>${comp}${s.material ? " (" + esc(s.material) + ")" : ""}</div>
       </div>
       ${s.custom && s.sourceNote ? `<p class="sp-src">Source: ${esc(s.sourceNote)}</p>` : ""}
+      <p class="sp-lookup"><a href="${ddbSearchUrl(s.name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
       <div class="sp-desc"><p>${mdToHtml(s.desc)}</p></div>
       ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
       <div class="cast-box">

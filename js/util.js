@@ -13,6 +13,8 @@ function mdToHtml(s) {
   return t.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
 }
 function sign(n) { return (n >= 0 ? "+" : "") + n; }
+// Official-source look-up: D&D Beyond search (just a link — no scraping/bundling of their text).
+function ddbSearchUrl(name) { return "https://www.dndbeyond.com/search?q=" + encodeURIComponent(name || ""); }
 function dmgMemory() { try { return JSON.parse(localStorage.getItem(DMG_KEY)) || {}; } catch { return {}; } }
 function setDmgMemory(id, expr) { const m = dmgMemory(); m[id] = expr; localStorage.setItem(DMG_KEY, JSON.stringify(m)); }
 

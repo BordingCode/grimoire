@@ -305,6 +305,8 @@ input[type=checkbox] { width: auto; }
 .sp-grid div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: .85rem; }
 .sp-grid b { display: block; color: var(--muted); font-size: .7rem; font-weight: 600; }
 .sp-src { font-size: .8rem; color: var(--gold); }
+.sp-lookup { font-size: .85rem; margin: 4px 0 2px; }
+.sp-lookup a { color: var(--accent); text-decoration: none; }
 .sp-desc { line-height: 1.5; font-size: .92rem; }
 .sp-higher { background: var(--panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; font-size: .88rem; }
 .cast-box { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
