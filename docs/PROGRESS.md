@@ -64,8 +64,15 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - UI: char menu → "Classes & levels" manager; Spells tab shows per-class casting rows + combined slots; spell library merges all classes; hit-dice breakdown (5d10+1d6) with die picker. Linking syncs `multiclass` (identity group).
 - Verified live incl. Paladin6/Warlock3 (standard 4/2 + pact 2@L2), Wiz5/Cle1=4/3/3, single Pal5=4/2.
 
+## Weapons / kill-count / resource-edit / safe-delete — DONE & LIVE ✅ (cache v10)
+- Weapons: `ch.weapons[{id,name,atk,damage,damageType,notes}]`, Combat tab section, tap → roll attack(adv/dis)+damage. Synced via link gear group.
+- Kill count: `Party` (localStorage `grimoire.party.v1`), home → "Kill count" screen, leaderboard +1/−, reset. LOCAL only (not synced) — possible future: sync via a party link code.
+- Resources now editable (name/max/reset/note) via `resForm`; note shown on card.
+- Two-step delete: `confirmDelete(msg, cb)` modal guards resources/items/weapons/party. Character delete still uses native confirm(); conditions stay one-tap (transient).
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: subclass auto-spells, leveling helper, printable sheet.
+- [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
 - [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
 - [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual).
 
