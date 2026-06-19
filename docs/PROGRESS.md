@@ -133,6 +133,17 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - v32: home "↻ Update app (keeps characters)" = unregister SW + clear Cache Storage + reload (localStorage kept). For users stuck on stale cache.
 - v33: Coins (ch.currency pp/gp/ep/sp/cp) on Gear; Bag of Holding (ch.bag, storage, no equip); item actions are data-list aware (inventory|bag) with Move between; give/receive items via GRIM1: code (offline, any two players). currency+bag synced via link gear group.
 
+## v34: instant party transfer + emoji removed
+- Worker (worker/index.js): new `/party/CODE` endpoint, one KV record per party `{members:{id:name}, inbox:{id:[{from,item,at}]}}`, ops join/leave/send/pull, 180-day TTL. Deployed & curl-verified.
+- Client (link.js): `PARTY` object — create/join a party (own code, `ch.party={code,memberId,roster}`, NOT in link sync groups), send an item to a chosen member, auto-pull on boot + visibilitychange + 25s interval; received items append to inventory with a toast. Party UI actions (partyOpen/Create/JoinGo/Copy/Refresh/Leave/SendOpen/SendGo).
+- Transfer is now reached via the char Options menu ("Party — transfer items") and the Gear Inventory header ("transfer"), NOT the per-item menu. Old GRIM1 copy-paste give/receive removed.
+- Emoji sweep: removed all decorative/pictographic emoji from the UI (CLASS_GLYPH class emblems gone, dice → "roll", Dark/Light text, removed the trash/pencil/camera/sparkle/crown/arrow emoji). Kept monochrome typographic marks (checks, stars, drag handle, minus, bullet). Verified in-browser: zero pictographic emoji in rendered DOM.
+- Browser-verified end-to-end: friend joins → sends "Staff of Power" (+2 AC) → recipient pulls → item lands in inventory with bonuses/notes intact.
+
+## Paladin multiclass spell slots — NOT A BUG (confirmed RAW)
+- Pure Paladin 5 = caster level 3 (ceil 5/2) → 4×L1 + 2×L2 (Paladin class table).
+- Multiclass Paladin 5 / Barb 2 / Fighter 2 = caster level **2** (floor 5/2; Barb & Fighter add 0) → 3×L1 only, per the PHB Multiclass Spellcaster table. Multiclassing a half-caster genuinely reduces slots — famous RAW quirk. The app is correct; calc.js casterLevel uses ceil single-class / floor multiclass for half-casters.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
