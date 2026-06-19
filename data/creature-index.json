@@ -1,0 +1,1286 @@
+[
+{
+"name": "Aberrant Spirit",
+"cr": "—",
+"type": "aberration",
+"source": "TCE"
+},
+{
+"name": "Beholder",
+"cr": "13",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Chuul",
+"cr": "4",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Cloaker",
+"cr": "8",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Cranium Rat",
+"cr": "0",
+"type": "aberration",
+"source": "VGM"
+},
+{
+"name": "Flumph",
+"cr": "1/8",
+"type": "aberration",
+"source": "VGM"
+},
+{
+"name": "Gazer",
+"cr": "1/2",
+"type": "aberration",
+"source": "VGM"
+},
+{
+"name": "Gibbering Mouther",
+"cr": "2",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Grell",
+"cr": "3",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Grick",
+"cr": "2",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Intellect Devourer",
+"cr": "2",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Mind Flayer",
+"cr": "7",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Nothic",
+"cr": "2",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Otyugh",
+"cr": "5",
+"type": "aberration",
+"source": "MM"
+},
+{
+"name": "Slithering Tracker",
+"cr": "3",
+"type": "aberration",
+"source": "VGM"
+},
+{
+"name": "Star Spawn Grue",
+"cr": "1/4",
+"type": "aberration",
+"source": "MTF"
+},
+{
+"name": "Swarm of Cranium Rats",
+"cr": "5",
+"type": "aberration",
+"source": "VGM"
+},
+{
+"name": "Allosaurus",
+"cr": "2",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Ankylosaurus",
+"cr": "3",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Aurochs",
+"cr": "2",
+"type": "beast",
+"source": "MTF"
+},
+{
+"name": "Axe Beak",
+"cr": "1/4",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Bestial Spirit",
+"cr": "—",
+"type": "beast",
+"source": "TCE"
+},
+{
+"name": "Brontosaurus",
+"cr": "9",
+"type": "beast",
+"source": "VGM"
+},
+{
+"name": "Cave Bear",
+"cr": "2",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Deinonychus",
+"cr": "1",
+"type": "beast",
+"source": "VGM"
+},
+{
+"name": "Dimetrodon",
+"cr": "1/4",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Flying Monkey",
+"cr": "0",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Giant Subterranean Lizard",
+"cr": "6",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Hadrosaurus",
+"cr": "1/4",
+"type": "beast",
+"source": "VGM"
+},
+{
+"name": "Hunter Shark",
+"cr": "2",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Mammoth",
+"cr": "6",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Plesiosaurus",
+"cr": "2",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Polar Bear",
+"cr": "2",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Pteranodon",
+"cr": "1/4",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Quetzalcoatlus",
+"cr": "2",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Stegosaurus",
+"cr": "4",
+"type": "beast",
+"source": "TOA"
+},
+{
+"name": "Stirge",
+"cr": "1/8",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Swarm of Rot Grubs",
+"cr": "1/2",
+"type": "beast",
+"source": "VGM"
+},
+{
+"name": "Triceratops",
+"cr": "5",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Tyrannosaurus Rex",
+"cr": "8",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Velociraptor",
+"cr": "1/4",
+"type": "beast",
+"source": "MM"
+},
+{
+"name": "Celestial Spirit",
+"cr": "—",
+"type": "celestial",
+"source": "TCE"
+},
+{
+"name": "Couatl",
+"cr": "4",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Deva",
+"cr": "10",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Hollyphant",
+"cr": "5",
+"type": "celestial",
+"source": "MTF"
+},
+{
+"name": "Pegasus",
+"cr": "2",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Planetar",
+"cr": "16",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Solar",
+"cr": "21",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Unicorn",
+"cr": "5",
+"type": "celestial",
+"source": "MM"
+},
+{
+"name": "Animated Armor",
+"cr": "1",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Clay Golem",
+"cr": "9",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Construct Spirit",
+"cr": "—",
+"type": "construct",
+"source": "TCE"
+},
+{
+"name": "Flesh Golem",
+"cr": "5",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Flying Sword",
+"cr": "1/4",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Helmed Horror",
+"cr": "4",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Homunculus",
+"cr": "0",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Iron Golem",
+"cr": "16",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Rug of Smothering",
+"cr": "2",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Scarecrow",
+"cr": "1",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Shield Guardian",
+"cr": "7",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Stone Golem",
+"cr": "10",
+"type": "construct",
+"source": "MM"
+},
+{
+"name": "Black Dragon Wyrmling",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Blue Dragon Wyrmling",
+"cr": "3",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Brass Dragon Wyrmling",
+"cr": "1",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Bronze Dragon Wyrmling",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Copper Dragon Wyrmling",
+"cr": "1",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Draconic Spirit",
+"cr": "—",
+"type": "dragon",
+"source": "FTD"
+},
+{
+"name": "Faerie Dragon (Older)",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Faerie Dragon (Young)",
+"cr": "1",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Gold Dragon Wyrmling",
+"cr": "3",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Green Dragon Wyrmling",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Red Dragon Wyrmling",
+"cr": "4",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Silver Dragon Wyrmling",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "White Dragon Wyrmling",
+"cr": "2",
+"type": "dragon",
+"source": "MM"
+},
+{
+"name": "Elemental Spirit",
+"cr": "—",
+"type": "elemental",
+"source": "TCE"
+},
+{
+"name": "Frost Salamander",
+"cr": "9",
+"type": "elemental",
+"source": "MTF"
+},
+{
+"name": "Galeb Duhr",
+"cr": "6",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Magmin",
+"cr": "1/2",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Dust)",
+"cr": "1/2",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Ice)",
+"cr": "1/2",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Magma)",
+"cr": "1/2",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Mud)",
+"cr": "1/4",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Smoke)",
+"cr": "1/4",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Mephit (Steam)",
+"cr": "1/4",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Steam Mephit",
+"cr": "1/4",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Water Weird",
+"cr": "3",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Xorn",
+"cr": "5",
+"type": "elemental",
+"source": "MM"
+},
+{
+"name": "Annis Hag",
+"cr": "6",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Bheur Hag",
+"cr": "7",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Blink Dog",
+"cr": "1/4",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Boggle",
+"cr": "1/8",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Darkling",
+"cr": "1/2",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Darkling Elder",
+"cr": "2",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Dryad",
+"cr": "1",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Fey Spirit",
+"cr": "—",
+"type": "fey",
+"source": "TCE"
+},
+{
+"name": "Green Hag",
+"cr": "3",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Korred",
+"cr": "7",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Meenlock",
+"cr": "2",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Night Hag",
+"cr": "5",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Pixie",
+"cr": "1/4",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Quickling",
+"cr": "1",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Redcap",
+"cr": "3",
+"type": "fey",
+"source": "VGM"
+},
+{
+"name": "Satyr",
+"cr": "1/2",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Sea Hag",
+"cr": "2",
+"type": "fey",
+"source": "MM"
+},
+{
+"name": "Abyssal Chicken",
+"cr": "1/8",
+"type": "fiend",
+"source": "BGDIA"
+},
+{
+"name": "Babau",
+"cr": "4",
+"type": "fiend",
+"source": "VGM"
+},
+{
+"name": "Barbed Devil",
+"cr": "5",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Bearded Devil",
+"cr": "3",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Cambion",
+"cr": "5",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Dretch",
+"cr": "1/4",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Fiendish Spirit",
+"cr": "—",
+"type": "fiend",
+"source": "TCE"
+},
+{
+"name": "Glabrezu",
+"cr": "9",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Hezrou",
+"cr": "8",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Incubus",
+"cr": "4",
+"type": "fiend",
+"source": "MTF"
+},
+{
+"name": "Lemure",
+"cr": "0",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Manes",
+"cr": "1/8",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Maw Demon",
+"cr": "1",
+"type": "fiend",
+"source": "VGM"
+},
+{
+"name": "Nupperibo",
+"cr": "1/2",
+"type": "fiend",
+"source": "MTF"
+},
+{
+"name": "Shadow Demon",
+"cr": "4",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Spinagon",
+"cr": "2",
+"type": "fiend",
+"source": "MTF"
+},
+{
+"name": "Spined Devil",
+"cr": "2",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Succubus",
+"cr": "4",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Vrock",
+"cr": "6",
+"type": "fiend",
+"source": "MM"
+},
+{
+"name": "Cloud Giant",
+"cr": "9",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Cyclops",
+"cr": "6",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Ettin",
+"cr": "4",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Fire Giant",
+"cr": "9",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Fomorian",
+"cr": "8",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Frost Giant",
+"cr": "8",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Hill Giant",
+"cr": "5",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Ogre",
+"cr": "2",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Oni",
+"cr": "7",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Stone Giant",
+"cr": "7",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Storm Giant",
+"cr": "13",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Troll",
+"cr": "5",
+"type": "giant",
+"source": "MM"
+},
+{
+"name": "Bugbear",
+"cr": "1",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Bullywug",
+"cr": "1/4",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Gnoll",
+"cr": "1/2",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Goblin",
+"cr": "1/4",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Grung",
+"cr": "1/4",
+"type": "humanoid",
+"source": "VGM"
+},
+{
+"name": "Hobgoblin",
+"cr": "1/2",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Kobold",
+"cr": "1/8",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Kuo-toa",
+"cr": "1/4",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Lizardfolk",
+"cr": "1/2",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Orc",
+"cr": "1/2",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Sahuagin",
+"cr": "1/2",
+"type": "humanoid",
+"source": "MM"
+},
+{
+"name": "Almiraj",
+"cr": "0",
+"type": "monstrosity",
+"source": "TOA"
+},
+{
+"name": "Ankheg",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Basilisk",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Bulette",
+"cr": "5",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Carrion Crawler",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Chimera",
+"cr": "6",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Cockatrice",
+"cr": "1/2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Darkmantle",
+"cr": "1/2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Death Dog",
+"cr": "1",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Displacer Beast",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Ettercap",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Gorgon",
+"cr": "5",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Griffon",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Grimlock",
+"cr": "1/4",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Harpy",
+"cr": "1",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Hippogriff",
+"cr": "1",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Hook Horror",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Manticore",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Mimic",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Owlbear",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Peryton",
+"cr": "2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Phase Spider",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Purple Worm",
+"cr": "15",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Remorhaz",
+"cr": "11",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Roc",
+"cr": "11",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Rust Monster",
+"cr": "1/2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Sea Spawn",
+"cr": "1",
+"type": "monstrosity",
+"source": "VGM"
+},
+{
+"name": "Shadow Spirit",
+"cr": "—",
+"type": "monstrosity",
+"source": "TCE"
+},
+{
+"name": "Tressym",
+"cr": "0",
+"type": "monstrosity",
+"source": "SKT"
+},
+{
+"name": "Winter Wolf",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Worg",
+"cr": "1/2",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Wyvern",
+"cr": "6",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Yeti",
+"cr": "3",
+"type": "monstrosity",
+"source": "MM"
+},
+{
+"name": "Awakened Shrub",
+"cr": "0",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Awakened Tree",
+"cr": "2",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Myconid Adult",
+"cr": "1/2",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Myconid Sovereign",
+"cr": "2",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Myconid Sprout",
+"cr": "0",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Needle Blight",
+"cr": "1/4",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Quaggoth",
+"cr": "2",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Thorny",
+"cr": "1/2",
+"type": "plant",
+"source": "VGM"
+},
+{
+"name": "Treant",
+"cr": "9",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Twig Blight",
+"cr": "1/8",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Vegepygmy",
+"cr": "1/4",
+"type": "plant",
+"source": "VGM"
+},
+{
+"name": "Vine Blight",
+"cr": "1/2",
+"type": "plant",
+"source": "MM"
+},
+{
+"name": "Wood Woad",
+"cr": "5",
+"type": "plant",
+"source": "VGM"
+},
+{
+"name": "Banshee",
+"cr": "4",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Beholder Zombie",
+"cr": "5",
+"type": "undead",
+"source": "VGM"
+},
+{
+"name": "Bone Naga",
+"cr": "4",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Boneclaw",
+"cr": "12",
+"type": "undead",
+"source": "MTF"
+},
+{
+"name": "Crawling Claw",
+"cr": "0",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Death Knight",
+"cr": "17",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Flameskull",
+"cr": "4",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Ghast",
+"cr": "2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Ghost",
+"cr": "4",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Ghoul",
+"cr": "1",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Minotaur Skeleton",
+"cr": "2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Mummy",
+"cr": "3",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Ogre Zombie",
+"cr": "2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Poltergeist",
+"cr": "2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Shadow",
+"cr": "1/2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Specter",
+"cr": "1",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Undead Spirit",
+"cr": "—",
+"type": "undead",
+"source": "TCE"
+},
+{
+"name": "Vampire Spawn",
+"cr": "5",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Warhorse Skeleton",
+"cr": "1/2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Wight",
+"cr": "3",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Will-o'-Wisp",
+"cr": "2",
+"type": "undead",
+"source": "MM"
+},
+{
+"name": "Wraith",
+"cr": "5",
+"type": "undead",
+"source": "MM"
+}
+]

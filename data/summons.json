@@ -1,1159 +1,7666 @@
 [
-{
-"name": "Baboon",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 3,
-"speed": "30 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 1,
-"damage": "1d4-1",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "baboon",
-"source": "SRD"
-},
-{
-"name": "Bat",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 1,
-"speed": "5 ft., fly 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 0,
-"damage": "1",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "bat",
-"source": "SRD"
-},
-{
-"name": "Cat",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 2,
-"speed": "40 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Claws",
-"atk": 0,
-"damage": "1",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "cat",
-"source": "SRD"
-},
-{
-"name": "Deer",
-"type": "beast",
-"cr": "0",
-"ac": 13,
-"hp": 4,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 2,
-"damage": "1d4",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "deer",
-"source": "SRD"
-},
-{
-"name": "Eagle",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 3,
-"speed": "10 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Talons",
-"atk": 4,
-"damage": "1d4+2",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "eagle",
-"source": "SRD"
-},
-{
-"name": "Hawk",
-"type": "beast",
-"cr": "0",
-"ac": 13,
-"hp": 1,
-"speed": "10 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Talons",
-"atk": 5,
-"damage": "1",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "hawk",
-"source": "SRD"
-},
-{
-"name": "Jackal",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 3,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 1,
-"damage": "1d4-1",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "jackal",
-"source": "SRD"
-},
-{
-"name": "Owl",
-"type": "beast",
-"cr": "0",
-"ac": 11,
-"hp": 1,
-"speed": "5 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Talons",
-"atk": 3,
-"damage": "1",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "owl",
-"source": "SRD"
-},
-{
-"name": "Rat",
-"type": "beast",
-"cr": "0",
-"ac": 10,
-"hp": 1,
-"speed": "20 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 0,
-"damage": "1",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "rat",
-"source": "SRD"
-},
-{
-"name": "Raven",
-"type": "beast",
-"cr": "0",
-"ac": 12,
-"hp": 1,
-"speed": "10 ft., fly 50 ft.",
-"attacks": [
-{
-"name": "Beak",
-"atk": 4,
-"damage": "1",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "raven",
-"source": "SRD"
-},
-{
-"name": "Camel",
-"type": "beast",
-"cr": "1/8",
-"ac": 9,
-"hp": 15,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d4",
-"type": "bludgeoning",
-"notes": ""
-}
-],
-"icon": "camel",
-"source": "SRD"
-},
-{
-"name": "Giant Rat",
-"type": "beast",
-"cr": "1/8",
-"ac": 12,
-"hp": 7,
-"speed": "30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d4+2",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "rat",
-"source": "SRD"
-},
-{
-"name": "Giant Weasel",
-"type": "beast",
-"cr": "1/8",
-"ac": 13,
-"hp": 9,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d4+3",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "weasel",
-"source": "SRD"
-},
-{
-"name": "Mastiff",
-"type": "beast",
-"cr": "1/8",
-"ac": 12,
-"hp": 5,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 3,
-"damage": "1d6+1",
-"type": "piercing",
-"notes": "DC 11 STR save or knocked prone"
-}
-],
-"icon": "dog",
-"source": "SRD"
-},
-{
-"name": "Mule",
-"type": "beast",
-"cr": "1/8",
-"ac": 10,
-"hp": 11,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Hooves",
-"atk": 2,
-"damage": "1d4+2",
-"type": "bludgeoning",
-"notes": ""
-}
-],
-"icon": "mule",
-"source": "SRD"
-},
-{
-"name": "Poisonous Snake",
-"type": "beast",
-"cr": "1/8",
-"ac": 13,
-"hp": 2,
-"speed": "30 ft., swim 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1",
-"type": "piercing",
-"notes": "DC 10 CON save or +1d4 (2.5) poison (half on success)"
-}
-],
-"icon": "snake",
-"source": "SRD"
-},
-{
-"name": "Pony",
-"type": "beast",
-"cr": "1/8",
-"ac": 10,
-"hp": 11,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Hooves",
-"atk": 4,
-"damage": "2d4+2",
-"type": "bludgeoning",
-"notes": ""
-}
-],
-"icon": "pony",
-"source": "SRD"
-},
-{
-"name": "Boar",
-"type": "beast",
-"cr": "1/4",
-"ac": 11,
-"hp": 11,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Tusk",
-"atk": 3,
-"damage": "1d6+1",
-"type": "slashing",
-"notes": "+1d6 if moved 20 ft. straight; DC 11 STR save or prone"
-}
-],
-"icon": "boar",
-"source": "SRD"
-},
-{
-"name": "Constrictor Snake",
-"type": "beast",
-"cr": "1/4",
-"ac": 12,
-"hp": 13,
-"speed": "30 ft., swim 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Constrict",
-"atk": 4,
-"damage": "1d8+2",
-"type": "bludgeoning",
-"notes": "grappled (escape DC 14), restrained"
-}
-],
-"icon": "snake",
-"source": "SRD"
-},
-{
-"name": "Elk",
-"type": "beast",
-"cr": "1/4",
-"ac": 10,
-"hp": 13,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Ram",
-"atk": 5,
-"damage": "1d6+3",
-"type": "bludgeoning",
-"notes": "+2d6 if moved 20 ft.; DC 13 STR save or prone"
-},
-{
-"name": "Hooves",
-"atk": 5,
-"damage": "2d4+3",
-"type": "bludgeoning",
-"notes": "only vs prone target"
-}
-],
-"icon": "elk",
-"source": "SRD"
-},
-{
-"name": "Giant Badger",
-"type": "beast",
-"cr": "1/4",
-"ac": 10,
-"hp": 13,
-"speed": "30 ft., burrow 10 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 3,
-"damage": "1d6+1",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claws",
-"atk": 3,
-"damage": "2d4+1",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "badger",
-"source": "SRD"
-},
-{
-"name": "Giant Bat",
-"type": "beast",
-"cr": "1/4",
-"ac": 13,
-"hp": 22,
-"speed": "10 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "bat",
-"source": "SRD"
-},
-{
-"name": "Giant Frog",
-"type": "beast",
-"cr": "1/4",
-"ac": 11,
-"hp": 18,
-"speed": "30 ft., swim 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 3,
-"damage": "1d6+1",
-"type": "piercing",
-"notes": "grappled (escape DC 11); Medium or smaller can be swallowed"
-}
-],
-"icon": "frog",
-"source": "SRD"
-},
-{
-"name": "Giant Lizard",
-"type": "beast",
-"cr": "1/4",
-"ac": 12,
-"hp": 19,
-"speed": "30 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d8+2",
-"type": "piercing",
-"notes": ""
-}
-],
-"icon": "lizard",
-"source": "SRD"
-},
-{
-"name": "Giant Owl",
-"type": "beast",
-"cr": "1/4",
-"ac": 12,
-"hp": 19,
-"speed": "5 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Talons",
-"atk": 3,
-"damage": "2d6+1",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "owl",
-"source": "SRD"
-},
-{
-"name": "Giant Poisonous Snake",
-"type": "beast",
-"cr": "1/4",
-"ac": 14,
-"hp": 11,
-"speed": "30 ft., swim 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 6,
-"damage": "1d4+4",
-"type": "piercing",
-"notes": "DC 11 CON save or +3d6 poison (half on success)"
-}
-],
-"icon": "snake",
-"source": "SRD"
-},
-{
-"name": "Giant Wolf Spider",
-"type": "beast",
-"cr": "1/4",
-"ac": 13,
-"hp": 11,
-"speed": "40 ft., climb 40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 3,
-"damage": "1d6+1",
-"type": "piercing",
-"notes": "DC 11 CON save or +2d6 poison (half on success)"
-}
-],
-"icon": "spider",
-"source": "SRD"
-},
-{
-"name": "Panther",
-"type": "beast",
-"cr": "1/4",
-"ac": 12,
-"hp": 13,
-"speed": "50 ft., climb 40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claw",
-"atk": 4,
-"damage": "1d4+2",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "panther",
-"source": "SRD"
-},
-{
-"name": "Pseudodragon",
-"type": "dragon",
-"cr": "1/4",
-"ac": 13,
-"hp": 7,
-"speed": "15 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d4+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Sting",
-"atk": 4,
-"damage": "1d4+2",
-"type": "piercing",
-"notes": "DC 11 CON save or poisoned 1h (unconscious if fails by 5+)"
-}
-],
-"icon": "dragon",
-"source": "SRD"
-},
-{
-"name": "Riding Horse",
-"type": "beast",
-"cr": "1/4",
-"ac": 10,
-"hp": 13,
-"speed": "60 ft.",
-"attacks": [
-{
-"name": "Hooves",
-"atk": 5,
-"damage": "2d4+3",
-"type": "bludgeoning",
-"notes": ""
-}
-],
-"icon": "horse",
-"source": "SRD"
-},
-{
-"name": "Skeleton",
-"type": "undead",
-"cr": "1/4",
-"ac": 13,
-"hp": 13,
-"speed": "30 ft.",
-"attacks": [
-{
-"name": "Shortsword",
-"atk": 4,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Shortbow",
-"atk": 4,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": "ranged 80/320 ft."
-}
-],
-"icon": "skeleton",
-"source": "SRD"
-},
-{
-"name": "Sprite",
-"type": "fey",
-"cr": "1/4",
-"ac": 15,
-"hp": 2,
-"speed": "10 ft., fly 40 ft.",
-"attacks": [
-{
-"name": "Longsword",
-"atk": 2,
-"damage": "1",
-"type": "slashing",
-"notes": ""
-},
-{
-"name": "Shortbow",
-"atk": 6,
-"damage": "1",
-"type": "piercing",
-"notes": "ranged 40/160 ft.; DC 10 CON save or poisoned 1 min (unconscious if 5 or lower)"
-}
-],
-"icon": "sprite",
-"source": "SRD"
-},
-{
-"name": "Wolf",
-"type": "beast",
-"cr": "1/4",
-"ac": 13,
-"hp": 11,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "2d4+2",
-"type": "piercing",
-"notes": "DC 11 STR save or knocked prone"
-}
-],
-"icon": "wolf",
-"source": "SRD"
-},
-{
-"name": "Zombie",
-"type": "undead",
-"cr": "1/4",
-"ac": 8,
-"hp": 22,
-"speed": "20 ft.",
-"attacks": [
-{
-"name": "Slam",
-"atk": 3,
-"damage": "1d6+1",
-"type": "bludgeoning",
-"notes": ""
-}
-],
-"icon": "zombie",
-"source": "SRD"
-},
-{
-"name": "Ape",
-"type": "beast",
-"cr": "1/2",
-"ac": 12,
-"hp": 19,
-"speed": "30 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Fist",
-"atk": 5,
-"damage": "1d6+3",
-"type": "bludgeoning",
-"notes": ""
-},
-{
-"name": "Rock",
-"atk": 5,
-"damage": "1d6+3",
-"type": "bludgeoning",
-"notes": "ranged 25/50 ft."
-}
-],
-"icon": "ape",
-"source": "SRD"
-},
-{
-"name": "Black Bear",
-"type": "beast",
-"cr": "1/2",
-"ac": 11,
-"hp": 19,
-"speed": "40 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 3,
-"damage": "1d6+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claws",
-"atk": 3,
-"damage": "2d4+2",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "bear",
-"source": "SRD"
-},
-{
-"name": "Crocodile",
-"type": "beast",
-"cr": "1/2",
-"ac": 12,
-"hp": 19,
-"speed": "20 ft., swim 20 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 4,
-"damage": "1d10+2",
-"type": "piercing",
-"notes": "grappled (escape DC 12), restrained"
-}
-],
-"icon": "crocodile",
-"source": "SRD"
-},
-{
-"name": "Giant Goat",
-"type": "beast",
-"cr": "1/2",
-"ac": 11,
-"hp": 19,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Ram",
-"atk": 5,
-"damage": "2d4+3",
-"type": "bludgeoning",
-"notes": "+2d4 if moved 20 ft.; DC 13 STR save or prone"
-}
-],
-"icon": "goat",
-"source": "SRD"
-},
-{
-"name": "Warhorse",
-"type": "beast",
-"cr": "1/2",
-"ac": 11,
-"hp": 19,
-"speed": "60 ft.",
-"attacks": [
-{
-"name": "Hooves",
-"atk": 6,
-"damage": "2d6+4",
-"type": "bludgeoning",
-"notes": "only vs prone target"
-}
-],
-"icon": "horse",
-"source": "SRD"
-},
-{
-"name": "Brown Bear",
-"type": "beast",
-"cr": "1",
-"ac": 11,
-"hp": 34,
-"speed": "40 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d8+4",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claws",
-"atk": 5,
-"damage": "2d6+4",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "bear",
-"source": "SRD"
-},
-{
-"name": "Dire Wolf",
-"type": "beast",
-"cr": "1",
-"ac": 14,
-"hp": 37,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "2d6+3",
-"type": "piercing",
-"notes": "DC 13 STR save or knocked prone"
-}
-],
-"icon": "wolf",
-"source": "SRD"
-},
-{
-"name": "Giant Eagle",
-"type": "beast",
-"cr": "1",
-"ac": 13,
-"hp": 26,
-"speed": "10 ft., fly 80 ft.",
-"attacks": [
-{
-"name": "Beak",
-"atk": 5,
-"damage": "1d6+3",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Talons",
-"atk": 5,
-"damage": "2d6+3",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "eagle",
-"source": "SRD"
-},
-{
-"name": "Giant Spider",
-"type": "beast",
-"cr": "1",
-"ac": 14,
-"hp": 26,
-"speed": "30 ft., climb 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d8+3",
-"type": "piercing",
-"notes": "DC 11 CON save or +2d8 poison (half on success)"
-}
-],
-"icon": "spider",
-"source": "SRD"
-},
-{
-"name": "Giant Vulture",
-"type": "beast",
-"cr": "1",
-"ac": 10,
-"hp": 22,
-"speed": "10 ft., fly 60 ft.",
-"attacks": [
-{
-"name": "Beak",
-"atk": 4,
-"damage": "2d4+2",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Talons",
-"atk": 4,
-"damage": "2d6+2",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "vulture",
-"source": "SRD"
-},
-{
-"name": "Imp",
-"type": "fiend",
-"cr": "1",
-"ac": 13,
-"hp": 10,
-"speed": "20 ft., fly 40 ft.",
-"attacks": [
-{
-"name": "Sting (Bite in Beast Form)",
-"atk": 5,
-"damage": "1d4+3",
-"type": "piercing",
-"notes": "DC 11 CON save or +3d6 poison (half on success)"
-}
-],
-"icon": "imp",
-"source": "SRD"
-},
-{
-"name": "Lion",
-"type": "beast",
-"cr": "1",
-"ac": 12,
-"hp": 26,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d8+3",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claw",
-"atk": 5,
-"damage": "1d6+3",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "lion",
-"source": "SRD"
-},
-{
-"name": "Quasit",
-"type": "fiend",
-"cr": "1",
-"ac": 13,
-"hp": 7,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Claw (Bite in Beast Form)",
-"atk": 4,
-"damage": "1d4+3",
-"type": "piercing",
-"notes": "DC 10 CON save or +2d4 poison & poisoned 1 min (half/no poison on success)"
-}
-],
-"icon": "imp",
-"source": "SRD"
-},
-{
-"name": "Tiger",
-"type": "beast",
-"cr": "1",
-"ac": 12,
-"hp": 37,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 5,
-"damage": "1d10+3",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Claw",
-"atk": 5,
-"damage": "1d8+3",
-"type": "slashing",
-"notes": ""
-}
-],
-"icon": "tiger",
-"source": "SRD"
-},
-{
-"name": "Giant Boar",
-"type": "beast",
-"cr": "2",
-"ac": 12,
-"hp": 42,
-"speed": "40 ft.",
-"attacks": [
-{
-"name": "Tusk",
-"atk": 5,
-"damage": "2d6+3",
-"type": "slashing",
-"notes": "+2d6 if moved 20 ft. straight; DC 13 STR save or prone"
-}
-],
-"icon": "boar",
-"source": "SRD"
-},
-{
-"name": "Giant Constrictor Snake",
-"type": "beast",
-"cr": "2",
-"ac": 12,
-"hp": 60,
-"speed": "30 ft., swim 30 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 6,
-"damage": "2d6+4",
-"type": "piercing",
-"notes": ""
-},
-{
-"name": "Constrict",
-"atk": 6,
-"damage": "2d8+4",
-"type": "bludgeoning",
-"notes": "grappled (escape DC 16), restrained"
-}
-],
-"icon": "snake",
-"source": "SRD"
-},
-{
-"name": "Air Elemental",
-"type": "elemental",
-"cr": "5",
-"ac": 15,
-"hp": 90,
-"speed": "fly 90 ft.",
-"attacks": [
-{
-"name": "Slam",
-"atk": 8,
-"damage": "2d8+5",
-"type": "bludgeoning",
-"notes": "2 attacks (multiattack)"
-}
-],
-"icon": "air",
-"source": "SRD"
-},
-{
-"name": "Earth Elemental",
-"type": "elemental",
-"cr": "5",
-"ac": 17,
-"hp": 126,
-"speed": "30 ft., burrow 30 ft.",
-"attacks": [
-{
-"name": "Slam",
-"atk": 8,
-"damage": "2d8+5",
-"type": "bludgeoning",
-"notes": "2 attacks (multiattack)"
-}
-],
-"icon": "earth",
-"source": "SRD"
-},
-{
-"name": "Fire Elemental",
-"type": "elemental",
-"cr": "5",
-"ac": 13,
-"hp": 102,
-"speed": "50 ft.",
-"attacks": [
-{
-"name": "Touch",
-"atk": 6,
-"damage": "2d6+3",
-"type": "fire",
-"notes": "target ignites: 1d10 fire/turn until doused"
-}
-],
-"icon": "fire",
-"source": "SRD"
-},
-{
-"name": "Giant Crocodile",
-"type": "beast",
-"cr": "5",
-"ac": 14,
-"hp": 85,
-"speed": "30 ft., swim 50 ft.",
-"attacks": [
-{
-"name": "Bite",
-"atk": 8,
-"damage": "3d10+5",
-"type": "piercing",
-"notes": "grappled (escape DC 16), restrained"
-},
-{
-"name": "Tail",
-"atk": 8,
-"damage": "2d8+5",
-"type": "bludgeoning",
-"notes": "targets not grappled; DC 16 STR save or prone"
-}
-],
-"icon": "crocodile",
-"source": "SRD"
-},
-{
-"name": "Water Elemental",
-"type": "elemental",
-"cr": "5",
-"ac": 14,
-"hp": 114,
-"speed": "30 ft., swim 90 ft.",
-"attacks": [
-{
-"name": "Slam",
-"atk": 7,
-"damage": "2d8+4",
-"type": "bludgeoning",
-"notes": "2 attacks (multiattack)"
-}
-],
-"icon": "water",
-"source": "SRD"
-}
+ {
+  "name": "Awakened Shrub",
+  "type": "plant",
+  "cr": "0",
+  "ac": 9,
+  "hp": 10,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Rake",
+    "atk": 1,
+    "damage": "1d4-1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Baboon",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 3,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 1,
+    "damage": "1d4-1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Badger",
+  "type": "beast",
+  "cr": "0",
+  "ac": 10,
+  "hp": 3,
+  "speed": "20 ft., burrow 5 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 2,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Bat",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 1,
+  "speed": "5 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 0,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Cat",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 2,
+  "speed": "40 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 0,
+    "damage": "1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Commoner",
+  "type": "humanoid",
+  "cr": "0",
+  "ac": 10,
+  "hp": 4,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Club",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Crab",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 2,
+  "speed": "20 ft., swim 20 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 0,
+    "damage": "1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Deer",
+  "type": "beast",
+  "cr": "0",
+  "ac": 13,
+  "hp": 4,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Eagle",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 3,
+  "speed": "10 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Talons",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Frog",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 1,
+  "speed": "20 ft., swim 20 ft.",
+  "attacks": [],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Fire Beetle",
+  "type": "beast",
+  "cr": "0",
+  "ac": 13,
+  "hp": 4,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 1,
+    "damage": "1d6-1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Goat",
+  "type": "beast",
+  "cr": "0",
+  "ac": 10,
+  "hp": 4,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Hawk",
+  "type": "beast",
+  "cr": "0",
+  "ac": 13,
+  "hp": 1,
+  "speed": "10 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Talons",
+    "atk": 5,
+    "damage": "1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Homunculus",
+  "type": "construct",
+  "cr": "0",
+  "ac": 13,
+  "hp": 5,
+  "speed": "20 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Hyena",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 5,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 2,
+    "damage": "1d6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Jackal",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 3,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 1,
+    "damage": "1d4-1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Lemure",
+  "type": "fiend",
+  "cr": "0",
+  "ac": 7,
+  "hp": 13,
+  "speed": "15 ft.",
+  "attacks": [
+   {
+    "name": "Fist",
+    "atk": 3,
+    "damage": "1d4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Lizard",
+  "type": "beast",
+  "cr": "0",
+  "ac": 10,
+  "hp": 2,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 0,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Octopus",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 3,
+  "speed": "5 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Tentacles",
+    "atk": 4,
+    "damage": "1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Owl",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 1,
+  "speed": "5 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Talons",
+    "atk": 3,
+    "damage": "1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Quipper",
+  "type": "beast",
+  "cr": "0",
+  "ac": 13,
+  "hp": 1,
+  "speed": "swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Rat",
+  "type": "beast",
+  "cr": "0",
+  "ac": 10,
+  "hp": 1,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 0,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Raven",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 1,
+  "speed": "10 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 4,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Scorpion",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 1,
+  "speed": "10 ft.",
+  "attacks": [
+   {
+    "name": "Sting",
+    "atk": 2,
+    "damage": "1",
+    "type": "piercing",
+    "notes": "DC 9 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Sea Horse",
+  "type": "beast",
+  "cr": "0",
+  "ac": 11,
+  "hp": 1,
+  "speed": "swim 20 ft.",
+  "attacks": [],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Shrieker",
+  "type": "plant",
+  "cr": "0",
+  "ac": 5,
+  "hp": 13,
+  "speed": "0 ft.",
+  "attacks": [],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Spider",
+  "type": "beast",
+  "cr": "0",
+  "ac": 12,
+  "hp": 1,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1",
+    "type": "piercing",
+    "notes": "DC 9 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Vulture",
+  "type": "beast",
+  "cr": "0",
+  "ac": 10,
+  "hp": 5,
+  "speed": "10 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Weasel",
+  "type": "beast",
+  "cr": "0",
+  "ac": 13,
+  "hp": 1,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Bandit",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 11,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Light Crossbow",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Blood Hawk",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 7,
+  "speed": "10 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Camel",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 9,
+  "hp": 15,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Cultist",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 9,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Flying Snake",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 14,
+  "hp": 5,
+  "speed": "30 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Crab",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 15,
+  "hp": 13,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Rat",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 7,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Rat (Diseased)",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 7,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Weasel",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 13,
+  "hp": 9,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Guard",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 16,
+  "hp": 11,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Kobold",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 5,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Dagger",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Sling",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Mastiff",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 5,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": "DC 11 STR save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Merfolk",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 11,
+  "hp": 11,
+  "speed": "10 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 2,
+    "damage": "1d6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Mule",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 10,
+  "hp": 11,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 2,
+    "damage": "1d4+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Noble",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 15,
+  "hp": 9,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Rapier",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Poisonous Snake",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 13,
+  "hp": 2,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Pony",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 10,
+  "hp": 11,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Stirge",
+  "type": "beast",
+  "cr": "1/8",
+  "ac": 14,
+  "hp": 2,
+  "speed": "10 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Blood Drain",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Tribal Warrior",
+  "type": "humanoid",
+  "cr": "1/8",
+  "ac": 12,
+  "hp": 11,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Acolyte",
+  "type": "humanoid",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 9,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Club",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Axe Beak",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 11,
+  "hp": 19,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Blink Dog",
+  "type": "fey",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 22,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Boar",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 11,
+  "hp": 11,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Tusk",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Constrictor Snake",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 13,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Constrict",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Draft Horse",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 19,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d4+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Dretch",
+  "type": "fiend",
+  "cr": "1/4",
+  "ac": 11,
+  "hp": 18,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 2,
+    "damage": "1d6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 2,
+    "damage": "2d4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Drow",
+  "type": "humanoid",
+  "cr": "1/4",
+  "ac": 15,
+  "hp": 13,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hand Crossbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": "DC 13 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Elk",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 13,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Hooves",
+    "atk": 5,
+    "damage": "2d4+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Flying Sword",
+  "type": "construct",
+  "cr": "1/4",
+  "ac": 17,
+  "hp": 17,
+  "speed": "0 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Badger",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 13,
+  "speed": "30 ft., burrow 10 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "2d4+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Bat",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 22,
+  "speed": "10 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Centipede",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 4,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Frog",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 11,
+  "hp": 18,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Lizard",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 19,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Owl",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 19,
+  "speed": "5 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Talons",
+    "atk": 3,
+    "damage": "2d6+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Poisonous Snake",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 14,
+  "hp": 11,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d4+4",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Wolf Spider",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 11,
+  "speed": "40 ft., climb 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Goblin",
+  "type": "humanoid",
+  "cr": "1/4",
+  "ac": 15,
+  "hp": 7,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Shortbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Grimlock",
+  "type": "humanoid",
+  "cr": "1/4",
+  "ac": 11,
+  "hp": 11,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spiked Bone Club",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Panther",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 13,
+  "speed": "50 ft., climb 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Pseudodragon",
+  "type": "dragon",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 7,
+  "speed": "15 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Sting",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Riding Horse",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 13,
+  "speed": "60 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 5,
+    "damage": "2d4+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Skeleton",
+  "type": "undead",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 13,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Shortbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Sprite",
+  "type": "fey",
+  "cr": "1/4",
+  "ac": 15,
+  "hp": 2,
+  "speed": "10 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 2,
+    "damage": "1",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Shortbow",
+    "atk": 6,
+    "damage": "1",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Steam Mephit",
+  "type": "elemental",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 21,
+  "speed": "30 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Bats",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 22,
+  "speed": "0 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 4,
+    "damage": "2d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Rats",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 10,
+  "hp": 24,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 2,
+    "damage": "2d6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Ravens",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 12,
+  "hp": 24,
+  "speed": "10 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Beaks",
+    "atk": 4,
+    "damage": "2d6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Violet Fungus",
+  "type": "plant",
+  "cr": "1/4",
+  "ac": 5,
+  "hp": 18,
+  "speed": "5 ft.",
+  "attacks": [
+   {
+    "name": "Rotting Touch",
+    "atk": 2,
+    "damage": "1d8",
+    "type": "necrotic",
+    "notes": ""
+   }
+  ],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Wolf",
+  "type": "beast",
+  "cr": "1/4",
+  "ac": 13,
+  "hp": 11,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "piercing",
+    "notes": "DC 11 STR save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Zombie",
+  "type": "undead",
+  "cr": "1/4",
+  "ac": 8,
+  "hp": 22,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Ape",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 19,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Fist",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Black Bear",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 19,
+  "speed": "40 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "2d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Cockatrice",
+  "type": "monstrosity",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 27,
+  "speed": "20 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Crocodile",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 19,
+  "speed": "20 ft., swim 20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Darkmantle",
+  "type": "monstrosity",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 22,
+  "speed": "10 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Crush",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Deep Gnome (Svirfneblin)",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 15,
+  "hp": 16,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "War Pick",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Poisoned Dart",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Dust Mephit",
+  "type": "elemental",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 17,
+  "speed": "30 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Goat",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 19,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 5,
+    "damage": "2d4+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Sea Horse",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 16,
+  "speed": "0 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Wasp",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 13,
+  "speed": "10 ft., fly 50 ft., swim 50 ft.",
+  "attacks": [
+   {
+    "name": "Sting",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Gnoll",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 15,
+  "hp": 22,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Spear",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Gray Ooze",
+  "type": "ooze",
+  "cr": "1/2",
+  "ac": 8,
+  "hp": 22,
+  "speed": "10 ft., climb 10 ft.",
+  "attacks": [
+   {
+    "name": "Pseudopod",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "ooze",
+  "source": "SRD"
+ },
+ {
+  "name": "Hobgoblin",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 18,
+  "hp": 11,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Ice Mephit",
+  "type": "elemental",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 21,
+  "speed": "30 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Lizardfolk",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 22,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Heavy Club",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Javelin",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Magma Mephit",
+  "type": "elemental",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 22,
+  "speed": "30 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Magmin",
+  "type": "elemental",
+  "cr": "1/2",
+  "ac": 14,
+  "hp": 9,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Touch",
+    "atk": 4,
+    "damage": "2d6",
+    "type": "fire",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Orc",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 15,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 5,
+    "damage": "1d12+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Javelin",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Reef Shark",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Rust Monster",
+  "type": "monstrosity",
+  "cr": "1/2",
+  "ac": 14,
+  "hp": 27,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d8+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Sahuagin",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "30 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Spear",
+    "atk": 3,
+    "damage": "1d6+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Satyr",
+  "type": "fey",
+  "cr": "1/2",
+  "ac": 14,
+  "hp": 31,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 3,
+    "damage": "2d4+1",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Shortsword",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Shortbow",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Scout",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 16,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Shadow",
+  "type": "undead",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 16,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Strength Drain",
+    "atk": 4,
+    "damage": "2d6+2",
+    "type": "necrotic",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Beetles",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "20 ft., burrow 5 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 3,
+    "damage": "4d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Centipedes",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 3,
+    "damage": "4d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Insects",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 3,
+    "damage": "4d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Spiders",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 3,
+    "damage": "4d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Wasps",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 12,
+  "hp": 22,
+  "speed": "5 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 3,
+    "damage": "4d4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Thug",
+  "type": "humanoid",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 32,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Mace",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Heavy Crossbow",
+    "atk": 2,
+    "damage": "1d10",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Warhorse",
+  "type": "beast",
+  "cr": "1/2",
+  "ac": 11,
+  "hp": 19,
+  "speed": "60 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Warhorse Skeleton",
+  "type": "undead",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 22,
+  "speed": "60 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Worg",
+  "type": "monstrosity",
+  "cr": "1/2",
+  "ac": 13,
+  "hp": 26,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": "DC 13 STR save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Animated Armor",
+  "type": "construct",
+  "cr": "1",
+  "ac": 18,
+  "hp": 33,
+  "speed": "25 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Brass Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "1",
+  "ac": 16,
+  "hp": 16,
+  "speed": "30 ft., burrow 15 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Brown Bear",
+  "type": "beast",
+  "cr": "1",
+  "ac": 11,
+  "hp": 34,
+  "speed": "40 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 5,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Bugbear",
+  "type": "humanoid",
+  "cr": "1",
+  "ac": 16,
+  "hp": 27,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Morningstar",
+    "atk": 4,
+    "damage": "2d8+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Javelin",
+    "atk": 4,
+    "damage": "2d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Copper Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "1",
+  "ac": 16,
+  "hp": 22,
+  "speed": "30 ft., climb 30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Death Dog",
+  "type": "monstrosity",
+  "cr": "1",
+  "ac": 12,
+  "hp": 39,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Dire Wolf",
+  "type": "beast",
+  "cr": "1",
+  "ac": 14,
+  "hp": 37,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": "DC 13 STR save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Dryad",
+  "type": "fey",
+  "cr": "1",
+  "ac": 11,
+  "hp": 22,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Club",
+    "atk": 2,
+    "damage": "1d4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Duergar",
+  "type": "humanoid",
+  "cr": "1",
+  "ac": 16,
+  "hp": 26,
+  "speed": "25 ft.",
+  "attacks": [
+   {
+    "name": "War Pick",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Javelin",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Ghoul",
+  "type": "undead",
+  "cr": "1",
+  "ac": 12,
+  "hp": 22,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 2,
+    "damage": "2d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "slashing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Eagle",
+  "type": "beast",
+  "cr": "1",
+  "ac": 13,
+  "hp": 26,
+  "speed": "10 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Talons",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Hyena",
+  "type": "beast",
+  "cr": "1",
+  "ac": 12,
+  "hp": 45,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Octopus",
+  "type": "beast",
+  "cr": "1",
+  "ac": 11,
+  "hp": 52,
+  "speed": "10 ft., swim 60 ft.",
+  "attacks": [
+   {
+    "name": "Tentacles",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Spider",
+  "type": "beast",
+  "cr": "1",
+  "ac": 14,
+  "hp": 26,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Toad",
+  "type": "beast",
+  "cr": "1",
+  "ac": 11,
+  "hp": 39,
+  "speed": "20 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Vulture",
+  "type": "beast",
+  "cr": "1",
+  "ac": 10,
+  "hp": 22,
+  "speed": "10 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Talons",
+    "atk": 4,
+    "damage": "2d6+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Harpy",
+  "type": "monstrosity",
+  "cr": "1",
+  "ac": 11,
+  "hp": 38,
+  "speed": "20 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 3,
+    "damage": "2d4+1",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Club",
+    "atk": 3,
+    "damage": "1d4+1",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Hippogriff",
+  "type": "monstrosity",
+  "cr": "1",
+  "ac": 11,
+  "hp": 19,
+  "speed": "40 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Imp",
+  "type": "fiend",
+  "cr": "1",
+  "ac": 13,
+  "hp": 10,
+  "speed": "20 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Sting (Bite in Beast Form)",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Lion",
+  "type": "beast",
+  "cr": "1",
+  "ac": 12,
+  "hp": 26,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Quasit",
+  "type": "fiend",
+  "cr": "1",
+  "ac": 13,
+  "hp": 7,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Claw (Bite in Beast Form)",
+    "atk": 4,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Specter",
+  "type": "undead",
+  "cr": "1",
+  "ac": 12,
+  "hp": 22,
+  "speed": "0 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Life Drain",
+    "atk": 4,
+    "damage": "3d6",
+    "type": "necrotic",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Spy",
+  "type": "humanoid",
+  "cr": "1",
+  "ac": 12,
+  "hp": 27,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hand Crossbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Quippers",
+  "type": "beast",
+  "cr": "1",
+  "ac": 13,
+  "hp": 28,
+  "speed": "0 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 5,
+    "damage": "4d6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Tiger",
+  "type": "beast",
+  "cr": "1",
+  "ac": 12,
+  "hp": 37,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Ankheg",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 14,
+  "hp": 39,
+  "speed": "30 ft., burrow 10 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Awakened Tree",
+  "type": "plant",
+  "cr": "2",
+  "ac": 13,
+  "hp": 59,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 6,
+    "damage": "3d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Azer",
+  "type": "elemental",
+  "cr": "2",
+  "ac": 15,
+  "hp": 39,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Warhammer",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Bandit Captain",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 15,
+  "hp": 65,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Dagger",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Berserker",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 13,
+  "hp": 67,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 5,
+    "damage": "1d12+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Black Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "2",
+  "ac": 17,
+  "hp": 33,
+  "speed": "30 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Bronze Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "2",
+  "ac": 17,
+  "hp": 32,
+  "speed": "30 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Centaur",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 12,
+  "hp": 45,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Pike",
+    "atk": 6,
+    "damage": "1d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Cult Fanatic",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 13,
+  "hp": 22,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Dagger",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Druid",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 11,
+  "hp": 27,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Quarterstaff",
+    "atk": 2,
+    "damage": "1d6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Ettercap",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 13,
+  "hp": 44,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   },
+   {
+    "name": "Claws",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Gargoyle",
+  "type": "elemental",
+  "cr": "2",
+  "ac": 15,
+  "hp": 52,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Gelatinous Cube",
+  "type": "ooze",
+  "cr": "2",
+  "ac": 6,
+  "hp": 84,
+  "speed": "15 ft.",
+  "attacks": [
+   {
+    "name": "Pseudopod",
+    "atk": 4,
+    "damage": "3d6",
+    "type": "acid",
+    "notes": ""
+   }
+  ],
+  "icon": "ooze",
+  "source": "SRD"
+ },
+ {
+  "name": "Ghast",
+  "type": "undead",
+  "cr": "2",
+  "ac": 13,
+  "hp": 36,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 3,
+    "damage": "2d8+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Boar",
+  "type": "beast",
+  "cr": "2",
+  "ac": 12,
+  "hp": 42,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Tusk",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Constrictor Snake",
+  "type": "beast",
+  "cr": "2",
+  "ac": 12,
+  "hp": 60,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Constrict",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Elk",
+  "type": "beast",
+  "cr": "2",
+  "ac": 14,
+  "hp": 42,
+  "speed": "60 ft.",
+  "attacks": [
+   {
+    "name": "Ram",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "4d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Gibbering Mouther",
+  "type": "aberration",
+  "cr": "2",
+  "ac": 9,
+  "hp": 67,
+  "speed": "10 ft., swim 10 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 2,
+    "damage": "5d6",
+    "type": "piercing",
+    "notes": "DC 10 STR save"
+   }
+  ],
+  "icon": "aberration",
+  "source": "SRD"
+ },
+ {
+  "name": "Green Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "2",
+  "ac": 17,
+  "hp": 38,
+  "speed": "30 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Grick",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 14,
+  "hp": 27,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Tentacles",
+    "atk": 4,
+    "damage": "2d6+2",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Beak",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Griffon",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 12,
+  "hp": 59,
+  "speed": "30 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 6,
+    "damage": "1d8+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Hunter Shark",
+  "type": "beast",
+  "cr": "2",
+  "ac": 12,
+  "hp": 45,
+  "speed": "swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Merrow",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 13,
+  "hp": 45,
+  "speed": "10 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d8+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 6,
+    "damage": "2d4+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Harpoon",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Mimic",
+  "type": "monstrosity",
+  "cr": "2",
+  "ac": 12,
+  "hp": 58,
+  "speed": "15 ft.",
+  "attacks": [
+   {
+    "name": "Pseudopod",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Minotaur Skeleton",
+  "type": "undead",
+  "cr": "2",
+  "ac": 12,
+  "hp": 67,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 6,
+    "damage": "2d12+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Gore",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Ochre Jelly",
+  "type": "ooze",
+  "cr": "2",
+  "ac": 8,
+  "hp": 45,
+  "speed": "10 ft., climb 10 ft.",
+  "attacks": [
+   {
+    "name": "Pseudopod",
+    "atk": 4,
+    "damage": "2d6+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "ooze",
+  "source": "SRD"
+ },
+ {
+  "name": "Ogre",
+  "type": "giant",
+  "cr": "2",
+  "ac": 11,
+  "hp": 59,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greatclub",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Javelin",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Ogre Zombie",
+  "type": "undead",
+  "cr": "2",
+  "ac": 8,
+  "hp": 85,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Morningstar",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Pegasus",
+  "type": "celestial",
+  "cr": "2",
+  "ac": 12,
+  "hp": 59,
+  "speed": "60 ft., fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Plesiosaurus",
+  "type": "beast",
+  "cr": "2",
+  "ac": 13,
+  "hp": 68,
+  "speed": "20 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "3d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Polar Bear",
+  "type": "beast",
+  "cr": "2",
+  "ac": 12,
+  "hp": 42,
+  "speed": "40 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "1d8+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 7,
+    "damage": "2d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Priest",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 13,
+  "hp": 27,
+  "speed": "25 ft.",
+  "attacks": [
+   {
+    "name": "Mace",
+    "atk": 2,
+    "damage": "1d6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Rhinoceros",
+  "type": "beast",
+  "cr": "2",
+  "ac": 11,
+  "hp": 45,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Gore",
+    "atk": 7,
+    "damage": "2d8+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Rug of Smothering",
+  "type": "construct",
+  "cr": "2",
+  "ac": 12,
+  "hp": 33,
+  "speed": "10 ft.",
+  "attacks": [],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Saber-Toothed Tiger",
+  "type": "beast",
+  "cr": "2",
+  "ac": 12,
+  "hp": 52,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 6,
+    "damage": "2d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Sea Hag",
+  "type": "fey",
+  "cr": "2",
+  "ac": 14,
+  "hp": 52,
+  "speed": "30 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Silver Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "2",
+  "ac": 17,
+  "hp": 45,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d10+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Swarm of Poisonous Snakes",
+  "type": "beast",
+  "cr": "2",
+  "ac": 14,
+  "hp": 36,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bites",
+    "atk": 6,
+    "damage": "2d6",
+    "type": "piercing",
+    "notes": "DC 10 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Wererat, Human Form",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 12,
+  "hp": 33,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hand Crossbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wererat, Hybrid Form",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 12,
+  "hp": 33,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   },
+   {
+    "name": "Shortsword",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hand Crossbow",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wererat, Rat Form",
+  "type": "humanoid",
+  "cr": "2",
+  "ac": 12,
+  "hp": 33,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "White Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "2",
+  "ac": 16,
+  "hp": 32,
+  "speed": "30 ft., burrow 15 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Will-o'-Wisp",
+  "type": "undead",
+  "cr": "2",
+  "ac": 19,
+  "hp": 22,
+  "speed": "0 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Shock",
+    "atk": 4,
+    "damage": "2d8",
+    "type": "lightning",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Basilisk",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 12,
+  "hp": 52,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Bearded Devil",
+  "type": "fiend",
+  "cr": "3",
+  "ac": 13,
+  "hp": 52,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Beard",
+    "atk": 5,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   },
+   {
+    "name": "Glaive",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "slashing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Blue Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "3",
+  "ac": 17,
+  "hp": 52,
+  "speed": "30 ft., burrow 15 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Doppelganger",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 14,
+  "hp": 52,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 6,
+    "damage": "1d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Scorpion",
+  "type": "beast",
+  "cr": "3",
+  "ac": 15,
+  "hp": 52,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Sting",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Gold Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "3",
+  "ac": 17,
+  "hp": 60,
+  "speed": "30 ft., fly 60 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d10+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Green Hag",
+  "type": "fey",
+  "cr": "3",
+  "ac": 17,
+  "hp": 82,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fey",
+  "source": "SRD"
+ },
+ {
+  "name": "Hell Hound",
+  "type": "fiend",
+  "cr": "3",
+  "ac": 15,
+  "hp": 45,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Killer Whale",
+  "type": "beast",
+  "cr": "3",
+  "ac": 12,
+  "hp": 90,
+  "speed": "swim 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "5d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Knight",
+  "type": "humanoid",
+  "cr": "3",
+  "ac": 18,
+  "hp": 52,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Greatsword",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Heavy Crossbow",
+    "atk": 2,
+    "damage": "1d10",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Manticore",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 14,
+  "hp": 68,
+  "speed": "30 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail Spike",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Minotaur",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 14,
+  "hp": 76,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 6,
+    "damage": "2d12+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Gore",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Mummy",
+  "type": "undead",
+  "cr": "3",
+  "ac": 11,
+  "hp": 58,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Rotting Fist",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Nightmare",
+  "type": "fiend",
+  "cr": "3",
+  "ac": 13,
+  "hp": 68,
+  "speed": "60 ft., fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 6,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Owlbear",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 13,
+  "hp": 59,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 7,
+    "damage": "1d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 7,
+    "damage": "2d8+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Phase Spider",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 13,
+  "hp": 32,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d10+2",
+    "type": "piercing",
+    "notes": "DC 11 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Veteran",
+  "type": "humanoid",
+  "cr": "3",
+  "ac": 17,
+  "hp": 58,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Shortsword",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Heavy Crossbow",
+    "atk": 3,
+    "damage": "1d10+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Werewolf, Human Form",
+  "type": "humanoid",
+  "cr": "3",
+  "ac": 11,
+  "hp": 58,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Werewolf, Hybrid Form",
+  "type": "humanoid",
+  "cr": "3",
+  "ac": 12,
+  "hp": 58,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   },
+   {
+    "name": "Claws",
+    "atk": 4,
+    "damage": "2d4+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Werewolf, Wolf Form",
+  "type": "humanoid",
+  "cr": "3",
+  "ac": 12,
+  "hp": 58,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wight",
+  "type": "undead",
+  "cr": "3",
+  "ac": 14,
+  "hp": 45,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Life Drain",
+    "atk": 4,
+    "damage": "1d6+2",
+    "type": "necrotic",
+    "notes": "DC 13 CON save"
+   },
+   {
+    "name": "Longsword",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Winter Wolf",
+  "type": "monstrosity",
+  "cr": "3",
+  "ac": 13,
+  "hp": 75,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": "DC 14 STR save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Black Pudding",
+  "type": "ooze",
+  "cr": "4",
+  "ac": 7,
+  "hp": 85,
+  "speed": "20 ft., climb 20 ft.",
+  "attacks": [
+   {
+    "name": "Pseudopod",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "ooze",
+  "source": "SRD"
+ },
+ {
+  "name": "Chuul",
+  "type": "aberration",
+  "cr": "4",
+  "ac": 16,
+  "hp": 93,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Pincer",
+    "atk": 6,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "aberration",
+  "source": "SRD"
+ },
+ {
+  "name": "Couatl",
+  "type": "celestial",
+  "cr": "4",
+  "ac": 19,
+  "hp": 97,
+  "speed": "30 ft., fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 8,
+    "damage": "1d6+5",
+    "type": "piercing",
+    "notes": "DC 13 CON save"
+   },
+   {
+    "name": "Constrict",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Elephant",
+  "type": "beast",
+  "cr": "4",
+  "ac": 12,
+  "hp": 76,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Gore",
+    "atk": 8,
+    "damage": "3d8+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Stomp",
+    "atk": 8,
+    "damage": "3d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Ettin",
+  "type": "giant",
+  "cr": "4",
+  "ac": 12,
+  "hp": 85,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Battleaxe",
+    "atk": 7,
+    "damage": "2d8+5",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Morningstar",
+    "atk": 7,
+    "damage": "2d8+5",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Ghost",
+  "type": "undead",
+  "cr": "4",
+  "ac": 11,
+  "hp": 45,
+  "speed": "0 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Withering Touch",
+    "atk": 5,
+    "damage": "4d6+3",
+    "type": "necrotic",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Lamia",
+  "type": "monstrosity",
+  "cr": "4",
+  "ac": 13,
+  "hp": 97,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Claws",
+    "atk": 5,
+    "damage": "2d10+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Dagger",
+    "atk": 5,
+    "damage": "1d4+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Red Dragon Wyrmling",
+  "type": "dragon",
+  "cr": "4",
+  "ac": 17,
+  "hp": 75,
+  "speed": "30 ft., climb 30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d10+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Succubus/Incubus",
+  "type": "fiend",
+  "cr": "4",
+  "ac": 15,
+  "hp": 66,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Claw (Fiend Form Only)",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Wereboar, Boar Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 11,
+  "hp": 78,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Tusks",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wereboar, Human Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 10,
+  "hp": 78,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Maul",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wereboar, Hybrid Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 11,
+  "hp": 78,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Maul",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Tusks",
+    "atk": 5,
+    "damage": "2d6+3",
+    "type": "slashing",
+    "notes": "DC 12 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Weretiger, Human Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 12,
+  "hp": 120,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 4,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Weretiger, Hybrid Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 12,
+  "hp": 120,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": "DC 13 CON save"
+   },
+   {
+    "name": "Claw",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Scimitar",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Weretiger, Tiger Form",
+  "type": "humanoid",
+  "cr": "4",
+  "ac": 12,
+  "hp": 120,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 5,
+    "damage": "1d10+3",
+    "type": "piercing",
+    "notes": "DC 13 CON save"
+   },
+   {
+    "name": "Claw",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Air Elemental",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 15,
+  "hp": 90,
+  "speed": "fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 8,
+    "damage": "2d8+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Barbed Devil",
+  "type": "fiend",
+  "cr": "5",
+  "ac": 15,
+  "hp": 110,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 6,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hurl Flame",
+    "atk": 5,
+    "damage": "3d6",
+    "type": "fire",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Bulette",
+  "type": "monstrosity",
+  "cr": "5",
+  "ac": 17,
+  "hp": 94,
+  "speed": "40 ft., burrow 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "4d12+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Earth Elemental",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 17,
+  "hp": 126,
+  "speed": "30 ft., burrow 30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 8,
+    "damage": "2d8+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Fire Elemental",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 13,
+  "hp": 102,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Touch",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "fire",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Flesh Golem",
+  "type": "construct",
+  "cr": "5",
+  "ac": 9,
+  "hp": 93,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Crocodile",
+  "type": "beast",
+  "cr": "5",
+  "ac": 14,
+  "hp": 85,
+  "speed": "30 ft., swim 50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 8,
+    "damage": "3d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 8,
+    "damage": "2d8+5",
+    "type": "bludgeoning",
+    "notes": "DC 16 STR save"
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Shark",
+  "type": "beast",
+  "cr": "5",
+  "ac": 13,
+  "hp": 126,
+  "speed": "swim 50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 9,
+    "damage": "3d10+6",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Gladiator",
+  "type": "humanoid",
+  "cr": "5",
+  "ac": 16,
+  "hp": 112,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Shield Bash",
+    "atk": 7,
+    "damage": "2d4+4",
+    "type": "bludgeoning",
+    "notes": "DC 15 STR save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Gorgon",
+  "type": "monstrosity",
+  "cr": "5",
+  "ac": 19,
+  "hp": 114,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Gore",
+    "atk": 8,
+    "damage": "2d12+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Hooves",
+    "atk": 8,
+    "damage": "2d10+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Half-Red Dragon Veteran",
+  "type": "humanoid",
+  "cr": "5",
+  "ac": 18,
+  "hp": 65,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 5,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Shortsword",
+    "atk": 5,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Heavy Crossbow",
+    "atk": 3,
+    "damage": "1d10+1",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Hill Giant",
+  "type": "giant",
+  "cr": "5",
+  "ac": 13,
+  "hp": 105,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greatclub",
+    "atk": 8,
+    "damage": "3d8+5",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 8,
+    "damage": "3d10+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Night Hag",
+  "type": "fiend",
+  "cr": "5",
+  "ac": 17,
+  "hp": 112,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Claws (Hag Form Only)",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Otyugh",
+  "type": "aberration",
+  "cr": "5",
+  "ac": 14,
+  "hp": 114,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "2d8+3",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   },
+   {
+    "name": "Tentacle",
+    "atk": 6,
+    "damage": "1d8+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "aberration",
+  "source": "SRD"
+ },
+ {
+  "name": "Roper",
+  "type": "monstrosity",
+  "cr": "5",
+  "ac": 20,
+  "hp": 93,
+  "speed": "10 ft., climb 10 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "4d8+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Salamander",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 15,
+  "hp": 90,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Spear",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Shambling Mound",
+  "type": "plant",
+  "cr": "5",
+  "ac": 15,
+  "hp": 136,
+  "speed": "20 ft., swim 20 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Triceratops",
+  "type": "beast",
+  "cr": "5",
+  "ac": 13,
+  "hp": 95,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Gore",
+    "atk": 9,
+    "damage": "4d8+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Stomp",
+    "atk": 9,
+    "damage": "3d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Troll",
+  "type": "giant",
+  "cr": "5",
+  "ac": 15,
+  "hp": 84,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "1d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Unicorn",
+  "type": "celestial",
+  "cr": "5",
+  "ac": 12,
+  "hp": 67,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Hooves",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Horn",
+    "atk": 7,
+    "damage": "1d8+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Vampire Spawn",
+  "type": "undead",
+  "cr": "5",
+  "ac": 15,
+  "hp": 82,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 6,
+    "damage": "2d4+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Water Elemental",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 14,
+  "hp": 114,
+  "speed": "30 ft., swim 90 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Werebear, Bear Form",
+  "type": "humanoid",
+  "cr": "5",
+  "ac": 11,
+  "hp": 135,
+  "speed": "40 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": "DC 14 CON save"
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Werebear, Human Form",
+  "type": "humanoid",
+  "cr": "5",
+  "ac": 10,
+  "hp": 135,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 7,
+    "damage": "1d12+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Werebear, Hybrid Form",
+  "type": "humanoid",
+  "cr": "5",
+  "ac": 11,
+  "hp": 135,
+  "speed": "40 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": "DC 14 CON save"
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Greataxe",
+    "atk": 7,
+    "damage": "1d12+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Wraith",
+  "type": "undead",
+  "cr": "5",
+  "ac": 13,
+  "hp": 67,
+  "speed": "0 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Life Drain",
+    "atk": 6,
+    "damage": "4d8+3",
+    "type": "necrotic",
+    "notes": "DC 14 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Xorn",
+  "type": "elemental",
+  "cr": "5",
+  "ac": 19,
+  "hp": 73,
+  "speed": "20 ft., burrow 20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "3d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 6,
+    "damage": "1d6+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Chimera",
+  "type": "monstrosity",
+  "cr": "6",
+  "ac": 14,
+  "hp": 114,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Horns",
+    "atk": 7,
+    "damage": "1d12+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Drider",
+  "type": "monstrosity",
+  "cr": "6",
+  "ac": 19,
+  "hp": 123,
+  "speed": "30 ft., climb 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "1d4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Longsword",
+    "atk": 6,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 6,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Invisible Stalker",
+  "type": "elemental",
+  "cr": "6",
+  "ac": 14,
+  "hp": 104,
+  "speed": "50 ft., fly 50 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Mage",
+  "type": "humanoid",
+  "cr": "6",
+  "ac": 12,
+  "hp": 40,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Dagger",
+    "atk": 5,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Mammoth",
+  "type": "beast",
+  "cr": "6",
+  "ac": 13,
+  "hp": 126,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Gore",
+    "atk": 10,
+    "damage": "4d8+7",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Stomp",
+    "atk": 10,
+    "damage": "4d10+7",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Medusa",
+  "type": "monstrosity",
+  "cr": "6",
+  "ac": 15,
+  "hp": 127,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Snake Hair",
+    "atk": 5,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Shortsword",
+    "atk": 5,
+    "damage": "1d6+2",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 5,
+    "damage": "1d8+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Vrock",
+  "type": "fiend",
+  "cr": "6",
+  "ac": 15,
+  "hp": 104,
+  "speed": "40 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Talons",
+    "atk": 6,
+    "damage": "2d10+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Wyvern",
+  "type": "dragon",
+  "cr": "6",
+  "ac": 13,
+  "hp": 110,
+  "speed": "20 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 7,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Stinger",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Brass Dragon",
+  "type": "dragon",
+  "cr": "6",
+  "ac": 17,
+  "hp": 110,
+  "speed": "40 ft., burrow 20 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young White Dragon",
+  "type": "dragon",
+  "cr": "6",
+  "ac": 17,
+  "hp": 133,
+  "speed": "40 ft., burrow 20 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Giant Ape",
+  "type": "beast",
+  "cr": "7",
+  "ac": 12,
+  "hp": 157,
+  "speed": "40 ft., climb 40 ft.",
+  "attacks": [
+   {
+    "name": "Fist",
+    "atk": 9,
+    "damage": "3d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 9,
+    "damage": "7d6+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Oni",
+  "type": "giant",
+  "cr": "7",
+  "ac": 16,
+  "hp": 110,
+  "speed": "30 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Claw (Oni Form Only)",
+    "atk": 7,
+    "damage": "1d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Glaive",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Shield Guardian",
+  "type": "construct",
+  "cr": "7",
+  "ac": 17,
+  "hp": 142,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Fist",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Stone Giant",
+  "type": "giant",
+  "cr": "7",
+  "ac": 17,
+  "hp": 126,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greatclub",
+    "atk": 9,
+    "damage": "3d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 9,
+    "damage": "4d10+6",
+    "type": "bludgeoning",
+    "notes": "DC 17 STR save"
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Black Dragon",
+  "type": "dragon",
+  "cr": "7",
+  "ac": 18,
+  "hp": 127,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Copper Dragon",
+  "type": "dragon",
+  "cr": "7",
+  "ac": 17,
+  "hp": 119,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Assassin",
+  "type": "humanoid",
+  "cr": "8",
+  "ac": 15,
+  "hp": 78,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Shortsword",
+    "atk": 6,
+    "damage": "1d6+3",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   },
+   {
+    "name": "Light Crossbow",
+    "atk": 6,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Chain Devil",
+  "type": "fiend",
+  "cr": "8",
+  "ac": 16,
+  "hp": 85,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Chain",
+    "atk": 8,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Cloaker",
+  "type": "aberration",
+  "cr": "8",
+  "ac": 14,
+  "hp": 78,
+  "speed": "10 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 6,
+    "damage": "2d6+3",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 6,
+    "damage": "1d8+3",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "aberration",
+  "source": "SRD"
+ },
+ {
+  "name": "Frost Giant",
+  "type": "giant",
+  "cr": "8",
+  "ac": 15,
+  "hp": 138,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Greataxe",
+    "atk": 9,
+    "damage": "3d12+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 9,
+    "damage": "4d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Hezrou",
+  "type": "fiend",
+  "cr": "8",
+  "ac": 16,
+  "hp": 136,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Hydra",
+  "type": "monstrosity",
+  "cr": "8",
+  "ac": 15,
+  "hp": 172,
+  "speed": "30 ft., swim 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 8,
+    "damage": "1d10+5",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Spirit Naga",
+  "type": "monstrosity",
+  "cr": "8",
+  "ac": 15,
+  "hp": 75,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "1d6+4",
+    "type": "piercing",
+    "notes": "DC 13 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Tyrannosaurus Rex",
+  "type": "beast",
+  "cr": "8",
+  "ac": 13,
+  "hp": 136,
+  "speed": "50 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "4d12+7",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 10,
+    "damage": "3d8+7",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "beast",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Bronze Dragon",
+  "type": "dragon",
+  "cr": "8",
+  "ac": 18,
+  "hp": 142,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 8,
+    "damage": "2d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 8,
+    "damage": "2d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Green Dragon",
+  "type": "dragon",
+  "cr": "8",
+  "ac": 18,
+  "hp": 136,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "2d10+4",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Bone Devil",
+  "type": "fiend",
+  "cr": "9",
+  "ac": 19,
+  "hp": 142,
+  "speed": "40 ft., fly 40 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 8,
+    "damage": "1d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Sting",
+    "atk": 8,
+    "damage": "2d8+4",
+    "type": "piercing",
+    "notes": "DC 14 CON save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Clay Golem",
+  "type": "construct",
+  "cr": "9",
+  "ac": 14,
+  "hp": 133,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 8,
+    "damage": "2d10+5",
+    "type": "bludgeoning",
+    "notes": "DC 15 CON save"
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Cloud Giant",
+  "type": "giant",
+  "cr": "9",
+  "ac": 14,
+  "hp": 200,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Morningstar",
+    "atk": 12,
+    "damage": "3d8+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 12,
+    "damage": "4d10+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Fire Giant",
+  "type": "giant",
+  "cr": "9",
+  "ac": 18,
+  "hp": 162,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Greatsword",
+    "atk": 11,
+    "damage": "6d6+7",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 11,
+    "damage": "4d10+7",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Glabrezu",
+  "type": "fiend",
+  "cr": "9",
+  "ac": 17,
+  "hp": 157,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Pincer",
+    "atk": 9,
+    "damage": "2d10+5",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Fist",
+    "atk": 9,
+    "damage": "2d4+2",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Treant",
+  "type": "plant",
+  "cr": "9",
+  "ac": 16,
+  "hp": 138,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 10,
+    "damage": "3d6+6",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 10,
+    "damage": "4d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "plant",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Blue Dragon",
+  "type": "dragon",
+  "cr": "9",
+  "ac": 18,
+  "hp": 152,
+  "speed": "40 ft., burrow 20 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 9,
+    "damage": "2d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 9,
+    "damage": "2d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Silver Dragon",
+  "type": "dragon",
+  "cr": "9",
+  "ac": 18,
+  "hp": 168,
+  "speed": "40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 10,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Aboleth",
+  "type": "aberration",
+  "cr": "10",
+  "ac": 17,
+  "hp": 135,
+  "speed": "10 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Tentacle",
+    "atk": 9,
+    "damage": "2d6+5",
+    "type": "bludgeoning",
+    "notes": "DC 14 CON save"
+   },
+   {
+    "name": "Tail",
+    "atk": 9,
+    "damage": "3d6+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "aberration",
+  "source": "SRD"
+ },
+ {
+  "name": "Deva",
+  "type": "celestial",
+  "cr": "10",
+  "ac": 17,
+  "hp": 136,
+  "speed": "30 ft., fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Mace",
+    "atk": 8,
+    "damage": "1d6+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Guardian Naga",
+  "type": "monstrosity",
+  "cr": "10",
+  "ac": 18,
+  "hp": 127,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 8,
+    "damage": "1d8+4",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Stone Golem",
+  "type": "construct",
+  "cr": "10",
+  "ac": 17,
+  "hp": 178,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 10,
+    "damage": "3d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Gold Dragon",
+  "type": "dragon",
+  "cr": "10",
+  "ac": 18,
+  "hp": 178,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 10,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Young Red Dragon",
+  "type": "dragon",
+  "cr": "10",
+  "ac": 18,
+  "hp": 178,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 10,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Behir",
+  "type": "monstrosity",
+  "cr": "11",
+  "ac": 17,
+  "hp": 168,
+  "speed": "50 ft., climb 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "3d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Constrict",
+    "atk": 10,
+    "damage": "2d10+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Djinni",
+  "type": "elemental",
+  "cr": "11",
+  "ac": 17,
+  "hp": 161,
+  "speed": "30 ft., fly 90 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 9,
+    "damage": "2d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Efreeti",
+  "type": "elemental",
+  "cr": "11",
+  "ac": 17,
+  "hp": 200,
+  "speed": "40 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Scimitar",
+    "atk": 10,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Hurl Flame",
+    "atk": 7,
+    "damage": "5d6",
+    "type": "fire",
+    "notes": ""
+   }
+  ],
+  "icon": "elemental",
+  "source": "SRD"
+ },
+ {
+  "name": "Gynosphinx",
+  "type": "monstrosity",
+  "cr": "11",
+  "ac": 17,
+  "hp": 136,
+  "speed": "40 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 9,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Horned Devil",
+  "type": "fiend",
+  "cr": "11",
+  "ac": 18,
+  "hp": 178,
+  "speed": "20 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Fork",
+    "atk": 10,
+    "damage": "2d8+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 10,
+    "damage": "1d8+6",
+    "type": "piercing",
+    "notes": "DC 17 CON save"
+   },
+   {
+    "name": "Hurl Flame",
+    "atk": 7,
+    "damage": "4d6",
+    "type": "fire",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Remorhaz",
+  "type": "monstrosity",
+  "cr": "11",
+  "ac": 17,
+  "hp": 195,
+  "speed": "30 ft., burrow 20 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "6d10+7",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Roc",
+  "type": "monstrosity",
+  "cr": "11",
+  "ac": 15,
+  "hp": 248,
+  "speed": "20 ft., fly 120 ft.",
+  "attacks": [
+   {
+    "name": "Beak",
+    "atk": 13,
+    "damage": "4d8+9",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Talons",
+    "atk": 13,
+    "damage": "4d6+9",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Archmage",
+  "type": "humanoid",
+  "cr": "12",
+  "ac": 12,
+  "hp": 99,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Dagger",
+    "atk": 6,
+    "damage": "1d4+2",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "humanoid",
+  "source": "SRD"
+ },
+ {
+  "name": "Erinyes",
+  "type": "fiend",
+  "cr": "12",
+  "ac": 18,
+  "hp": 153,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 8,
+    "damage": "1d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Longbow",
+    "atk": 7,
+    "damage": "1d8+3",
+    "type": "piercing",
+    "notes": "DC 14 CON save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Brass Dragon",
+  "type": "dragon",
+  "cr": "13",
+  "ac": 18,
+  "hp": 172,
+  "speed": "40 ft., burrow 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 11,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 11,
+    "damage": "2d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult White Dragon",
+  "type": "dragon",
+  "cr": "13",
+  "ac": 18,
+  "hp": 200,
+  "speed": "40 ft., burrow 30 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 11,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 11,
+    "damage": "2d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Nalfeshnee",
+  "type": "fiend",
+  "cr": "13",
+  "ac": 18,
+  "hp": 184,
+  "speed": "20 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "5d10+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 10,
+    "damage": "3d6+5",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Rakshasa",
+  "type": "fiend",
+  "cr": "13",
+  "ac": 16,
+  "hp": 110,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 7,
+    "damage": "2d6+2",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Storm Giant",
+  "type": "giant",
+  "cr": "13",
+  "ac": 16,
+  "hp": 230,
+  "speed": "50 ft., swim 50 ft.",
+  "attacks": [
+   {
+    "name": "Greatsword",
+    "atk": 14,
+    "damage": "6d6+9",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Rock",
+    "atk": 14,
+    "damage": "4d12+9",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "giant",
+  "source": "SRD"
+ },
+ {
+  "name": "Vampire, Bat Form",
+  "type": "undead",
+  "cr": "13",
+  "ac": 16,
+  "hp": 144,
+  "speed": "5 ft., fly 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 9,
+    "damage": "1d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Vampire, Mist Form",
+  "type": "undead",
+  "cr": "13",
+  "ac": 16,
+  "hp": 144,
+  "speed": "fly 20 ft.",
+  "attacks": [],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Vampire, Vampire Form",
+  "type": "undead",
+  "cr": "13",
+  "ac": 16,
+  "hp": 144,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Unarmed Strike",
+    "atk": 9,
+    "damage": "1d8+4",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Bite",
+    "atk": 9,
+    "damage": "1d6+4",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Black Dragon",
+  "type": "dragon",
+  "cr": "14",
+  "ac": 19,
+  "hp": 195,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 11,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 11,
+    "damage": "2d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Copper Dragon",
+  "type": "dragon",
+  "cr": "14",
+  "ac": 18,
+  "hp": 184,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 11,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 11,
+    "damage": "2d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ice Devil",
+  "type": "fiend",
+  "cr": "14",
+  "ac": 18,
+  "hp": 180,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 10,
+    "damage": "2d6+5",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claws",
+    "atk": 10,
+    "damage": "2d4+5",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 10,
+    "damage": "2d6+5",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Bronze Dragon",
+  "type": "dragon",
+  "cr": "15",
+  "ac": 19,
+  "hp": 212,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 12,
+    "damage": "2d10+7",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 12,
+    "damage": "2d6+7",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 12,
+    "damage": "2d8+7",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Green Dragon",
+  "type": "dragon",
+  "cr": "15",
+  "ac": 19,
+  "hp": 207,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 11,
+    "damage": "2d10+6",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 11,
+    "damage": "2d6+6",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 11,
+    "damage": "2d8+6",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Mummy Lord",
+  "type": "undead",
+  "cr": "15",
+  "ac": 17,
+  "hp": 97,
+  "speed": "20 ft.",
+  "attacks": [
+   {
+    "name": "Rotting Fist",
+    "atk": 9,
+    "damage": "3d6+4",
+    "type": "bludgeoning",
+    "notes": "DC 16 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Purple Worm",
+  "type": "monstrosity",
+  "cr": "15",
+  "ac": 18,
+  "hp": 247,
+  "speed": "50 ft., burrow 30 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 9,
+    "damage": "3d8+9",
+    "type": "piercing",
+    "notes": "DC 19 DEX save"
+   },
+   {
+    "name": "Tail Stinger",
+    "atk": 9,
+    "damage": "3d6+9",
+    "type": "piercing",
+    "notes": "DC 19 CON save"
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Blue Dragon",
+  "type": "dragon",
+  "cr": "16",
+  "ac": 19,
+  "hp": 225,
+  "speed": "40 ft., burrow 30 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 12,
+    "damage": "2d10+7",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 12,
+    "damage": "2d6+7",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 12,
+    "damage": "2d8+7",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Silver Dragon",
+  "type": "dragon",
+  "cr": "16",
+  "ac": 19,
+  "hp": 243,
+  "speed": "40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 13,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 13,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 13,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Iron Golem",
+  "type": "construct",
+  "cr": "16",
+  "ac": 20,
+  "hp": 210,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Slam",
+    "atk": 13,
+    "damage": "3d8+7",
+    "type": "bludgeoning",
+    "notes": ""
+   },
+   {
+    "name": "Sword",
+    "atk": 13,
+    "damage": "3d10+7",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "construct",
+  "source": "SRD"
+ },
+ {
+  "name": "Marilith",
+  "type": "fiend",
+  "cr": "16",
+  "ac": 18,
+  "hp": 189,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 9,
+    "damage": "2d8+4",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 9,
+    "damage": "2d10+4",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Planetar",
+  "type": "celestial",
+  "cr": "16",
+  "ac": 19,
+  "hp": 200,
+  "speed": "40 ft., fly 120 ft.",
+  "attacks": [
+   {
+    "name": "Greatsword",
+    "atk": 12,
+    "damage": "4d6+7",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Gold Dragon",
+  "type": "dragon",
+  "cr": "17",
+  "ac": 19,
+  "hp": 256,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 14,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 14,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Adult Red Dragon",
+  "type": "dragon",
+  "cr": "17",
+  "ac": 19,
+  "hp": 256,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 14,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 14,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Androsphinx",
+  "type": "monstrosity",
+  "cr": "17",
+  "ac": 17,
+  "hp": 199,
+  "speed": "40 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Claw",
+    "atk": 12,
+    "damage": "2d10+6",
+    "type": "slashing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Dragon Turtle",
+  "type": "dragon",
+  "cr": "17",
+  "ac": 20,
+  "hp": 341,
+  "speed": "20 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 13,
+    "damage": "3d12+7",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 13,
+    "damage": "2d8+7",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 13,
+    "damage": "3d12+7",
+    "type": "bludgeoning",
+    "notes": "DC 20 STR save"
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Balor",
+  "type": "fiend",
+  "cr": "19",
+  "ac": 19,
+  "hp": 262,
+  "speed": "40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Longsword",
+    "atk": 14,
+    "damage": "3d8+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Whip",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": "DC 20 STR save"
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Brass Dragon",
+  "type": "dragon",
+  "cr": "20",
+  "ac": 20,
+  "hp": 297,
+  "speed": "40 ft., burrow 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 14,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 14,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient White Dragon",
+  "type": "dragon",
+  "cr": "20",
+  "ac": 20,
+  "hp": 333,
+  "speed": "40 ft., burrow 40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 14,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 14,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Pit Fiend",
+  "type": "fiend",
+  "cr": "20",
+  "ac": 19,
+  "hp": 300,
+  "speed": "30 ft., fly 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 14,
+    "damage": "4d6+8",
+    "type": "piercing",
+    "notes": "DC 21 CON save"
+   },
+   {
+    "name": "Claw",
+    "atk": 14,
+    "damage": "2d8+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Mace",
+    "atk": 14,
+    "damage": "2d6+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "fiend",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Black Dragon",
+  "type": "dragon",
+  "cr": "21",
+  "ac": 22,
+  "hp": 367,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 15,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 15,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 15,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Copper Dragon",
+  "type": "dragon",
+  "cr": "21",
+  "ac": 21,
+  "hp": 350,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 15,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 15,
+    "damage": "2d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 15,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Lich",
+  "type": "undead",
+  "cr": "21",
+  "ac": 17,
+  "hp": 135,
+  "speed": "30 ft.",
+  "attacks": [
+   {
+    "name": "Paralyzing Touch",
+    "atk": 12,
+    "damage": "3d6",
+    "type": "cold",
+    "notes": "DC 18 CON save"
+   }
+  ],
+  "icon": "undead",
+  "source": "SRD"
+ },
+ {
+  "name": "Solar",
+  "type": "celestial",
+  "cr": "21",
+  "ac": 21,
+  "hp": 243,
+  "speed": "50 ft., fly 150 ft.",
+  "attacks": [
+   {
+    "name": "Greatsword",
+    "atk": 15,
+    "damage": "4d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Slaying Longbow",
+    "atk": 13,
+    "damage": "2d8+6",
+    "type": "piercing",
+    "notes": "DC 15 CON save"
+   }
+  ],
+  "icon": "celestial",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Bronze Dragon",
+  "type": "dragon",
+  "cr": "22",
+  "ac": 22,
+  "hp": 444,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 16,
+    "damage": "2d10+9",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 16,
+    "damage": "2d6+9",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 16,
+    "damage": "2d8+9",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Green Dragon",
+  "type": "dragon",
+  "cr": "22",
+  "ac": 21,
+  "hp": 385,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 15,
+    "damage": "2d10+8",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 15,
+    "damage": "4d6+8",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 15,
+    "damage": "2d8+8",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Blue Dragon",
+  "type": "dragon",
+  "cr": "23",
+  "ac": 22,
+  "hp": 481,
+  "speed": "40 ft., burrow 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 16,
+    "damage": "2d10+9",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 16,
+    "damage": "2d6+9",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 16,
+    "damage": "2d8+9",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Silver Dragon",
+  "type": "dragon",
+  "cr": "23",
+  "ac": 22,
+  "hp": 487,
+  "speed": "40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 17,
+    "damage": "2d10+10",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 17,
+    "damage": "2d6+10",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 17,
+    "damage": "2d8+10",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Kraken",
+  "type": "monstrosity",
+  "cr": "23",
+  "ac": 18,
+  "hp": 472,
+  "speed": "20 ft., swim 60 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 7,
+    "damage": "3d8+10",
+    "type": "piercing",
+    "notes": "DC 25 CON save"
+   },
+   {
+    "name": "Tentacle",
+    "atk": 7,
+    "damage": "3d6+10",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Gold Dragon",
+  "type": "dragon",
+  "cr": "24",
+  "ac": 22,
+  "hp": 546,
+  "speed": "40 ft., fly 80 ft., swim 40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 17,
+    "damage": "2d10+10",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 17,
+    "damage": "2d6+10",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 17,
+    "damage": "2d8+10",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Ancient Red Dragon",
+  "type": "dragon",
+  "cr": "24",
+  "ac": 22,
+  "hp": 546,
+  "speed": "40 ft., climb 40 ft., fly 80 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 17,
+    "damage": "2d10+10",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 17,
+    "damage": "2d6+10",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Tail",
+    "atk": 17,
+    "damage": "2d8+10",
+    "type": "bludgeoning",
+    "notes": ""
+   }
+  ],
+  "icon": "dragon",
+  "source": "SRD"
+ },
+ {
+  "name": "Tarrasque",
+  "type": "monstrosity",
+  "cr": "30",
+  "ac": 25,
+  "hp": 676,
+  "speed": "40 ft.",
+  "attacks": [
+   {
+    "name": "Bite",
+    "atk": 19,
+    "damage": "4d12+10",
+    "type": "piercing",
+    "notes": ""
+   },
+   {
+    "name": "Claw",
+    "atk": 19,
+    "damage": "4d8+10",
+    "type": "slashing",
+    "notes": ""
+   },
+   {
+    "name": "Horns",
+    "atk": 19,
+    "damage": "4d10+10",
+    "type": "piercing",
+    "notes": ""
+   }
+  ],
+  "icon": "monstrosity",
+  "source": "SRD"
+ }
 ]

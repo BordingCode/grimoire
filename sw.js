@@ -1,6 +1,6 @@
 /* Grimoire service worker — offline-first cache.
    Bump CACHE when any cached file changes, or phones serve stale copies. */
-const CACHE = "grimoire-v43";
+const CACHE = "grimoire-v44";
 const ASSETS = [
   "./",
   "./index.html",
@@ -18,6 +18,21 @@ const ASSETS = [
   "./data/spells-2024.json",
   "./data/spell-index.json",
   "./data/summons.json",
+  "./data/creature-index.json",
+  "./icons/types/beast.svg",
+  "./icons/types/undead.svg",
+  "./icons/types/elemental.svg",
+  "./icons/types/fey.svg",
+  "./icons/types/fiend.svg",
+  "./icons/types/dragon.svg",
+  "./icons/types/construct.svg",
+  "./icons/types/monstrosity.svg",
+  "./icons/types/plant.svg",
+  "./icons/types/ooze.svg",
+  "./icons/types/aberration.svg",
+  "./icons/types/celestial.svg",
+  "./icons/types/giant.svg",
+  "./icons/types/humanoid.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

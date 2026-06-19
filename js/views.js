@@ -576,6 +576,8 @@ function viewSession(ch) {
 }
 
 /* ---- Summons manager (per-character; SRD library + custom; manages HP in/out of combat) ---- */
+const CREATURE_TYPES = new Set(["beast", "undead", "elemental", "fey", "fiend", "dragon", "construct", "monstrosity", "plant", "ooze", "aberration", "celestial", "giant", "humanoid"]);
+function creatureIcon(type) { return `<img class="type-ic" src="icons/types/${CREATURE_TYPES.has(type) ? type : "beast"}.svg" alt="" aria-hidden="true">`; }
 function summonCard(ch, s) {
   const n = (s.hps || []).length;
   const atks = (s.attacks || []).map((a) => `<div class="sm-atk"><b>${esc(a.name)}</b> ${a.atk >= 0 ? "+" : ""}${a.atk} · ${esc(a.damage)} ${esc(a.type || "")}${a.notes ? ` <span class="muted">— ${esc(a.notes)}</span>` : ""}</div>`).join("");
@@ -588,7 +590,7 @@ function summonCard(ch, s) {
     </div>`).join("");
   return `<div class="summon-card">
     <div class="sm-head">
-      ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}">photo</button>`}
+      ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}" title="add a picture">${creatureIcon(s.icon)}</button>`}
       <div class="sm-title"><span class="sm-name">${esc(s.name)}${n > 1 ? ` ×${n}` : ""}</span><span class="sm-meta">AC ${s.ac} · ${esc(s.speed || "")}${s.conc ? " · concentration" : ""}</span></div>
       <button class="opt-btn" data-act="summonOptions" data-id="${esc(s.id)}">⋯</button>
     </div>

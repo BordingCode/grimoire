@@ -316,8 +316,13 @@ input[type=checkbox] { width: auto; }
 .sm-inst button.del { color: var(--muted); font-size: .8rem; }
 .sm-addone { margin-left: 2px; }
 .sum-lib { display: flex; flex-direction: column; gap: 4px; max-height: 50svh; overflow: auto; margin: 8px 0; }
-.sum-pick { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
-.sum-pick .sp-n { font-weight: 600; }
+.sum-pick { display: flex; align-items: center; gap: 8px; text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.sum-pick .sp-ic { width: 22px; height: 22px; flex: none; color: var(--accent-2); }
+.sum-pick .sp-n { font-weight: 600; flex: 1; min-width: 0; }
+.sum-pick.stub { opacity: .72; }
+.sum-pick.stub .sp-n { color: var(--muted); }
+.type-ic { width: 100%; height: 100%; display: block; }
+.sm-photo-add { display: flex; align-items: center; justify-content: center; color: var(--accent-2); padding: 7px; }
 .sc-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .sc-title { font-weight: 700; }
 .sc-date { font-size: .78rem; color: var(--muted); white-space: nowrap; }

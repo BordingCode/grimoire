@@ -15,13 +15,15 @@ const Party = {
 };
 
 async function loadSpells() {
-  const [a, b, idx, sl] = await Promise.all([
+  const [a, b, idx, sl, ci] = await Promise.all([
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
     fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
-    fetch("data/summons.json?v=43").then((r) => r.json()).catch(() => []),
+    fetch("data/summons.json?v=44").then((r) => r.json()).catch(() => []),
+    fetch("data/creature-index.json?v=44").then((r) => r.json()).catch(() => []),
   ]);
-  Grimoire.summonLib = sl || [];   // bundled SRD creature stat library for the Summons picker
+  Grimoire.summonLib = sl || [];        // bundled SRD creature stat library (full stats)
+  Grimoire.creatureIndex = ci || [];    // non-SRD creature names -> greyed look-up stubs in the picker
   // The bundled SRD data is missing class tags for Paladin (and Artificer), and lists
   // only one class on many spells. Merge in the fuller class lists from the index so
   // multiclass casters (e.g. Paladin) get a correct class list.
@@ -1025,9 +1027,18 @@ function makeSummon(def, count) {
   return { id: "sm" + Gx.uid(), name: def.name, ac: def.ac, speed: def.speed || "", attacks: JSON.parse(JSON.stringify(def.attacks || [])), hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), notes: def.notes || "", icon: def.icon || "", photo: null, conc: false };
 }
 function summonLibRows(q) {
-  const lib = Grimoire.summonLib || [];
-  const list = q ? lib.filter((d) => d.name.toLowerCase().includes(q.toLowerCase())) : lib;
-  return list.map((d) => `<button class="sum-pick" data-act="summonLibPick" data-name="${esc(d.name)}"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · AC ${d.ac} · ${d.hp} HP</span></button>`).join("") || `<p class="muted small pad">No match — use “Custom summon”.</p>`;
+  const lib = Grimoire.summonLib || [], idx = Grimoire.creatureIndex || [];
+  const ql = (q || "").toLowerCase();
+  const have = new Set(lib.map((d) => d.name.toLowerCase()));
+  const items = [
+    ...lib.filter((d) => !ql || d.name.toLowerCase().includes(ql)).map((d) => ({ d, stub: false })),
+    ...idx.filter((d) => !have.has(d.name.toLowerCase()) && (!ql || d.name.toLowerCase().includes(ql))).map((d) => ({ d, stub: true })),
+  ].sort((x, y) => x.d.name.localeCompare(y.d.name));
+  if (!items.length) return `<p class="muted small pad">No match — use “Custom summon”.</p>`;
+  return items.map(({ d, stub }) => stub
+    ? `<button class="sum-pick stub" data-act="summonStub" data-name="${esc(d.name)}" data-type="${esc(d.type || "")}"><span class="sp-ic">${creatureIcon(d.type)}</span><span class="sp-n">${esc(d.name)}</span><span class="muted small">${d.cr && d.cr !== "—" ? "CR " + esc(d.cr) + " · " : ""}${esc(d.type || "")} · not bundled</span></button>`
+    : `<button class="sum-pick" data-act="summonLibPick" data-name="${esc(d.name)}"><span class="sp-ic">${creatureIcon(d.type || d.icon)}</span><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · AC ${d.ac} · ${d.hp} HP</span></button>`
+  ).join("");
 }
 actions.openSummons = () => { ui.screen = "summons"; render(); };
 actions.summonBack = () => { ui.screen = "sheet"; ui.tab = "combat"; render(); };
@@ -1093,9 +1104,20 @@ actions.summonEditSave = () => {
   s.hps = s.hps.map((hp) => full ? s.hpMax : Math.min(hp, s.hpMax));
   actions._sumEditId = null; closeModal(); commit();
 };
-actions.summonCustom = () => {
+actions.summonStub = (el) => {
+  const name = el.dataset.name, type = el.dataset.type;
+  const c = (Grimoire.creatureIndex || []).find((x) => x.name === name) || { name, type, cr: "", source: "" };
+  modal(name, `
+    <p class="sp-line">${c.cr && c.cr !== "—" ? "CR " + esc(c.cr) + " · " : ""}${esc(c.type || "")}${c.source ? ` · <span class="muted">${esc(c.source)}</span>` : ""}</p>
+    <p class="muted small">Not bundled — Grimoire only ships free SRD creatures. Look up its stats, then add it as a custom summon.</p>
+    <p class="sp-lookup"><a href="${ddbSearchUrl(name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button><button class="btn primary" data-act="summonCustom" data-name="${esc(name)}" data-type="${esc(type)}">Add as custom</button></div>`);
+};
+actions.summonCustom = (el) => {
+  const pname = el && el.dataset ? (el.dataset.name || "") : "";
+  actions._sumType = el && el.dataset ? (el.dataset.type || "") : "";
   modal("Custom summon", `
-    <label class="fld"><span>Name *</span><input id="sc-name" placeholder="e.g. Spectral Wolf"></label>
+    <label class="fld"><span>Name *</span><input id="sc-name" value="${esc(pname)}" placeholder="e.g. Spectral Wolf"></label>
     <div class="grid2">
       <label class="fld"><span>Count</span><input id="sc-count" type="number" min="1" value="1"></label>
       <label class="fld"><span>AC</span><input id="sc-ac" type="number" value="12"></label>
@@ -1121,8 +1143,8 @@ actions.summonCustomSave = () => {
   const atks = []; const an = $("#sc-atkname").value.trim();
   if (an) atks.push({ name: an, atk: +$("#sc-atk").value || 0, damage: $("#sc-dmg").value.trim(), type: $("#sc-dtype").value.trim(), notes: "" });
   const ch = Store.active(); if (!ch.summons) ch.summons = [];
-  ch.summons.push({ id: "sm" + Gx.uid(), name, ac: +$("#sc-ac").value || 10, speed: $("#sc-speed").value.trim(), attacks: atks, hpMax: hp, hps: Array(count).fill(hp), notes: $("#sc-notes").value.trim(), icon: "", photo: null, conc: false });
-  closeModal(); commit(); toast(`Added ${count}× ${name}.`);
+  ch.summons.push({ id: "sm" + Gx.uid(), name, ac: +$("#sc-ac").value || 10, speed: $("#sc-speed").value.trim(), attacks: atks, hpMax: hp, hps: Array(count).fill(hp), notes: $("#sc-notes").value.trim(), icon: actions._sumType || "", photo: null, conc: false });
+  actions._sumType = null; closeModal(); commit(); toast(`Added ${count}× ${name}.`);
 };
 actions.summonPhoto = (el) => {
   const id = el.dataset.id; closeModal();
@@ -1265,7 +1287,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=43");
+      const reg = await navigator.serviceWorker.register("sw.js?v=44");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
