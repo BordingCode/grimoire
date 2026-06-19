@@ -157,8 +157,18 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Refactored the spell-list pool logic into one shared `spellPoolForList(ch)` used by both the full render (`spellListSection`) and live-search re-render (`spellListRowsHtml`).
 - Browser-verified: level filter + search work on Class list AND Find more; focus preserved while typing; full-detail vs stub-detail modals both correct; 0 console errors.
 
+## v38–v44 (current = cache v44 LIVE)
+- v38 Proficiencies & Languages box (Stats; `ch.proficiencies`). v39 natural-armor AC (`combat.armorDexMode` none/full/med/con) + fixed feature/item bonus-row delete naming bug.
+- v40 Session book (Log: notes/photos/drawing-pad; blobs in IndexedDB `js/media.js`; export embeds `_media`). Editable spell slots (Spells "edit": ±/level → `overrides['slotMax.i']`). Char photo 1024px. SW registered with live `?v=`.
+- v41 Stats redesign (left-column bonuses, big ability mods, striping, no roll buttons). Log moved INTO Notes tab. Session media review fixes (char-delete media cleanup, in-mem cache, draw-save-keeps-art). FIX: SRD spell data lacked Paladin/Artificer tags → loadSpells merges class lists from spell-index.
+- v42 Spells default tab = Prepared/Known. "All spells" = whole game (SRD + non-SRD stubs; Find-more folded in). All lists sorted level→A–Z under sticky headers. +16 Tasha's spells in spell-index.
+- v43 Summons MVP + delete session logs + kill count on Notes tab.
+- v44 Summons: 334 SRD creatures full stats (data/summons.json) + 214 non-SRD stubs (data/creature-index.json, D&D Beyond look-up + add-as-custom) + type icons (icons/types/*.svg). Summons UI = Combat→Manage summons sub-screen (`viewSummons`/`summonCard`, `ch.summons`); per-instance HP, edit (Mighty Summoner via "set all to full"), custom, dismiss-all.
+
 ## NOT yet done / next steps
-- [ ] Phase 5 polish: printable sheet (leveling helper now DONE).
+- [ ] **Dice removal** (Mathias always rolls IRL): remove spell attack/damage rolls, weapon attack/damage rolls; hit-die spend → type rolled HP; level-up HP → type rolled; concentration → "Kept it / Lost it". (Stats save/skill roll buttons already removed in v41.)
+- [ ] **Themes redesign** (per-class light+dark, tint whole palette): research done; deliver concrete palettes doc → pick favourites → implement.
+- [ ] Phase 5 polish: printable sheet (leveling helper DONE).
 - [ ] Optional: extend the spell index with Tasha's / PHB-2024 names (need a source with reliable class lists — current index is ~2018-era); add Artificer.
 - [ ] Optional: a "show all classes" toggle on Find more (currently filtered to the character's classes).
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
