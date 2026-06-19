@@ -147,5 +147,17 @@ for (const cls in EXTRA_SUBCLASSES) {
   for (const name of EXTRA_SUBCLASSES[cls]) if (!(name in SUBCLASSES[cls])) SUBCLASSES[cls][name] = null;
 }
 
+// accent colour palette [base, lighter] + the default accent key per class
+const ACCENTS = {
+  violet: ["#6d4aff", "#8b6dff"], azure: ["#4a8fff", "#74a9ff"], teal: ["#3fb0bf", "#6fcdd9"],
+  green: ["#57a85a", "#79c47c"], gold: ["#e0b13a", "#f0cd6b"], orange: ["#d3863a", "#e8a866"],
+  red: ["#e0564b", "#ef7a70"], crimson: ["#d44a6a", "#e8748f"], pink: ["#d36ad0", "#e592e2"], slate: ["#8b8f99", "#aeb2bb"],
+};
+const CLASS_ACCENT = {
+  Artificer: "orange", Barbarian: "red", Bard: "pink", Cleric: "gold", Druid: "green",
+  Fighter: "crimson", Monk: "teal", Paladin: "gold", Ranger: "green", Rogue: "slate",
+  Sorcerer: "crimson", Warlock: "violet", Wizard: "violet",
+};
+
 // expose
-window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };
+window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };

@@ -43,6 +43,8 @@ function newCharacter({ name, edition, cls, level }) {
     id: uid(),
     schema: 1,
     name: name || "New Adventurer",
+    portrait: "",                  // small data-URL photo (downscaled)
+    accent: "",                    // accent colour key override ("" = class default)
     edition: edition === "2024" ? "2024" : "2014",
     cls,
     level: Math.max(1, Math.min(20, level || 1)),

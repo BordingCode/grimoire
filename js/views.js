@@ -71,6 +71,7 @@ function render() {
   else if (ui.screen === "new") app.innerHTML = viewNew();
   else if (ui.screen === "party") app.innerHTML = viewParty();
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
+  if (typeof applyTheme === "function") applyTheme(ui.screen === "sheet" ? Store.active() : null);
   if (typeof initSortables === "function") initSortables();
 }
 // drag-handle markup, shown only in Arrange mode (ui.reorder)
@@ -80,6 +81,7 @@ function handle() { return ui.reorder ? '<button class="drag-handle" title="drag
 function viewHome() {
   const list = Store.characters.map((c) => `
     <button class="char-card" data-act="open" data-id="${c.id}">
+      ${c.portrait ? `<img class="avatar" src="${c.portrait}" alt="">` : `<span class="avatar avatar-blank">${esc((c.name || "?").trim().charAt(0).toUpperCase())}</span>`}
       <div class="cc-main"><span class="cc-name">${esc(c.name)}</span>
         <span class="cc-sub">${esc(classSummary(c))} · level ${Calc.totalLevel(c)} · ${c.edition}</span></div>
       <span class="cc-go">›</span>
@@ -158,6 +160,7 @@ function viewSheet(ch) {
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
+      ${ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`}
       <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>

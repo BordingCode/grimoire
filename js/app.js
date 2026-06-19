@@ -16,14 +16,36 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=28").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=28").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=29").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=29").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
 function commit(rerender = true) { Store.touch(); if (window.LINK) LINK.schedulePush(Store.active()); if (rerender) render(); }
+
+/* apply dark/light mode (global) + accent colour (per active character / its class) */
+function applyTheme(ch) {
+  const root = document.documentElement;
+  root.dataset.theme = localStorage.getItem("grimoire.mode") || "dark";
+  const key = ch ? (ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet") : "violet";
+  const pair = RULES.ACCENTS[key] || RULES.ACCENTS.violet;
+  root.style.setProperty("--accent", pair[0]);
+  root.style.setProperty("--accent-2", pair[1]);
+  // readable text colour on top of the accent (dark text for light accents like gold)
+  const c = pair[0].replace("#", "");
+  const lum = (0.299 * parseInt(c.slice(0, 2), 16) + 0.587 * parseInt(c.slice(2, 4), 16) + 0.114 * parseInt(c.slice(4, 6), 16)) / 255;
+  root.style.setProperty("--on-accent", lum > 0.6 ? "#1c1430" : "#ffffff");
+}
+// shrink a chosen image to a small JPEG data-URL so it doesn't bloat storage
+function downscaleImage(img, max = 320) {
+  const s = Math.min(1, max / Math.max(img.width, img.height));
+  const w = Math.round(img.width * s), h = Math.round(img.height * s);
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  cv.getContext("2d").drawImage(img, 0, 0, w, h);
+  return cv.toDataURL("image/jpeg", 0.82);
+}
 
 /* ===================================================================== */
 /*  ACTIONS                                                              */
@@ -270,6 +292,8 @@ const actions = {
     const ch = Store.active();
     modal(ch.name, `
       <div class="menu-list">
+        <button class="btn ghost" data-act="charPhoto">📷 Character photo</button>
+        <button class="btn ghost" data-act="appearance">🎨 Appearance (theme)</button>
         <button class="btn ghost" data-act="linkOpen">${ch.link ? "🔗 Linked — manage sharing" : "🔗 Link with another player"}</button>
         <button class="btn ghost" data-act="exportChar">⬇ Export character (backup / share)</button>
         <button class="btn ghost" data-act="renameChar">✎ Rename</button>
@@ -578,6 +602,48 @@ actions.ssToggle = (el) => {
 };
 actions.ssDone = () => { closeModal(); render(); };
 
+/* ---------- character photo ---------- */
+actions.charPhoto = () => {
+  const ch = Store.active();
+  modal("Character photo", `
+    ${ch.portrait ? `<img src="${ch.portrait}" class="portrait-preview" alt="">` : '<p class="muted small">No photo yet. A small copy is stored on this device.</p>'}
+    <div class="modal-btns">
+      <button class="btn primary" data-act="photoPick">${ch.portrait ? "Change photo" : "Add photo"}</button>
+      ${ch.portrait ? `<button class="btn danger" data-act="photoRemove">Remove</button>` : ""}
+    </div>`);
+};
+actions.photoPick = () => {
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { const img = new Image(); img.onload = () => { Store.active().portrait = downscaleImage(img); commit(); if (window.LINK) LINK.schedulePush(Store.active()); closeModal(); toast("Photo added."); }; img.onerror = () => toast("Couldn't read that image."); img.src = r.result; };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+};
+actions.photoRemove = () => { const ch = Store.active(); ch.portrait = ""; commit(); if (window.LINK) LINK.schedulePush(ch); closeModal(); };
+
+/* ---------- appearance (dark/light + accent) ---------- */
+actions.appearance = () => {
+  const ch = Store.active();
+  const mode = localStorage.getItem("grimoire.mode") || "dark";
+  const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
+  const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
+  modal("Appearance", `
+    <h3 class="sec">Mode</h3>
+    <div class="mode-row">
+      <button class="btn ${mode === "dark" ? "primary" : "ghost"}" data-act="setMode" data-mode="dark">🌙 Dark</button>
+      <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">☀️ Light</button>
+    </div>
+    <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
+    <div class="swatches">${swatches}</div>
+    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use ${esc(ch.cls)} default</button>` : ""}`);
+};
+actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mode); render(); actions.appearance(); };
+actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+
 /* ---------- drag-to-reorder (only active in Arrange mode) ---------- */
 actions.toggleReorder = () => { ui.reorder = !ui.reorder; render(); };
 
@@ -668,7 +734,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=28").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=29").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
