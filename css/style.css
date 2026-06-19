@@ -265,6 +265,23 @@ input[type=checkbox] { width: auto; }
 .held { color: var(--good); font-weight: 700; }
 .lost { color: var(--bad); font-weight: 700; }
 
+/* multiclass */
+.cast-multi { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.cast-cls { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.cc-cls { font-weight: 700; }
+.cc-cls em { color: var(--muted); font-style: normal; font-size: .7rem; margin-left: 4px; }
+.cc-stats { font-size: .85rem; color: var(--muted); }
+.cc-stats b { color: var(--gold); }
+.cls-list { display: flex; flex-direction: column; gap: 8px; }
+.cls-row { display: flex; align-items: center; gap: 10px; }
+.cls-name { flex: 1; }
+.cls-name em { color: var(--accent-2); font-style: normal; font-size: .7rem; margin-left: 6px; }
+.cls-lvl { width: 64px; text-align: center; }
+.del-spacer { width: 24px; }
+.cls-add { display: flex; gap: 8px; }
+.cls-add select { flex: 1; }
+.cls-add input { width: 64px; }
+
 /* linking */
 .or { text-align: center; color: var(--muted); font-size: .8rem; margin: 6px 0; }
 .join-row { display: flex; gap: 8px; }

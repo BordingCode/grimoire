@@ -39,15 +39,21 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=8").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=8").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=9").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=9").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
 function spellPool(ch) { return [...(Grimoire.spells[ch.edition] || []), ...(ch.customSpells || [])]; }
 function findSpell(ch, id) { return spellPool(ch).find((s) => s.id === id); }
 function classSpells(ch) {
-  return spellPool(ch).filter((s) => s.custom || (s.classes || []).some((c) => c.toLowerCase() === ch.cls.toLowerCase()));
+  const names = Calc.classList(ch).map((c) => c.cls.toLowerCase());
+  return spellPool(ch).filter((s) => s.custom || (s.classes || []).some((c) => names.includes(c.toLowerCase())));
+}
+function classSummary(ch) {
+  const list = Calc.classList(ch);
+  if (list.length <= 1) return ch.cls;
+  return list.map((c) => `${c.cls} ${c.level}`).join(" / ");
 }
 
 /* ---------- toast / modal ---------- */
@@ -87,7 +93,7 @@ function viewHome() {
   const list = Store.characters.map((c) => `
     <button class="char-card" data-act="open" data-id="${c.id}">
       <div class="cc-main"><span class="cc-name">${esc(c.name)}</span>
-        <span class="cc-sub">${esc(c.cls)} · level ${c.level} · ${c.edition}</span></div>
+        <span class="cc-sub">${esc(classSummary(c))} · level ${Calc.totalLevel(c)} · ${c.edition}</span></div>
       <span class="cc-go">›</span>
     </button>`).join("");
   return `
@@ -137,7 +143,7 @@ function viewSheet(ch) {
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(ch.cls)} · lvl ${ch.level} · ${ch.edition}</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
     <div class="screen tabbed">${body}</div>
@@ -226,8 +232,8 @@ function tabCombat(ch) {
       <span class="ds">✗ ${[0,1,2].map((i)=>`<button class="pip ${c.death.fail>i?"on bad":""}" data-act="death" data-t="fail" data-i="${i}"></button>`).join("")}</span>
     </div>
     <div class="hitdice">
-      <span>Hit dice <b>${Math.max(0, ch.level - c.hitDiceUsed)}/${ch.level}</b> d${(RULES.CLASSES[ch.cls]||{}).hitDie || 8}</span>
-      <button class="btn small-b" data-act="spendHitDie" ${ch.level - c.hitDiceUsed <= 0 ? "disabled" : ""}>Spend (heal)</button>
+      <span>Hit dice <b>${Math.max(0, Calc.totalLevel(ch) - c.hitDiceUsed)}/${Calc.totalLevel(ch)}</b> · ${Object.entries(Calc.hitDicePool(ch)).sort((a, b) => b[0] - a[0]).map(([d, n]) => n + "d" + d).join(" + ")}</span>
+      <button class="btn small-b" data-act="spendHitDie" ${Calc.totalLevel(ch) - c.hitDiceUsed <= 0 ? "disabled" : ""}>Spend (heal)</button>
     </div>
     <div class="rest-row">
       <button class="btn" data-act="shortRest">Short rest</button>
@@ -247,7 +253,6 @@ function tabSpells(ch) {
       <p class="muted">You can still hand-add spells (racial, feats, items).</p>
       <button class="btn" data-act="addCustom">+ Add a spell</button></div>` + spellListSection(ch);
   }
-  const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch);
   const slots = Calc.spellSlots(ch), pact = Calc.pactMagic(ch);
   let slotHtml = "";
   for (let i = 1; i <= 9; i++) {
@@ -259,13 +264,24 @@ function tabSpells(ch) {
     const pips = Array.from({ length: pact.max }, (_, k) => `<button class="slot pact ${k < pact.used ? "used" : ""}" data-act="pactSlot" data-k="${k}"></button>`).join("");
     slotHtml += `<div class="slot-row"><span class="slvl">Pact L${pact.level}</span><span class="pips">${pips}</span><small class="muted">short rest</small></div>`;
   }
-  const prep = Calc.preparedCount(ch);
-  return `
-    <div class="cast-head">
+  const casters = Calc.castingClasses(ch);
+  let headHtml;
+  if (casters.length <= 1) {
+    const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch), prep = Calc.preparedCount(ch);
+    headHtml = `<div class="cast-head">
       <div class="big-stat"><b>${dc ?? "—"}</b><span>Save DC</span></div>
       <div class="big-stat"><b>${atk != null ? sign(atk) : "—"}</b><span>Spell atk</span></div>
       ${prep != null ? `<div class="big-stat" data-act="override" data-key="preparedCount" data-label="Prepared count" data-auto="${prep}"><b>${ch.spells.prepared.length}/${prep}</b><span>Prepared</span></div>` : ""}
-    </div>
+    </div>`;
+  } else {
+    headHtml = `<div class="cast-multi">${casters.map((cc) => `
+      <div class="cast-cls">
+        <span class="cc-cls">${esc(cc.cls)} <em>${cc.ability.toUpperCase()}</em></span>
+        <span class="cc-stats">DC <b>${cc.dc}</b> · atk <b>${sign(cc.attack)}</b>${cc.prepares ? ` · prep ${cc.prepared}` : ""}</span>
+      </div>`).join("")}</div>`;
+  }
+  return `
+    ${headHtml}
     <div class="slots">${slotHtml || '<p class="muted">No spell slots at this level.</p>'}</div>
     ${spellListSection(ch)}`;
 }
@@ -391,7 +407,14 @@ const actions = {
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
   shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
-  spendHitDie() { const ch = Store.active(); const c = ch.combat; if (ch.level - c.hitDiceUsed <= 0) { toast("No hit dice left."); return; } const die = (RULES.CLASSES[ch.cls] || {}).hitDie || 8; const con = Calc.abilityMod(ch, "con"); const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con); c.hitDiceUsed++; c.hpCur = Math.min(c.hpMax, c.hpCur + heal); commit(); toast(`Hit die: d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`); },
+  spendHitDie() {
+    const ch = Store.active(); const c = ch.combat;
+    if (Calc.totalLevel(ch) - c.hitDiceUsed <= 0) { toast("No hit dice left."); return; }
+    const dice = Object.keys(Calc.hitDicePool(ch)).map(Number).sort((a, b) => b - a);
+    if (dice.length === 1) return rollHitDie(dice[0]);
+    modal("Spend which hit die?", `<div class="modal-btns">${dice.map((d) => `<button class="btn" data-act="hitDiePick" data-die="${d}">d${d}</button>`).join("")}</div>`);
+  },
+  hitDiePick(el) { closeModal(); rollHitDie(+el.dataset.die); },
   longRest() { const ch = Store.active(); const c = ch.combat;
     c.hpCur = c.hpMax; c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
     c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(ch.level / 2)));
@@ -501,15 +524,36 @@ const actions = {
         <button class="btn ghost" data-act="linkOpen">${ch.link ? "🔗 Linked — manage sharing" : "🔗 Link with another player"}</button>
         <button class="btn ghost" data-act="exportChar">⬇ Export character (backup / share)</button>
         <button class="btn ghost" data-act="renameChar">✎ Rename</button>
-        <button class="btn ghost" data-act="setLevel">Level: ${ch.level} (change)</button>
+        <button class="btn ghost" data-act="manageClasses">⚔ Classes &amp; levels</button>
         <button class="btn danger" data-act="deleteChar">🗑 Delete character</button>
       </div>`);
   },
   exportChar() { Gx.exportCharacter(Store.active()); closeModal(); toast("Exported. Keep it as a backup or send it to share."); },
   renameChar() { const ch = Store.active(); modal("Rename", `<input id="rn" value="${esc(ch.name)}"><div class="modal-btns"><button class="btn primary" data-act="renameSave">Save</button></div>`, () => $("#rn").focus()); },
   renameSave() { const ch = Store.active(); ch.name = $("#rn").value.trim() || ch.name; closeModal(); commit(); },
-  setLevel() { const ch = Store.active(); modal("Level", `<input id="lv" type="number" min="1" max="20" value="${ch.level}"><div class="modal-btns"><button class="btn primary" data-act="levelSave">Save</button></div>`); },
-  levelSave() { const ch = Store.active(); ch.level = Math.max(1, Math.min(20, +$("#lv").value || ch.level)); closeModal(); commit(); },
+  manageClasses() {
+    const ch = Store.active();
+    const list = Calc.classList(ch);
+    const taken = list.map((c) => c.cls);
+    const rows = list.map((c, i) => `
+      <div class="cls-row">
+        <span class="cls-name">${esc(c.cls)}${i === 0 ? ' <em>primary</em>' : ""}</span>
+        <input type="number" min="1" max="20" value="${c.level}" data-act="clsLevel" data-i="${i}" class="cls-lvl">
+        ${i > 0 ? `<button class="del" data-act="clsRemove" data-i="${i}">✕</button>` : '<span class="del-spacer"></span>'}
+      </div>`).join("");
+    const avail = Object.keys(RULES.CLASSES).filter((c) => !taken.includes(c));
+    modal("Classes & levels", `
+      <p class="muted small">Total level ${Calc.totalLevel(ch)}. Proficiency bonus & spell slots combine across classes; saving-throw proficiencies come from your <b>first</b> class only. Set HP yourself on the Combat tab after changing classes.</p>
+      <div class="cls-list">${rows}</div>
+      ${avail.length ? `<h3 class="sec">Add a class</h3>
+      <div class="cls-add">
+        <select id="mc-cls">${avail.map((c) => `<option>${c}</option>`).join("")}</select>
+        <input id="mc-lvl" type="number" min="1" max="20" value="1">
+        <button class="btn" data-act="clsAdd">Add</button>
+      </div>` : ""}`);
+  },
+  clsAdd() { const ch = Store.active(); const cls = $("#mc-cls").value; const lvl = Math.max(1, Math.min(20, +$("#mc-lvl").value || 1)); if (!cls) return; if (!ch.multiclass) ch.multiclass = []; ch.multiclass.push({ cls, level: lvl }); commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); },
+  clsRemove(el) { const ch = Store.active(); ch.multiclass.splice(+el.dataset.i - 1, 1); commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); },
   deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
   importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); toast("Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
@@ -518,6 +562,12 @@ const actions = {
 };
 
 function toggleList(list, id) { const ch = Store.active(); const arr = ch.spells[list]; const i = arr.indexOf(id); if (i >= 0) arr.splice(i, 1); else arr.push(id); commit(); }
+function rollHitDie(die) {
+  const ch = Store.active(); const c = ch.combat; const con = Calc.abilityMod(ch, "con");
+  const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con);
+  c.hitDiceUsed++; c.hpCur = Math.min(c.hpMax, c.hpCur + heal); commit();
+  toast(`Hit die d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`);
+}
 function spellListRowsHtml(ch) {
   const f = ui.spellFilter; let pool = f.list === "available" ? classSpells(ch) : (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
@@ -625,13 +675,19 @@ document.addEventListener("input", (e) => {
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
 });
 document.addEventListener("change", (e) => {
+  const cl = e.target.closest('[data-act="clsLevel"]');
+  if (cl) {
+    const ch = Store.active(); const i = +cl.dataset.i; const v = Math.max(1, Math.min(20, +cl.value || 1));
+    if (i === 0) ch.level = v; else ch.multiclass[i - 1].level = v;
+    commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); return;
+  }
   const t = e.target.closest("[data-bind]"); if (!t) return;
   if (t.tagName === "TEXTAREA") return; // don't yank focus from notes
   if (["combat.hpMax", "combat.armorBaseAC", "combat.shield"].includes(t.dataset.bind)) render();
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=8").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=9").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }

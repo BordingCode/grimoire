@@ -1,7 +1,11 @@
 /* Grimoire — derived stats. Every function checks ch.overrides[key] first so a
    player can pin any value (magic items, odd builds) — research showed the #1
-   auto-calc complaint is it being WRONG with no way to fix it. */
+   auto-calc complaint is it being WRONG with no way to fix it.
+   Multiclass-aware: a character has a primary class (ch.cls/ch.level) plus an
+   optional ch.multiclass = [{cls, level}, ...]. */
 "use strict";
+
+const ZERO9 = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 function ov(ch, key, auto) {
   const o = ch.overrides ? ch.overrides[key] : undefined;
@@ -13,7 +17,14 @@ const Calc = {
 
   abilityMod(ch, ab) { return this.mod(ch.abilities[ab]); },
 
-  prof(ch) { return ov(ch, "prof", RULES.profBonus(ch.level)); },
+  // [{cls, level}] across primary + multiclass, skipping blanks.
+  classList(ch) {
+    return [{ cls: ch.cls, level: ch.level }, ...(ch.multiclass || [])].filter((c) => c.cls && c.level > 0);
+  },
+  totalLevel(ch) { return this.classList(ch).reduce((s, c) => s + c.level, 0) || ch.level || 1; },
+  isMulti(ch) { return this.classList(ch).length > 1; },
+
+  prof(ch) { return ov(ch, "prof", RULES.profBonus(this.totalLevel(ch))); },
 
   classInfo(ch) { return RULES.CLASSES[ch.cls] || { caster: "none", saves: [] }; },
 
@@ -30,13 +41,11 @@ const Calc = {
   },
 
   passivePerception(ch) { return ov(ch, "passivePerception", 10 + this.skillBonus(ch, "Perception")); },
-
   initiative(ch) { return ov(ch, "initiative", this.abilityMod(ch, "dex")); },
-
   speed(ch) { return ov(ch, "speed", ch.combat.speed || 30); },
 
   unarmoredAC(ch) {
-    // class unarmored defense: Barbarian 10+Dex+Con, Monk 10+Dex+Wis, else 10+Dex
+    // class unarmored defense from the PRIMARY class: Barbarian 10+Dex+Con, Monk 10+Dex+Wis
     const dex = this.abilityMod(ch, "dex");
     if (ch.cls === "Barbarian") return 10 + dex + this.abilityMod(ch, "con");
     if (ch.cls === "Monk") return 10 + dex + this.abilityMod(ch, "wis");
@@ -44,36 +53,52 @@ const Calc = {
   },
 
   armorClass(ch) {
-    const auto = (ch.combat.armorBaseAC == null)
-      ? this.unarmoredAC(ch)                             // unarmored (class-aware)
-      : ch.combat.armorBaseAC;                           // armor sets the base
+    const auto = (ch.combat.armorBaseAC == null) ? this.unarmoredAC(ch) : ch.combat.armorBaseAC;
     const shield = ch.combat.shield ? 2 : 0;
     const gear = (ch.inventory || []).filter((i) => i.equipped).reduce((s, i) => s + (+i.acBonus || 0), 0);
     return ov(ch, "ac", auto + shield + gear);
   },
 
-  spellAbility(ch) { return ch.spells.abilityOverride || this.classInfo(ch).ability || null; },
+  isCaster(ch) {
+    return this.classList(ch).some((c) => { const cc = (RULES.CLASSES[c.cls] || {}).caster; return cc && cc !== "none"; });
+  },
 
-  isCaster(ch) { return this.classInfo(ch).caster && this.classInfo(ch).caster !== "none"; },
+  // Primary spellcasting ability (for the single-class DC/attack chips & overrides).
+  spellAbility(ch) {
+    if (ch.spells.abilityOverride) return ch.spells.abilityOverride;
+    const c = this.classList(ch).find((x) => (RULES.CLASSES[x.cls] || {}).ability);
+    return c ? RULES.CLASSES[c.cls].ability : null;
+  },
 
   spellSaveDC(ch) {
     const ab = this.spellAbility(ch);
     if (!ab) return null;
     return ov(ch, "spellDC", 8 + this.prof(ch) + this.abilityMod(ch, ab));
   },
-
   spellAttack(ch) {
     const ab = this.spellAbility(ch);
     if (!ab) return null;
     return ov(ch, "spellAtk", this.prof(ch) + this.abilityMod(ch, ab));
   },
 
-  // Standard (Vancian) slots: {1:{max,used}, ...}. Empty for warlocks (they use pact).
+  // Combined multiclass spellcaster level (drives shared spell slots).
+  // full = +level; Paladin/Ranger = floor(level/2) when multiclassed, ceil when single;
+  // Artificer = ceil(level/2); Warlock (pact) is tracked separately.
+  casterLevel(ch) {
+    const list = this.classList(ch);
+    const multi = list.length > 1;
+    let cl = 0;
+    for (const c of list) {
+      const info = RULES.CLASSES[c.cls] || {};
+      if (info.caster === "full") cl += c.level;
+      else if (info.caster === "half") cl += (c.cls === "Artificer") ? Math.ceil(c.level / 2) : (multi ? Math.floor(c.level / 2) : Math.ceil(c.level / 2));
+    }
+    return cl;
+  },
+
   spellSlots(ch) {
-    const info = this.classInfo(ch);
-    let table = [0,0,0,0,0,0,0,0,0];
-    if (info.caster === "full") table = RULES.FULL_SLOTS[ch.level] || table;
-    else if (info.caster === "half") table = RULES.halfSlots(ch.level);
+    const cl = Math.min(20, this.casterLevel(ch));
+    const table = cl >= 1 ? (RULES.FULL_SLOTS[cl] || ZERO9) : ZERO9;
     const out = {};
     for (let i = 1; i <= 9; i++) {
       const auto = table[i - 1] || 0;
@@ -84,18 +109,45 @@ const Calc = {
   },
 
   pactMagic(ch) {
-    if (this.classInfo(ch).caster !== "pact") return null;
-    const p = RULES.PACT[ch.level] || { n: 0, l: 0 };
+    const w = this.classList(ch).find((c) => (RULES.CLASSES[c.cls] || {}).caster === "pact");
+    if (!w) return null;
+    const p = RULES.PACT[w.level] || { n: 0, l: 0 };
     return { max: p.n, level: p.l, used: Math.min(ch.spells.pact.used || 0, p.n) };
   },
 
-  // Suggested number of prepared spells (editable). null if class doesn't "prepare".
+  // Per spellcasting class: ability, DC, attack, prepared allowance. Used by the
+  // Spells tab (one row for single-class, several when multiclassed).
+  castingClasses(ch) {
+    const prof = this.prof(ch);
+    return this.classList(ch).map((c) => {
+      const info = RULES.CLASSES[c.cls] || {};
+      if (!info.ability) return null;
+      const abMod = this.abilityMod(ch, info.ability);
+      return {
+        cls: c.cls, level: c.level, ability: info.ability, caster: info.caster,
+        dc: 8 + prof + abMod,
+        attack: prof + abMod,
+        prepares: !!info.prepares,
+        prepared: info.prepares ? Math.max(1, abMod + Math.floor(c.level * (info.prepFactor || 1))) : null,
+      };
+    }).filter(Boolean);
+  },
+
   preparedCount(ch) {
-    const info = this.classInfo(ch);
+    const info = RULES.CLASSES[ch.cls] || {};
     if (!info.prepares) return null;
     const abMod = this.abilityMod(ch, info.ability);
-    const base = Math.max(1, abMod + Math.floor(ch.level * (info.prepFactor || 1)));
-    return ov(ch, "preparedCount", base);
+    return ov(ch, "preparedCount", Math.max(1, abMod + Math.floor(ch.level * (info.prepFactor || 1))));
+  },
+
+  // Hit dice grouped by die size, e.g. {10: 5, 6: 1} for Fighter5/Wizard1.
+  hitDicePool(ch) {
+    const pool = {};
+    for (const c of this.classList(ch)) {
+      const die = (RULES.CLASSES[c.cls] || {}).hitDie || 8;
+      pool[die] = (pool[die] || 0) + c.level;
+    }
+    return pool;
   },
 };
 
