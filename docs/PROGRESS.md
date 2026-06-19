@@ -58,9 +58,16 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Verified end-to-end on the LIVE site + worker: join pulls partner char, HP edits sync, shape-shift shares body not mind.
 - Current cache: **v8**.
 
+## Multiclassing — DONE & LIVE ✅ (cache v9)
+- Model: primary `cls`/`level` + `ch.multiclass = [{cls,level}]`. Total level → proficiency.
+- `Calc.casterLevel` combines for shared slots: full=+lvl, Paladin/Ranger=floor(lvl/2) when multiclassed / ceil when single (fixed a single half-caster rounding bug), Artificer=ceil, Warlock pact separate. `Calc.castingClasses` gives per-class DC/atk/prepared.
+- UI: char menu → "Classes & levels" manager; Spells tab shows per-class casting rows + combined slots; spell library merges all classes; hit-dice breakdown (5d10+1d6) with die picker. Linking syncs `multiclass` (identity group).
+- Verified live incl. Paladin6/Warlock3 (standard 4/2 + pact 2@L2), Wiz5/Cle1=4/3/3, single Pal5=4/2.
+
 ## NOT yet done / next steps
-- [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet.
-- [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual). Add a "Pull now" reminder in the sheet header when linked?
+- [ ] Phase 5 polish: subclass auto-spells, leveling helper, printable sheet.
+- [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
+- [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual).
 
 ## Known limitations / decisions to remember
 - Spell damage dice aren't in SRD data cleanly → cast modal has a damage field that REMEMBERS what you type per spell (localStorage `grimoire.dmg.v1`). Not auto-filled first time. (Could enhance build_spells to capture casting_options damage later.)
