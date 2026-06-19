@@ -79,6 +79,7 @@ function newCharacter({ name, edition, cls, level }) {
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote
     proficiencies: { languages: "", armor: "", weapons: "", tools: "" },  // freeform proficiency/language notes
+    sessions: [],                  // session-book entries: {id,date,title,text,media:[{id,type,caption}]} — media blobs live in IndexedDB (device-only)
     notes: "",
     createdAt: nowStamp(),
     updatedAt: nowStamp(),

@@ -459,9 +459,16 @@ function tabGear(ch) {
   return `
     <div class="armor-row">
       <label>Armor base AC <input type="number" placeholder="(unarmored)" data-bind="combat.armorBaseAC" value="${ch.combat.armorBaseAC ?? ""}"></label>
+      <label>Add Dex?
+        <select data-bind="combat.armorDexMode">
+          <option value="none" ${(ch.combat.armorDexMode || "none") === "none" ? "selected" : ""}>None (heavy / fixed)</option>
+          <option value="full" ${ch.combat.armorDexMode === "full" ? "selected" : ""}>+ Dex (light / natural)</option>
+          <option value="med" ${ch.combat.armorDexMode === "med" ? "selected" : ""}>+ Dex, max 2 (medium)</option>
+          <option value="con" ${ch.combat.armorDexMode === "con" ? "selected" : ""}>+ Con (e.g. Loxodon)</option>
+        </select></label>
       <label class="chk"><input type="checkbox" data-bind="combat.shield" ${ch.combat.shield ? "checked" : ""}> Shield (+2)</label>
     </div>
-    <p class="muted small">Tick an item's box to <b>equip</b> it — its bonuses &amp; advantage then apply automatically (AC now ${Calc.armorClass(ch)}).</p>
+    <p class="muted small">Leave the base empty for unarmored (10 + Dex). For <b>natural armor</b>, type the base (e.g. 13 for Lizardfolk) and pick “+ Dex”. Tick an item's box to <b>equip</b> it — its bonuses apply automatically (AC now ${Calc.armorClass(ch)}).</p>
     <h3 class="sec">Coins</h3>
     <div class="coins">${coin("pp", "PP")}${coin("gp", "GP")}${coin("ep", "EP")}${coin("sp", "SP")}${coin("cp", "CP")}</div>
     <h3 class="sec">Inventory <span class="hdr-btns"><button class="mini" data-act="partyOpen">transfer</button><button class="mini" data-act="addItem">+ add</button></span></h3>

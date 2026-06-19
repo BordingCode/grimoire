@@ -81,7 +81,18 @@ const Calc = {
   },
 
   armorClass(ch) {
-    const auto = (ch.combat.armorBaseAC == null) ? this.unarmoredAC(ch) : ch.combat.armorBaseAC;
+    let auto;
+    if (ch.combat.armorBaseAC == null) {
+      auto = this.unarmoredAC(ch);                       // 10 + Dex (+ class unarmored defense)
+    } else {
+      // base number + an optional Dex rule (heavy/fixed = none; light/natural = full Dex; medium = max +2)
+      auto = ch.combat.armorBaseAC;
+      const mode = ch.combat.armorDexMode || "none";
+      const dex = this.abilityMod(ch, "dex");
+      if (mode === "full") auto += dex;
+      else if (mode === "med") auto += Math.min(2, dex);
+      else if (mode === "con") auto += this.abilityMod(ch, "con");   // e.g. Loxodon 12 + Con
+    }
     const shield = ch.combat.shield ? 2 : 0;
     const gear = (ch.inventory || []).filter((i) => i.equipped).reduce((s, i) => s + (+i.acBonus || 0), 0);
     return ov(ch, "ac", auto + shield + gear + this.featBonus(ch, "ac"));

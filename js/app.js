@@ -577,14 +577,14 @@ function bonusRowsHtml(list, prefix) {
     <div class="bonus-row">
       <select>${FEAT_TARGETS.map(([v, l]) => `<option value="${v}" ${b.target === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <input type="number" inputmode="numeric" placeholder="+/–" value="${b.value ?? ""}">
-      <button class="opt-btn" data-act="${prefix}BonusRemove" data-i="${i}">✕</button>
+      <button class="opt-btn" data-act="${prefix}Remove" data-i="${i}">✕</button>
     </div>`).join("");
 }
 function advRowsHtml(list, prefix) {
   return list.map((t, i) => `
     <div class="adv-row">
       <select>${ADV_TARGETS.map(([v, l]) => `<option value="${v}" ${t === v ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <button class="opt-btn" data-act="${prefix}AdvRemove" data-i="${i}">✕</button>
+      <button class="opt-btn" data-act="${prefix}Remove" data-i="${i}">✕</button>
     </div>`).join("");
 }
 
@@ -959,7 +959,7 @@ document.addEventListener("change", (e) => {
   if (sub) { const ch = Store.active(); ch.subclass = sub.value; commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); return; }
   const t = e.target.closest("[data-bind]"); if (!t) return;
   if (t.tagName === "TEXTAREA") return; // don't yank focus from notes
-  if (["combat.hpMax", "combat.armorBaseAC", "combat.shield"].includes(t.dataset.bind)) render();
+  if (["combat.hpMax", "combat.armorBaseAC", "combat.armorDexMode", "combat.shield"].includes(t.dataset.bind)) render();
 });
 
 /* service worker + "new version available" prompt */
