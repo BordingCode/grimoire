@@ -144,8 +144,23 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Pure Paladin 5 = caster level 3 (ceil 5/2) → 4×L1 + 2×L2 (Paladin class table).
 - Multiclass Paladin 5 / Barb 2 / Fighter 2 = caster level **2** (floor 5/2; Barb & Fighter add 0) → 3×L1 only, per the PHB Multiclass Spellcaster table. Multiclassing a half-caster genuinely reduces slots — famous RAW quirk. The app is correct; calc.js casterLevel uses ceil single-class / floor multiclass for half-casters.
 
+## v35: Level-up helper — DONE & LIVE ✅
+- Char ⋯ menu → "Level up": pick which class gains a level (multiclass-aware), choose HP = average (floor(die/2)+1) or rolled, +CON (min 1). Applies level + HP, then a "what changed" summary modal: HP gained & new max, proficiency-bonus increases, new spell slots (diff before/after), pact-magic changes, ASI/feat reminder at the right class levels (Fighter 4/6/8/12/14/16/19, Rogue +10, else 4/8/12/16/19), "add new class features / review spellbook" nudges. `actions.levelUp/levelApply` in app.js. Browser-verified (Wizard 4→5: +6 HP→32, prof +3, +2 L3 slots).
+
+## v36: D&D Beyond look-up + paste-and-parse importer — DONE & LIVE ✅
+- LEGAL stance held: app can't auto-fetch/bundle copyrighted spell text. So: (a) "Look it up on D&D Beyond ↗" link on every spell detail = `ddbSearchUrl(name)` (search link, no scraping); (b) **paste-and-parse**: player copies spell text from a source they own, pastes once, `parseSpellsText()` parses name/level/school/casting/range(+/area)/components(+material)/duration/concentration/"at higher levels" into local custom spells. Handles PHB, D&D Beyond ("Source:" line, Range/Area), and 2024 "Level N" layouts (regex is case-insensitive). Entry points: "paste" mini-button in Spellbook header + a link in the hand-add form. Spells go to customSpells + known. Browser-verified (Fireball + Mage Hand + Haste).
+- Bundled `data/spell-index.json` = 461 official spell names/levels/schools/classes/source (PHB2014/XGE/EE/SCAG), from community index (asimone/5e-Spell-Data), UA playtest filtered out. NAMES/level/class only — no rules text. Class lists ~2018-era ("good not gospel"; no Tasha's/2024/Artificer).
+
+## v37: "Find more" look-up tab + fixed dead search/level filters — DONE & LIVE ✅
+- New Spellbook tab "Find more": `indexStubs(ch)` = index spells castable by the char's classes and NOT already in their book (SRD deduped by name), shown greyed (name + source badge + "L# · school · not included — tap to add"). Tap → `openStub()` detail = level/school/source + disclaimer + D&D Beyond link + "Paste the text to add it" (opens paste modal). Stub ids = `idxId(name)` ("idx-<slug>"). ~108 non-bundled spells for a Wizard.
+- **BUG FIXED (pre-existing, app-wide):** spell search box (`data-act=spellSearch`, input event) and level dropdown (`spellLevel`, change event) did nothing — the global input/change listeners only handled `data-bind`, never dispatched `data-act`. Added generic `data-act` dispatch to both (clsLevel/subSelect have no action fn so they fall through to their explicit handlers). Also revives the subclass-spell-picker search (ssSearch).
+- Refactored the spell-list pool logic into one shared `spellPoolForList(ch)` used by both the full render (`spellListSection`) and live-search re-render (`spellListRowsHtml`).
+- Browser-verified: level filter + search work on Class list AND Find more; focus preserved while typing; full-detail vs stub-detail modals both correct; 0 console errors.
+
 ## NOT yet done / next steps
-- [ ] Phase 5 polish: leveling helper, printable sheet.
+- [ ] Phase 5 polish: printable sheet (leveling helper now DONE).
+- [ ] Optional: extend the spell index with Tasha's / PHB-2024 names (need a source with reliable class lists — current index is ~2018-era); add Artificer.
+- [ ] Optional: a "show all classes" toggle on Find more (currently filtered to the character's classes).
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
