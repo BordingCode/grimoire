@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=15").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=15").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=16").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=16").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -63,6 +63,18 @@ function classSummary(ch) {
   if (list.length <= 1) return ch.cls;
   return list.map((c) => `${c.cls} ${c.level}`).join(" / ");
 }
+// spells granted by the chosen subclass at the character's level (SRD subclasses only)
+function subclassSpells(ch) {
+  const sub = ch.subclass; if (!sub) return [];
+  let table = null, lvl = 0;
+  for (const c of Calc.classList(ch)) { const m = RULES.SUBCLASSES[c.cls]; if (m && m[sub]) { table = m[sub]; lvl = c.level; break; } }
+  if (!table) return [];
+  const names = [];
+  Object.keys(table).forEach((t) => { if (+t <= lvl) names.push(...table[t]); });
+  const pool = spellPool(ch);
+  return names.map((n) => pool.find((s) => s.name.toLowerCase() === n.toLowerCase())).filter(Boolean);
+}
+function subclassSpellIdSet(ch) { return new Set(subclassSpells(ch).map((s) => s.id)); }
 
 /* ---------- toast / modal ---------- */
 function toast(html, ms = 2600) {
@@ -345,10 +357,15 @@ function tabSpells(ch) {
 
 function spellListSection(ch) {
   const f = ui.spellFilter;
+  const subSpells = subclassSpells(ch);
+  Grimoire._subSet = new Set(subSpells.map((s) => s.id));
   const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
+  if (subSpells.length) lists.splice(2, 0, ["subclass", "Subclass"]);
   let pool;
   if (f.list === "available") pool = classSpells(ch);
   else if (f.list === "all") pool = spellPool(ch);
+  else if (f.list === "subclass") pool = subSpells;
+  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subSpells].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
   else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
@@ -368,19 +385,20 @@ function spellListSection(ch) {
 }
 
 function spellRow(ch, s) {
+  const isSub = Grimoire._subSet && Grimoire._subSet.has(s.id);
   const isFav = ch.spells.favorites.includes(s.id);
-  const isPrep = ch.spells.prepared.includes(s.id);
+  const isPrep = ch.spells.prepared.includes(s.id) || isSub;
   const isKnown = ch.spells.known.includes(s.id);
   const lvl = s.level === 0 ? "Cantrip" : "L" + s.level;
   const tags = [s.concentration ? "C" : "", s.ritual ? "R" : ""].filter(Boolean).join(" ");
   return `<div class="spell">
     <button class="spell-main" data-act="spellDetail" data-id="${esc(s.id)}">
-      <span class="sp-name">${esc(s.name)} ${s.custom ? '<em class="hb">homebrew</em>' : ""}</span>
+      <span class="sp-name">${esc(s.name)} ${s.custom ? '<em class="hb">homebrew</em>' : ""}${isSub ? '<em class="sub-badge">subclass</em>' : ""}</span>
       <span class="sp-meta">${lvl} · ${esc(s.school)}${tags ? " · " + tags : ""}</span>
     </button>
     <div class="spell-acts">
       <button class="ic ${isFav ? "on" : ""}" data-act="fav" data-id="${esc(s.id)}" title="favorite">★</button>
-      <button class="ic ${isPrep ? "on" : ""}" data-act="prep" data-id="${esc(s.id)}" title="prepared">P</button>
+      <button class="ic ${isPrep ? "on" : ""}" data-act="prep" data-id="${esc(s.id)}" title="prepared${isSub ? " (always, from subclass)" : ""}">P</button>
       <button class="ic ${isKnown ? "on" : ""}" data-act="know" data-id="${esc(s.id)}" title="known">K</button>
     </div>
   </div>`;
@@ -662,10 +680,19 @@ const actions = {
         ${i > 0 ? `<button class="del" data-act="clsRemove" data-i="${i}">✕</button>` : '<span class="del-spacer"></span>'}
       </div>`).join("");
     const avail = Object.keys(RULES.CLASSES).filter((c) => !taken.includes(c));
+    const subOpts = [];
+    list.forEach((c) => { const m = RULES.SUBCLASSES[c.cls]; if (m) Object.keys(m).forEach((sc) => subOpts.push(sc)); });
     modal("Classes & levels", `
       <p class="muted small">Total level ${Calc.totalLevel(ch)}. Proficiency bonus & spell slots combine across classes; saving-throw proficiencies come from your <b>first</b> class only. Set HP yourself on the Combat tab after changing classes.</p>
       <div class="cls-list">${rows}</div>
-      ${avail.length ? `<h3 class="sec">Add a class</h3>
+      ${subOpts.length ? `<h3 class="sec">Subclass <small>auto-adds its spells</small></h3>
+      <select id="mc-sub" data-act="subSelect">
+        <option value="">— none —</option>
+        ${subOpts.map((sc) => `<option ${ch.subclass === sc ? "selected" : ""}>${sc}</option>`).join("")}
+      </select>
+      <p class="muted small">Only SRD subclasses that grant spells are listed. Others: add their spells from the spellbook's “All” tab.</p>` : `<p class="muted small">No SRD auto-spell subclass for your class — add any subclass spells from the spellbook's “All” tab.</p>`}
+      ${avail.length ? `<h3 class="sec">Add a class</h3>` : ""}
+      ${avail.length ? `
       <div class="cls-add">
         <select id="mc-cls">${avail.map((c) => `<option>${c}</option>`).join("")}</select>
         <input id="mc-lvl" type="number" min="1" max="20" value="1">
@@ -783,7 +810,13 @@ function weaponForm(w, idx) {
     <div class="modal-btns"><button class="btn primary" data-act="weaponSave">${w ? "Save" : "Add"}</button></div>`, () => $("#wp-name").focus());
 }
 function spellListRowsHtml(ch) {
-  const f = ui.spellFilter; let pool = f.list === "available" ? classSpells(ch) : f.list === "all" ? spellPool(ch) : (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
+  const f = ui.spellFilter;
+  let pool;
+  if (f.list === "available") pool = classSpells(ch);
+  else if (f.list === "all") pool = spellPool(ch);
+  else if (f.list === "subclass") pool = subclassSpells(ch);
+  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subclassSpells(ch)].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
+  else pool = (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
   pool.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
@@ -895,13 +928,15 @@ document.addEventListener("change", (e) => {
     if (i === 0) ch.level = v; else ch.multiclass[i - 1].level = v;
     commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); return;
   }
+  const sub = e.target.closest('[data-act="subSelect"]');
+  if (sub) { const ch = Store.active(); ch.subclass = sub.value; commit(); if (window.LINK) LINK.schedulePush(ch); actions.manageClasses(); return; }
   const t = e.target.closest("[data-bind]"); if (!t) return;
   if (t.tagName === "TEXTAREA") return; // don't yank focus from notes
   if (["combat.hpMax", "combat.armorBaseAC", "combat.shield"].includes(t.dataset.bind)) render();
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=15").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=16").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

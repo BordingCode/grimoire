@@ -81,5 +81,30 @@ const CONDITION_INFO = {
   "Unconscious": "Incapacitated, unaware, drop what you hold and fall prone. Auto-fail STR & DEX saves. Attacks have advantage; hits from within 5 ft are crits.",
 };
 
+// Subclass always-prepared / expanded spells (SRD only — these are the SRD subclasses
+// that grant spells). Keyed by class -> subclass name -> { classLevel: [spell names] }.
+// Spells become available once the class reaches that level. Names resolve per edition.
+const SUBCLASSES = {
+  Cleric: {
+    "Life Domain": { 1: ["Bless", "Cure Wounds"], 3: ["Lesser Restoration", "Spiritual Weapon"], 5: ["Beacon of Hope", "Revivify"], 7: ["Death Ward", "Guardian of Faith"], 9: ["Mass Cure Wounds", "Raise Dead"] },
+  },
+  Paladin: {
+    "Oath of Devotion": { 3: ["Protection from Evil and Good", "Sanctuary"], 5: ["Lesser Restoration", "Zone of Truth"], 9: ["Beacon of Hope", "Dispel Magic"], 13: ["Freedom of Movement", "Guardian of Faith"], 17: ["Commune", "Flame Strike"] },
+  },
+  Warlock: {
+    "The Fiend": { 1: ["Burning Hands", "Command"], 3: ["Blindness/Deafness", "Scorching Ray"], 5: ["Fireball", "Stinking Cloud"], 7: ["Fire Shield", "Wall of Fire"], 9: ["Flame Strike", "Hallow"] },
+  },
+  Druid: {
+    "Circle of the Land (Arctic)": { 3: ["Hold Person", "Spike Growth"], 5: ["Sleet Storm", "Slow"], 7: ["Freedom of Movement", "Ice Storm"], 9: ["Commune with Nature", "Cone of Cold"] },
+    "Circle of the Land (Coast)": { 3: ["Mirror Image", "Misty Step"], 5: ["Water Breathing", "Water Walk"], 7: ["Control Water", "Freedom of Movement"], 9: ["Conjure Elemental", "Scrying"] },
+    "Circle of the Land (Desert)": { 3: ["Blur", "Silence"], 5: ["Create Food and Water", "Protection from Energy"], 7: ["Blight", "Hallucinatory Terrain"], 9: ["Insect Plague", "Wall of Stone"] },
+    "Circle of the Land (Forest)": { 3: ["Barkskin", "Spider Climb"], 5: ["Call Lightning", "Plant Growth"], 7: ["Divination", "Freedom of Movement"], 9: ["Commune with Nature", "Tree Stride"] },
+    "Circle of the Land (Grassland)": { 3: ["Invisibility", "Pass without Trace"], 5: ["Daylight", "Haste"], 7: ["Divination", "Freedom of Movement"], 9: ["Dream", "Insect Plague"] },
+    "Circle of the Land (Mountain)": { 3: ["Spider Climb", "Spike Growth"], 5: ["Lightning Bolt", "Meld into Stone"], 7: ["Stone Shape", "Stoneskin"], 9: ["Passwall", "Wall of Stone"] },
+    "Circle of the Land (Swamp)": { 3: ["Acid Arrow", "Darkness"], 5: ["Water Walk", "Stinking Cloud"], 7: ["Freedom of Movement", "Locate Creature"], 9: ["Insect Plague", "Scrying"] },
+    "Circle of the Land (Underdark)": { 3: ["Spider Climb", "Web"], 5: ["Gaseous Form", "Stinking Cloud"], 7: ["Greater Invisibility", "Stone Shape"], 9: ["Cloudkill", "Insect Plague"] },
+  },
+};
+
 // expose
-window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };
+window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, profBonus, halfSlots };
