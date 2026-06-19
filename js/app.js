@@ -39,8 +39,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=6").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=6").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=8").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=8").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -68,7 +68,7 @@ function modal(title, bodyHtml, onMount) {
 function closeModal() { const m = $("#modal"); if (m) m.remove(); }
 
 /* ---------- persistence helper ---------- */
-function commit(rerender = true) { Store.touch(); if (rerender) render(); }
+function commit(rerender = true) { Store.touch(); if (window.LINK) LINK.schedulePush(Store.active()); if (rerender) render(); }
 function setPath(obj, path, val) { const k = path.split("."); let o = obj; for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = val; }
 function getPath(obj, path) { return path.split(".").reduce((o, k) => (o == null ? o : o[k]), obj); }
 
@@ -498,12 +498,12 @@ const actions = {
     const ch = Store.active();
     modal(ch.name, `
       <div class="menu-list">
+        <button class="btn ghost" data-act="linkOpen">${ch.link ? "🔗 Linked — manage sharing" : "🔗 Link with another player"}</button>
         <button class="btn ghost" data-act="exportChar">⬇ Export character (backup / share)</button>
         <button class="btn ghost" data-act="renameChar">✎ Rename</button>
         <button class="btn ghost" data-act="setLevel">Level: ${ch.level} (change)</button>
         <button class="btn danger" data-act="deleteChar">🗑 Delete character</button>
-      </div>
-      <p class="muted small">Linking with another player (cloud sync) is coming next.</p>`);
+      </div>`);
   },
   exportChar() { Gx.exportCharacter(Store.active()); closeModal(); toast("Exported. Keep it as a backup or send it to share."); },
   renameChar() { const ch = Store.active(); modal("Rename", `<input id="rn" value="${esc(ch.name)}"><div class="modal-btns"><button class="btn primary" data-act="renameSave">Save</button></div>`, () => $("#rn").focus()); },
@@ -620,7 +620,7 @@ document.addEventListener("input", (e) => {
   const ch = Store.active(); if (!ch) return;
   let v = t.type === "checkbox" ? t.checked : t.value;
   if (t.type === "number") v = (t.value === "" ? (t.dataset.bind === "combat.armorBaseAC" ? null : 0) : Number(t.value));
-  setPath(ch, t.dataset.bind, v); Store.touch();
+  setPath(ch, t.dataset.bind, v); Store.touch(); if (window.LINK) LINK.schedulePush(ch);
   // live-update small computed readouts without rebuilding inputs
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
 });
@@ -631,10 +631,11 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=6").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=8").catch(() => {}));
 (async function boot() {
   Store.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
   if (Store.active()) { ui.screen = "sheet"; }
   render();
+  if (window.LINK) LINK.afterBoot();
 })();

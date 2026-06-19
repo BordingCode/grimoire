@@ -1,0 +1,11 @@
+# Grimoire sync Worker config.
+# Deploy: cd worker && CLOUDFLARE_API_TOKEN=... npx wrangler deploy
+# (first create the KV namespace: npx wrangler kv namespace create LINKS  -> paste its id below)
+name = "grimoire-sync"
+main = "index.js"
+compatibility_date = "2024-11-01"
+
+[[kv_namespaces]]
+binding = "LINKS"
+id = "607fb02528244acb86c681de239bcaf3"
+# local `wrangler dev` simulates KV and ignores this id.

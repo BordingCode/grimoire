@@ -265,6 +265,19 @@ input[type=checkbox] { width: auto; }
 .held { color: var(--good); font-weight: 700; }
 .lost { color: var(--bad); font-weight: 700; }
 
+/* linking */
+.or { text-align: center; color: var(--muted); font-size: .8rem; margin: 6px 0; }
+.join-row { display: flex; gap: 8px; }
+.join-row input { flex: 1; text-transform: uppercase; }
+.link-code { font-size: 1.1rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
+.link-code b { color: var(--gold); letter-spacing: 1px; }
+.preset-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.grps { display: flex; flex-direction: column; gap: 8px; }
+.grp { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; cursor: pointer; color: var(--ink); font-size: .85rem; }
+.grp-dot { width: 16px; height: 16px; border-radius: 5px; border: 2px solid var(--line); flex: none; }
+.grp.on { border-color: var(--accent); }
+.grp.on .grp-dot { background: var(--accent); border-color: var(--accent); }
+
 /* toast */
 #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--accent); color: var(--ink); padding: 12px 18px; border-radius: 12px; max-width: 90%; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; font-size: .9rem; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
