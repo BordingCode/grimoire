@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=30").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=30").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=31").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=31").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -33,6 +33,8 @@ function applyTheme(ch) {
   const pair = RULES.ACCENTS[key] || RULES.ACCENTS.violet;
   root.style.setProperty("--accent", pair[0]);
   root.style.setProperty("--accent-2", pair[1]);
+  root.style.setProperty("--accent-soft", pair[0] + "2b");   // ~17% — themed glow
+  root.style.setProperty("--accent-faint", pair[0] + "14");  // ~8% — subtle tint
   // readable text colour on top of the accent (dark text for light accents like gold)
   const c = pair[0].replace("#", "");
   const lum = (0.299 * parseInt(c.slice(0, 2), 16) + 0.587 * parseInt(c.slice(2, 4), 16) + 0.114 * parseInt(c.slice(4, 6), 16)) / 255;
@@ -129,6 +131,8 @@ const actions = {
     commit();
     if (d < 0) maybeConcentration(ch, -d);
   },
+  hpDamage() { amountPrompt("Take damage", "How much damage?", (n) => applyDamage(n)); },
+  hpHeal() { amountPrompt("Heal", "How much healing?", (n) => applyHeal(n)); },
   hpEdit() { const ch = Store.active(); modal("Set current HP", `<input id="hp-in" type="number" value="${ch.combat.hpCur}"><div class="modal-btns"><button class="btn primary" data-act="hpSet">Set</button></div>`, () => $("#hp-in").focus()); },
   hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
@@ -508,6 +512,29 @@ function openSpell(ch, id) {
 actions.castAttack = (el) => { const r = d20(+el.dataset.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; };
 
 /* concentration: prompt a CON save when a concentrating caster takes damage (DC = max 10, half damage) */
+/* HP take-damage / heal with an amount prompt (temp HP absorbs damage; heal caps at max) */
+function applyDamage(n) {
+  n = Math.max(0, n | 0); if (!n) return;
+  const ch = Store.active(); const c = ch.combat;
+  const fromTemp = Math.min(c.hpTemp, n); c.hpTemp -= fromTemp;
+  c.hpCur = Math.max(0, c.hpCur - (n - fromTemp));
+  commit(); toast(`Took ${n} damage.`); maybeConcentration(ch, n);
+}
+function applyHeal(n) {
+  n = Math.max(0, n | 0); if (!n) return;
+  const ch = Store.active(); ch.combat.hpCur = Math.min(Calc.maxHP(ch), ch.combat.hpCur + n);
+  commit(); toast(`Healed ${n}.`);
+}
+function amountPrompt(title, label, cb) {
+  modal(title, `
+    <label class="fld"><span>${esc(label)}</span><input id="amt-in" type="number" inputmode="numeric" min="0" placeholder="0"></label>
+    <div class="modal-btns"><button class="btn primary" data-act="amtApply">${esc(title)}</button></div>`, () => {
+      const i = $("#amt-in"); if (i) { i.focus(); i.addEventListener("keydown", (e) => { if (e.key === "Enter") actions.amtApply(); }); }
+    });
+  actions._amtCb = cb;
+}
+actions.amtApply = () => { const n = parseInt($("#amt-in").value, 10) || 0; const cb = actions._amtCb; actions._amtCb = null; closeModal(); if (cb) cb(n); };
+
 function maybeConcentration(ch, dmg) {
   if (!dmg || !ch.spells.concentratingOn) return;
   const dc = Math.max(10, Math.floor(dmg / 2));
@@ -748,7 +775,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=30");
+      const reg = await navigator.serviceWorker.register("sw.js?v=31");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

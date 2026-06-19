@@ -161,7 +161,7 @@ function viewSheet(ch) {
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
       ${ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`}
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub"><span class="cls-glyph">${RULES.CLASS_GLYPH[ch.cls] || ""}</span>${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
@@ -264,9 +264,9 @@ function tabCombat(ch) {
       <div class="hp-row"><span>Hit points</span>
         <span class="hp-now">${c.hpCur}<small>/${Calc.maxHP(ch)}</small>${c.hpTemp ? ` <em class="temp">+${c.hpTemp}</em>` : ""}</span></div>
       <div class="hp-btns">
-        <button data-act="hp" data-d="-5">−5</button><button data-act="hp" data-d="-1">−1</button>
-        <button data-act="hp" data-d="1">+1</button><button data-act="hp" data-d="5">+5</button>
-        <button data-act="hpEdit">edit</button>
+        <button class="btn dmg-btn" data-act="hpDamage">Take damage</button>
+        <button class="btn heal-btn" data-act="hpHeal">Heal</button>
+        <button class="btn set-hp" data-act="hpEdit">Set</button>
       </div>
       <div class="hp-sub">
         <label>Temp HP <input type="number" data-bind="combat.hpTemp" value="${c.hpTemp}"></label>
@@ -431,5 +431,8 @@ function tabGear(ch) {
 }
 
 function tabNotes(ch) {
-  return `<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests, session notes…">${esc(ch.notes)}</textarea>`;
+  const photo = ch.portrait
+    ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
+    : `<button class="btn ghost notes-addphoto" data-act="charPhoto">📷 Add a character photo</button>`;
+  return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests, session notes…">${esc(ch.notes)}</textarea>`;
 }

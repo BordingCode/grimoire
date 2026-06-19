@@ -158,6 +158,11 @@ const CLASS_ACCENT = {
   Fighter: "crimson", Monk: "teal", Paladin: "gold", Ranger: "green", Rogue: "slate",
   Sorcerer: "crimson", Warlock: "violet", Wizard: "violet",
 };
+// thematic emblem per class (shown on the sheet)
+const CLASS_GLYPH = {
+  Artificer: "⚙️", Barbarian: "🪓", Bard: "🎵", Cleric: "🌟", Druid: "🌿", Fighter: "⚔️",
+  Monk: "👊", Paladin: "🛡️", Ranger: "🏹", Rogue: "🗡️", Sorcerer: "🔥", Warlock: "👁️", Wizard: "🪄",
+};
 
 // expose
-window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };
+window.RULES = { ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, CLASS_GLYPH, profBonus, halfSlots };
