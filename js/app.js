@@ -36,25 +36,32 @@ async function loadSpells() {
   enrich(a); enrich(b);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
   Grimoire.spellIndex = idx || [];   // factual name index powering the non-SRD stubs in "All spells"
+  try { Grimoire.themes = await fetch("data/themes.json?v=46").then((r) => r.json()); } catch (e) { Grimoire.themes = null; }
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
 function commit(rerender = true) { Store.touch(); if (window.LINK) LINK.schedulePush(Store.active()); if (rerender) render(); }
 
-/* apply dark/light mode (global) + accent colour (per active character / its class) */
+/* apply dark/light mode + the active character's per-class theme (tints the whole palette).
+   Off a character (home/party), inline overrides are cleared so the CSS defaults apply. */
+const THEME_VARS = ["--bg", "--bg-2", "--panel", "--panel-2", "--ink", "--muted", "--line", "--gold", "--accent", "--accent-2", "--accent-soft", "--accent-faint", "--on-accent"];
 function applyTheme(ch) {
   const root = document.documentElement;
-  root.dataset.theme = localStorage.getItem("grimoire.mode") || "dark";
-  const key = ch ? (ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet") : "violet";
-  const pair = RULES.ACCENTS[key] || RULES.ACCENTS.violet;
-  root.style.setProperty("--accent", pair[0]);
-  root.style.setProperty("--accent-2", pair[1]);
-  root.style.setProperty("--accent-soft", pair[0] + "2b");   // ~17% — themed glow
-  root.style.setProperty("--accent-faint", pair[0] + "14");  // ~8% — subtle tint
-  // readable text colour on top of the accent (dark text for light accents like gold)
-  const c = pair[0].replace("#", "");
+  const mode = localStorage.getItem("grimoire.mode") || "dark";
+  root.dataset.theme = mode;
+  const t = ch && Grimoire.themes && Grimoire.themes[ch.cls] && Grimoire.themes[ch.cls][mode];
+  if (!t) { THEME_VARS.forEach((v) => root.style.removeProperty(v)); return; }
+  const p = { ...t };
+  // the Appearance accent picker (ch.accent) still overrides just the accent pair
+  if (ch.accent && RULES.ACCENTS[ch.accent]) { p.accent = RULES.ACCENTS[ch.accent][0]; p.accent2 = RULES.ACCENTS[ch.accent][1]; }
+  const set = (k, v) => root.style.setProperty(k, v);
+  set("--bg", p.bg); set("--bg-2", p.bg2); set("--panel", p.panel); set("--panel-2", p.panel2);
+  set("--ink", p.ink); set("--muted", p.muted); set("--line", p.line); set("--gold", p.gold);
+  set("--accent", p.accent); set("--accent-2", p.accent2);
+  set("--accent-soft", p.accent + "2b"); set("--accent-faint", p.accent + "14");
+  const c = p.accent.replace("#", "");
   const lum = (0.299 * parseInt(c.slice(0, 2), 16) + 0.587 * parseInt(c.slice(2, 4), 16) + 0.114 * parseInt(c.slice(4, 6), 16)) / 255;
-  root.style.setProperty("--on-accent", lum > 0.6 ? "#1c1430" : "#ffffff");
+  set("--on-accent", lum > 0.6 ? "#1c1430" : "#ffffff");
 }
 // shrink a chosen image to a small JPEG data-URL so it doesn't bloat storage
 function downscaleImage(img, max = 320) {
@@ -1237,7 +1244,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=45");
+      const reg = await navigator.serviceWorker.register("sw.js?v=46");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

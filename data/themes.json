@@ -1,0 +1,171 @@
+{
+  "Barbarian": {
+    "concept": "blood, rust and ember — a warm near-black forge",
+    "dark": {
+      "accent": "#d83a2e", "accent2": "#f06a4a", "bg": "#1a0d0a", "bg2": "#26120d",
+      "panel": "#301712", "panel2": "#3b1c16", "ink": "#fbe7e0", "muted": "#cf9f93",
+      "line": "#522822", "gold": "#ffc46b"
+    },
+    "light": {
+      "accent": "#bf2f24", "accent2": "#d8533e", "bg": "#faf1ee", "bg2": "#f4e3de",
+      "panel": "#ffffff", "panel2": "#faece8", "ink": "#36140e", "muted": "#8a5a4e",
+      "line": "#efd6cf", "gold": "#9c6a18"
+    }
+  },
+  "Bard": {
+    "concept": "festive magenta and rose, performance lights",
+    "dark": {
+      "accent": "#e0479e", "accent2": "#f57ac0", "bg": "#1c0c18", "bg2": "#281024",
+      "panel": "#33162e", "panel2": "#3e1b38", "ink": "#fde4f3", "muted": "#d29bc1",
+      "line": "#552449", "gold": "#ffce6b"
+    },
+    "light": {
+      "accent": "#c52f86", "accent2": "#e056a4", "bg": "#fbeff6", "bg2": "#f5e1ee",
+      "panel": "#ffffff", "panel2": "#fbe9f3", "ink": "#361030", "muted": "#8a5778",
+      "line": "#f0d2e6", "gold": "#a06b1c"
+    }
+  },
+  "Cleric": {
+    "concept": "radiant gold and warm candlelit white",
+    "dark": {
+      "accent": "#f0b53a", "accent2": "#ffd277", "bg": "#16120a", "bg2": "#201a0d",
+      "panel": "#2a2212", "panel2": "#352b17", "ink": "#fbf2dd", "muted": "#cdbb94",
+      "line": "#4a3d22", "gold": "#ffd86b"
+    },
+    "light": {
+      "accent": "#b07d12", "accent2": "#d09c2c", "bg": "#faf6ec", "bg2": "#f3ecda",
+      "panel": "#ffffff", "panel2": "#faf4e6", "ink": "#322814", "muted": "#827253",
+      "line": "#ecdfc4", "gold": "#9a6f10"
+    }
+  },
+  "Druid": {
+    "concept": "mossy green and damp bark, deep forest floor",
+    "dark": {
+      "accent": "#4fae5a", "accent2": "#79cf80", "bg": "#0c130c", "bg2": "#121d12",
+      "panel": "#172617", "panel2": "#1d2f1d", "ink": "#e6f2e3", "muted": "#9bbd9a",
+      "line": "#2c422c", "gold": "#e2c264"
+    },
+    "light": {
+      "accent": "#3a8a44", "accent2": "#57a861", "bg": "#eef5ec", "bg2": "#e2efe0",
+      "panel": "#ffffff", "panel2": "#edf5eb", "ink": "#16261a", "muted": "#5b7359",
+      "line": "#d4e6d1", "gold": "#7e7314"
+    }
+  },
+  "Fighter": {
+    "concept": "cold gunmetal and steel blue-grey, tempered iron",
+    "dark": {
+      "accent": "#5a8bd6", "accent2": "#85aee8", "bg": "#0d1014", "bg2": "#141922",
+      "panel": "#1b212c", "panel2": "#222936", "ink": "#e6ebf3", "muted": "#9aa6b8",
+      "line": "#323b4a", "gold": "#d9bd6a"
+    },
+    "light": {
+      "accent": "#3a6bb0", "accent2": "#5a87c8", "bg": "#eef1f5", "bg2": "#e1e7ee",
+      "panel": "#ffffff", "panel2": "#edf1f6", "ink": "#1a212b", "muted": "#5d6878",
+      "line": "#d3dbe5", "gold": "#7d6c1a"
+    }
+  },
+  "Monk": {
+    "concept": "serene jade and teal, still water",
+    "dark": {
+      "accent": "#28b6a0", "accent2": "#5fd6c2", "bg": "#08130f", "bg2": "#0e1d18",
+      "panel": "#122722", "panel2": "#16302a", "ink": "#def3ee", "muted": "#8fc0b6",
+      "line": "#234339", "gold": "#e2c873"
+    },
+    "light": {
+      "accent": "#0f8e7c", "accent2": "#2bab98", "bg": "#ecf6f3", "bg2": "#def0eb",
+      "panel": "#ffffff", "panel2": "#ebf6f2", "ink": "#0e2620", "muted": "#52766e",
+      "line": "#cfe7e0", "gold": "#7a7016"
+    }
+  },
+  "Paladin": {
+    "concept": "holy gold over a vault of sacred azure",
+    "dark": {
+      "accent": "#4f8fe6", "accent2": "#ffd877", "bg": "#0a0f1a", "bg2": "#101829",
+      "panel": "#172139", "panel2": "#1d2945", "ink": "#eaf0fb", "muted": "#9fb0d0",
+      "line": "#2e3e63", "gold": "#ffd86b"
+    },
+    "light": {
+      "accent": "#2f63c0", "accent2": "#c79622", "bg": "#eef2fb", "bg2": "#e1e9f6",
+      "panel": "#ffffff", "panel2": "#edf2fb", "ink": "#16213a", "muted": "#5a6788",
+      "line": "#d3deef", "gold": "#9a7212"
+    }
+  },
+  "Ranger": {
+    "concept": "deep forest green and worn leather brown",
+    "dark": {
+      "accent": "#6f9e3e", "accent2": "#9bc566", "bg": "#11120b", "bg2": "#1b1c10",
+      "panel": "#242616", "panel2": "#2d2f1b", "ink": "#eef0df", "muted": "#b3b58f",
+      "line": "#42422a", "gold": "#d6a857"
+    },
+    "light": {
+      "accent": "#557d24", "accent2": "#739c3c", "bg": "#f3f3e8", "bg2": "#e9e9d8",
+      "panel": "#ffffff", "panel2": "#f3f3e6", "ink": "#22230f", "muted": "#6a6a48",
+      "line": "#e0e0c9", "gold": "#856914"
+    }
+  },
+  "Rogue": {
+    "concept": "shadow grey and violet-black with a cold steel glint",
+    "dark": {
+      "accent": "#7d8aa8", "accent2": "#aab4cd", "bg": "#0d0c12", "bg2": "#15131d",
+      "panel": "#1c1a27", "panel2": "#232030", "ink": "#e8e7ef", "muted": "#9a96ab",
+      "line": "#34303f", "gold": "#c9b06a"
+    },
+    "light": {
+      "accent": "#4a536b", "accent2": "#6b7490", "bg": "#f0eff3", "bg2": "#e5e3ec",
+      "panel": "#ffffff", "panel2": "#eeecf3", "ink": "#1b1924", "muted": "#5e5a6e",
+      "line": "#dad7e2", "gold": "#7a6418"
+    }
+  },
+  "Sorcerer": {
+    "concept": "fiery orange and crimson, raw arcane heat",
+    "dark": {
+      "accent": "#f26a1f", "accent2": "#ff945a", "bg": "#180e08", "bg2": "#23150b",
+      "panel": "#2e1c10", "panel2": "#392315", "ink": "#fceadc", "muted": "#d0a98c",
+      "line": "#503020", "gold": "#ffcf63"
+    },
+    "light": {
+      "accent": "#d2540f", "accent2": "#e8742c", "bg": "#fbf2ea", "bg2": "#f5e5d6",
+      "panel": "#ffffff", "panel2": "#fbece0", "ink": "#341a0c", "muted": "#8a6044",
+      "line": "#efd9c6", "gold": "#9e6c14"
+    }
+  },
+  "Warlock": {
+    "concept": "eldritch violet with a sickly green pact-light",
+    "dark": {
+      "accent": "#9a4fe0", "accent2": "#7fe06a", "bg": "#100a1a", "bg2": "#191029",
+      "panel": "#221739", "panel2": "#2a1d45", "ink": "#ece3fb", "muted": "#b09fce",
+      "line": "#3c2c5e", "gold": "#cfd96a"
+    },
+    "light": {
+      "accent": "#7a30c0", "accent2": "#4f9a2f", "bg": "#f3eefb", "bg2": "#e8e0f6",
+      "panel": "#ffffff", "panel2": "#f1eafb", "ink": "#1f1636", "muted": "#665a85",
+      "line": "#ddd2ef", "gold": "#6f7416"
+    }
+  },
+  "Wizard": {
+    "concept": "deep arcane indigo, a midnight spell-vault",
+    "dark": {
+      "accent": "#5b6df0", "accent2": "#8597ff", "bg": "#0c0e1d", "bg2": "#13162b",
+      "panel": "#1a1e3b", "panel2": "#212547", "ink": "#e6e9fb", "muted": "#9aa1cf",
+      "line": "#2f355f", "gold": "#ffd86b"
+    },
+    "light": {
+      "accent": "#3a47c8", "accent2": "#5a68e0", "bg": "#eeeffb", "bg2": "#e2e4f6",
+      "panel": "#ffffff", "panel2": "#edeefb", "ink": "#181a36", "muted": "#5c6088",
+      "line": "#d3d6ef", "gold": "#8a6f14"
+    }
+  },
+  "Artificer": {
+    "concept": "polished brass and copper with verdigris teal",
+    "dark": {
+      "accent": "#c98a3a", "accent2": "#3fb6a6", "bg": "#150f08", "bg2": "#1f180d",
+      "panel": "#2a2113", "panel2": "#342919", "ink": "#f5ecdb", "muted": "#c3ad8d",
+      "line": "#4a3c25", "gold": "#ffd277"
+    },
+    "light": {
+      "accent": "#9a6a1c", "accent2": "#178a7c", "bg": "#f8f3e9", "bg2": "#f0e7d5",
+      "panel": "#ffffff", "panel2": "#f8f1e2", "ink": "#2e2412", "muted": "#7d6c4d",
+      "line": "#e9dcc3", "gold": "#876c12"
+    }
+  }
+}
