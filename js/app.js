@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=17").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=17").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=18").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=18").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -519,7 +519,7 @@ const actions = {
   hitDiePick(el) { closeModal(); rollHitDie(+el.dataset.die); },
   longRest() { const ch = Store.active(); const c = ch.combat;
     c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
-    c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(ch.level / 2)));
+    c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(Calc.totalLevel(ch) / 2)));
     for (let i = 1; i <= 9; i++) ch.spells.slots[i].used = 0;
     ch.spells.pact.used = 0;
     (ch.resources || []).forEach((r) => (r.used = 0));
@@ -936,7 +936,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=17").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=18").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
