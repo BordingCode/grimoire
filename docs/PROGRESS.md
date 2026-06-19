@@ -97,6 +97,11 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Full rules-audit harness passes 0 failures (mods, prof, skills+expertise+feat, saves, passive perc, AC variants, init, maxHP, hit-dice pool, short/long rest, export/import, concentration DC, full spell matrix). Bugs fixed: Paladin/Ranger L1 slots (v17), long-rest hit-dice uses total level (v18).
 - app.js split into util.js + views.js + app.js (v19); verified 0 console errors + audit/UI smoke clean, live.
 
+## v20: advantage + rollable saves/skills
+- Saves & skills tappable to roll (🎲) with dis/normal/adv (rollCheck + actions.checkRoll/rollSave/rollSkill). Saves were previously display-only.
+- Features can grant ADVANTAGE: feature.adv = [targets] via "Grants advantage on" section in the feature form. Calc.advSources(ch,target) (handles save.all/skill.all wildcards). Stats lines show green ADV badge; roll dialog + concentration prompt note the source and default to the Advantage button. ADV_TARGETS/ADV_LABEL in views.js. Synced via link (part of feature object, mental group).
+- Note: advantage targets include save.concentration (War Caster). Conditional advantage (vs poison only) is description-only; the roller's adv button still lets you choose it.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet. (Subclass auto-spells limited to SRD by design.)
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
