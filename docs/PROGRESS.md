@@ -102,6 +102,9 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Features can grant ADVANTAGE: feature.adv = [targets] via "Grants advantage on" section in the feature form. Calc.advSources(ch,target) (handles save.all/skill.all wildcards). Stats lines show green ADV badge; roll dialog + concentration prompt note the source and default to the Advantage button. ADV_TARGETS/ADV_LABEL in views.js. Synced via link (part of feature object, mental group).
 - Note: advantage targets include save.concentration (War Caster). Conditional advantage (vs poison only) is description-only; the roller's adv button still lets you choose it.
 
+## v21: items grant bonuses + advantage (when equipped)
+- Inventory items now carry `bonuses` + `adv` (same editor as features — shared bonusRowsHtml/advRowsHtml/captureBonusAdvRows in app.js). Calc.featBonus & advSources include EQUIPPED items. Equip/unequip toggles all effects; gear list shows bonus/ADV tags (dimmed when unequipped). Legacy `acBonus` field still honored in armorClass. Synced via link gear group.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet. (Subclass auto-spells limited to SRD by design.)
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
