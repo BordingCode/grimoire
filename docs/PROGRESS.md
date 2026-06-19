@@ -124,12 +124,12 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Appearance: global Dark/Light (localStorage grimoire.mode) + per-character accent (ch.accent, default RULES.CLASS_ACCENT[cls]). applyTheme() (called in render) sets --accent/--accent-2 + luminance-based --on-accent. Light theme = :root[data-theme=light] vars. Char menu → "Appearance".
 - Each class has a signature accent (RULES.ACCENTS + CLASS_ACCENT in rules.js).
 
-## STALE-CACHE NOTE (recurring)
-- A user report of "L5 Paladin only 3 L1 slots" was a stale cached build (pre-v17 floor bug). Current code verified correct (L5 Paladin = 4/2). PWA serves old SW until update; tell users to refresh twice / reopen. Consider adding an auto "new version available → reload" prompt in sw registration.
+## v30: update prompt (fixes stale-cache for good)
+- sw.js no longer auto-skipWaiting (waits); activates on page message "skipWaiting". app.js registration detects updatefound→installed (with controller) and shows a persistent toast with a Reload button (doUpdate). controllerchange reloads once, guarded by _doReload so first install never loops. Hourly reg.update() check. Verified end-to-end.
+- Takes effect from v30 onward (v29→v30 auto-updates via old skipWaiting; v30→v31+ shows the prompt).
 
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
-- [ ] Consider SW auto-update reload prompt (avoids stale-cache confusion).
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
