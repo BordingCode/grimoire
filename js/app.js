@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=26").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=26").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=27").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=27").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -340,10 +340,19 @@ actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModa
 /* small Edit/Delete menu behind the ⋯ options button (kind = res|item|weapon|feature) */
 function optionsMenu(title, kind, dataAttr) {
   modal(title, `<div class="menu-list">
+    <div class="move-row">
+      <button class="btn ghost" data-act="${kind}MoveUp" ${dataAttr}>↑ Move up</button>
+      <button class="btn ghost" data-act="${kind}MoveDown" ${dataAttr}>↓ Move down</button>
+    </div>
     <button class="btn ghost" data-act="${kind}Edit" ${dataAttr}>✎ Edit</button>
     <button class="btn danger" data-act="${kind}Del" ${dataAttr}>🗑 Delete</button>
   </div>`);
 }
+
+/* reorder helpers */
+function moveAt(arr, i, dir) { const j = i + dir; if (i < 0 || j < 0 || j >= arr.length) return; const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+function moveById(arr, id, dir) { moveAt(arr, arr.findIndex((x) => x.id === id), dir); }
+function moveStrId(arr, id, dir) { moveAt(arr, arr.indexOf(id), dir); }
 
 function resForm(r) {
   actions._resEditId = r ? r.id : null;
@@ -578,6 +587,18 @@ actions.ssToggle = (el) => {
 };
 actions.ssDone = () => { closeModal(); render(); };
 
+/* ---------- reordering ---------- */
+actions.resMoveUp = (el) => { moveById(Store.active().resources, el.dataset.id, -1); closeModal(); commit(); };
+actions.resMoveDown = (el) => { moveById(Store.active().resources, el.dataset.id, 1); closeModal(); commit(); };
+actions.itemMoveUp = (el) => { moveById(Store.active().inventory, el.dataset.id, -1); closeModal(); commit(); };
+actions.itemMoveDown = (el) => { moveById(Store.active().inventory, el.dataset.id, 1); closeModal(); commit(); };
+actions.featureMoveUp = (el) => { moveById(Store.active().features || [], el.dataset.id, -1); closeModal(); commit(); };
+actions.featureMoveDown = (el) => { moveById(Store.active().features || [], el.dataset.id, 1); closeModal(); commit(); };
+actions.weaponMoveUp = (el) => { moveAt(Store.active().weapons, +el.dataset.i, -1); closeModal(); commit(); };
+actions.weaponMoveDown = (el) => { moveAt(Store.active().weapons, +el.dataset.i, 1); closeModal(); commit(); };
+actions.spMoveUp = (el) => { const ch = Store.active(); moveStrId(ch.spells[ui.spellFilter.list], el.dataset.id, -1); commit(); };
+actions.spMoveDown = (el) => { const ch = Store.active(); moveStrId(ch.spells[ui.spellFilter.list], el.dataset.id, 1); commit(); };
+
 /* ===================================================================== */
 /*  WIRING                                                               */
 /* ===================================================================== */
@@ -609,7 +630,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=26").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=27").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

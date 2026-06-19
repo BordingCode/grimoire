@@ -339,7 +339,8 @@ function spellListSection(ch) {
   else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
-  pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  // keep the player's chosen order in curated lists; auto-sort the browse lists
+  if (!["prepared", "known", "favorites"].includes(f.list)) pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   const levels = `<option value="all">All levels</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(f.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrips" : "Level " + i}</option>`).join("");
   const subEditBanner = (f.list === "subclass" && ch.subclass && !subclassHasBuiltin(ch))
     ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">✎ Set subclass spells</button></div>`
@@ -370,6 +371,7 @@ function spellRow(ch, s) {
       <span class="sp-meta">${lvl} · ${esc(s.school)}${tags ? " · " + tags : ""}</span>
     </button>
     <div class="spell-acts">
+      ${["prepared", "known", "favorites"].includes(ui.spellFilter.list) && !isSub ? `<button class="ic mv" data-act="spMoveUp" data-id="${esc(s.id)}" title="move up">↑</button><button class="ic mv" data-act="spMoveDown" data-id="${esc(s.id)}" title="move down">↓</button>` : ""}
       <button class="ic ${isFav ? "on" : ""}" data-act="fav" data-id="${esc(s.id)}" title="favorite">★</button>
       <button class="ic ${isPrep ? "on" : ""}" data-act="prep" data-id="${esc(s.id)}" title="prepared${isSub ? " (always, from subclass)" : ""}">P</button>
       <button class="ic ${isKnown ? "on" : ""}" data-act="know" data-id="${esc(s.id)}" title="known">K</button>
@@ -387,7 +389,7 @@ function spellListRowsHtml(ch) {
   else pool = (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
-  pool.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  if (!["prepared", "known", "favorites"].includes(f.list)) pool.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   return pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.</p>`;
 }
 

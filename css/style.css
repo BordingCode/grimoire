@@ -210,6 +210,9 @@ input[type=checkbox] { width: auto; }
 .spell-acts { display: flex; gap: 4px; }
 .ic { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: .85rem; font-weight: 700; cursor: pointer; }
 .ic.on { background: var(--accent); color: #fff; border-color: transparent; }
+.ic.mv { width: 26px; color: var(--accent-2); }
+.menu-list .move-row { display: flex; gap: 8px; }
+.menu-list .move-row .btn { flex: 1; }
 .spell-acts .ic:first-child.on { background: var(--gold); color: #000; }
 
 .caster-none { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 12px; }
