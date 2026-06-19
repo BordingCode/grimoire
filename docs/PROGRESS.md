@@ -70,6 +70,11 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Resources now editable (name/max/reset/note) via `resForm`; note shown on card.
 - Two-step delete: `confirmDelete(msg, cb)` modal guards resources/items/weapons/party. Character delete still uses native confirm(); conditions stay one-tap (transient).
 
+## Features & traits — DONE & LIVE ✅ (cache v13)
+- Stats tab "Features & traits": `ch.features[{id,name,desc,bonuses:[{target,value}]}]`, ⋯ edit/delete.
+- Auto-bonuses: `Calc.featBonus(ch,target)` sums into AC, initiative, speed, saves (save.all + save.<ab>), spell DC/attack, passive perception, max HP (`Calc.maxHP`), and all-weapon attack/damage (weaponAttack/weaponDamage applied in weapon display + wpnAtk/wpnDmg). Overrides still win. Targets list = FEAT_TARGETS in app.js.
+- Cards show gold bonus tags; weapon attack/damage conditional ones (Archery/Dueling) advised to live on the specific weapon. Synced via link mental group.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: subclass auto-spells, leveling helper, printable sheet.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
