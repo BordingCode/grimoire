@@ -14,7 +14,7 @@ const LINK = {
     resources: ["spells.slots", "spells.pact", "spells.concentratingOn", "resources"],
     mental: ["abilities", "saveProf", "skillProf", "overrides", "spells.known", "spells.prepared", "spells.favorites", "spells.abilityOverride", "customSpells"],
     identity: ["name", "cls", "level", "multiclass", "edition", "notes"],
-    gear: ["inventory"],
+    gear: ["inventory", "weapons"],
   },
   LABELS: {
     physical: "Physical — HP, hit dice, death saves, conditions, AC/armor, speed",

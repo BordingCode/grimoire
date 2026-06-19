@@ -66,7 +66,8 @@ function newCharacter({ name, edition, cls, level }) {
       concentratingOn: null,       // spell id or {name}
       abilityOverride: null,       // override spellcasting ability
     },
-    resources: [],                 // {id,name,max,used,resetOn:'long'|'short'}
+    resources: [],                 // {id,name,max,used,resetOn:'long'|'short',note}
+    weapons: [],                   // {id,name,atk,damage,damageType,notes}
     inventory: [],                 // {id,name,qty,equipped,acBonus,notes}
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote

@@ -265,6 +265,31 @@ input[type=checkbox] { width: auto; }
 .held { color: var(--good); font-weight: 700; }
 .lost { color: var(--bad); font-weight: 700; }
 
+/* weapons */
+.weapons { display: flex; flex-direction: column; }
+.weapon { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+.wpn-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.wpn-name { font-weight: 700; }
+.wpn-sub { font-size: .78rem; color: var(--muted); }
+.wpn-go { font-size: 1.2rem; }
+
+/* resource note */
+.res-note { font-size: .8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+
+/* kill count */
+.kill-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.kill-row { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.kill-rank { width: 30px; text-align: center; color: var(--muted); font-weight: 700; }
+.kill-name { flex: 1; font-weight: 600; }
+.kill-count { font-size: 1.5rem; font-weight: 800; color: var(--gold); min-width: 34px; text-align: right; }
+.kill-btns { display: flex; gap: 6px; align-items: center; }
+.kill-btns button { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--ink); cursor: pointer; }
+.kill-plus { background: var(--accent) !important; border-color: transparent !important; color: #fff !important; font-weight: 700; }
+.kill-btns .del { color: var(--bad); }
+.kill-add { display: flex; gap: 8px; }
+.kill-add input { flex: 1; }
+.reset-kills { width: 100%; margin-top: 14px; color: var(--bad); }
+
 /* multiclass */
 .cast-multi { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .cast-cls { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }

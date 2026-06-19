@@ -7,6 +7,14 @@ const Grimoire = { spells: { "2014": [], "2024": [] } };
 const ui = { screen: "home", tab: "stats", spellFilter: { q: "", level: "all", list: "available" } };
 const DMG_KEY = "grimoire.dmg.v1"; // remembers damage dice you typed per spell
 
+/* team kill-count tracker (local to this device, separate from characters) */
+const Party = {
+  KEY: "grimoire.party.v1",
+  members: [],
+  load() { try { this.members = JSON.parse(localStorage.getItem(this.KEY)) || []; } catch { this.members = []; } },
+  save() { localStorage.setItem(this.KEY, JSON.stringify(this.members)); },
+};
+
 /* ---------- tiny helpers ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -39,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=9").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=9").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=10").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=10").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -85,6 +93,7 @@ function render() {
   const app = $("#app");
   if (ui.screen === "home") app.innerHTML = viewHome();
   else if (ui.screen === "new") app.innerHTML = viewNew();
+  else if (ui.screen === "party") app.innerHTML = viewParty();
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
 }
 
@@ -102,8 +111,35 @@ function viewHome() {
       ${Store.characters.length ? `<div class="char-list">${list}</div>` : `<p class="empty">No characters yet. Create your first adventurer.</p>`}
       <div class="home-actions">
         <button class="btn primary" data-act="goNew">+ New character</button>
+        <button class="btn ghost" data-act="goParty">⚔ Kill count</button>
         <button class="btn ghost" data-act="importFile">⬆ Import from file</button>
       </div>
+    </div>`;
+}
+
+/* ---- Kill count (team) ---- */
+function viewParty() {
+  const sorted = [...Party.members].sort((a, b) => b.kills - a.kills);
+  const rows = sorted.map((m, idx) => `
+    <div class="kill-row">
+      <span class="kill-rank">${idx === 0 && m.kills > 0 ? "👑" : "#" + (idx + 1)}</span>
+      <span class="kill-name">${esc(m.name)}</span>
+      <span class="kill-count">${m.kills}</span>
+      <div class="kill-btns">
+        <button data-act="partyUnkill" data-id="${m.id}">−</button>
+        <button class="kill-plus" data-act="partyKill" data-id="${m.id}">+1</button>
+        <button class="del" data-act="partyRemove" data-id="${m.id}">✕</button>
+      </div>
+    </div>`).join("") || `<p class="empty">No one yet. Add your party below — then tap +1 each time they down a foe.</p>`;
+  return `
+    <header class="topbar"><button class="back" data-act="goHome">‹</button><h1>Kill count</h1></header>
+    <div class="screen">
+      <div class="kill-list">${rows}</div>
+      <div class="kill-add">
+        <input id="party-name" placeholder="Add a party member…" maxlength="24">
+        <button class="btn" data-act="partyAdd">Add</button>
+      </div>
+      ${Party.members.length ? `<button class="btn ghost reset-kills" data-act="partyReset">Reset all kills to 0</button>` : ""}
     </div>`;
 }
 
@@ -200,12 +236,20 @@ function tabCombat(ch) {
   const res = (ch.resources || []).map((r) => `
     <div class="res">
       <div class="res-top"><span>${esc(r.name)}</span><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn} rest</span></div>
+      ${r.note ? `<div class="res-note">${esc(r.note)}</div>` : ""}
       <div class="res-btns">
         <button data-act="resUse" data-id="${r.id}">Use</button>
         <button data-act="resRestore" data-id="${r.id}">+</button>
+        <button data-act="resEdit" data-id="${r.id}">edit</button>
         <button class="del" data-act="resDel" data-id="${r.id}">✕</button>
       </div>
     </div>`).join("");
+  const weapons = (ch.weapons || []).map((w, i) => `
+    <button class="weapon" data-act="weaponOpen" data-i="${i}">
+      <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
+        <span class="wpn-sub">${w.atk !== "" && w.atk != null ? sign(+w.atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
+      <span class="wpn-go">🎲</span>
+    </button>`).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
   const conc = ch.spells.concentratingOn ? (findSpell(ch, ch.spells.concentratingOn)?.name || "a spell") : null;
   return `
     <div class="combat-top">
@@ -226,6 +270,8 @@ function tabCombat(ch) {
         <label>Max <input type="number" data-bind="combat.hpMax" value="${c.hpMax}"></label>
       </div>
     </div>
+    <h3 class="sec">Weapons &amp; attacks <button class="mini" data-act="addWeapon">+ add</button></h3>
+    <div class="weapons">${weapons}</div>
     <div class="death">
       <span>Death saves</span>
       <span class="ds">✓ ${[0,1,2].map((i)=>`<button class="pip ${c.death.succ>i?"on good":""}" data-act="death" data-t="succ" data-i="${i}"></button>`).join("")}</span>
@@ -355,6 +401,12 @@ function tabNotes(ch) {
 const actions = {
   goHome() { ui.screen = "home"; render(); },
   goNew() { ui.screen = "new"; render(); },
+  goParty() { ui.screen = "party"; render(); },
+  partyAdd() { const n = ($("#party-name").value || "").trim(); if (!n) return; Party.members.push({ id: Gx.uid(), name: n, kills: 0 }); Party.save(); render(); },
+  partyKill(el) { const m = Party.members.find((x) => x.id === el.dataset.id); if (m) { m.kills++; Party.save(); render(); } },
+  partyUnkill(el) { const m = Party.members.find((x) => x.id === el.dataset.id); if (m && m.kills > 0) { m.kills--; Party.save(); render(); } },
+  partyRemove(el) { const m = Party.members.find((x) => x.id === el.dataset.id); confirmDelete(`Remove ${m ? m.name : "this member"} from the kill count?`, () => { Party.members = Party.members.filter((x) => x.id !== el.dataset.id); Party.save(); render(); }); },
+  partyReset() { if (confirm("Reset everyone's kills to 0?")) { Party.members.forEach((m) => (m.kills = 0)); Party.save(); render(); } },
   open(el) { Store.setActive(el.dataset.id); ui.screen = "sheet"; ui.tab = "stats"; render(); },
   tab(el) { ui.tab = el.dataset.tab; render(); },
 
@@ -444,15 +496,19 @@ const actions = {
   condRemove(el) { const ch = Store.active(); ch.conditions.splice(+el.dataset.i, 1); commit(); },
 
   /* resources */
-  addRes() { modal("Add resource tracker", `
-      <label class="fld"><span>Name</span><input id="res-name" placeholder="e.g. Rage, Ki, Channel Divinity"></label>
-      <label class="fld"><span>Max uses</span><input id="res-max" type="number" min="1" value="3"></label>
-      <label class="fld"><span>Resets on</span><select id="res-reset"><option value="long">Long rest</option><option value="short">Short rest</option></select></label>
-      <div class="modal-btns"><button class="btn primary" data-act="resAdd">Add</button></div>`, () => $("#res-name").focus()); },
-  resAdd() { const ch = Store.active(); const name = $("#res-name").value.trim(); if (!name) return closeModal(); ch.resources.push({ id: Gx.uid(), name, max: +$("#res-max").value || 1, used: 0, resetOn: $("#res-reset").value }); closeModal(); commit(); },
+  addRes() { resForm(null); },
+  resEdit(el) { const ch = Store.active(); resForm(ch.resources.find((x) => x.id === el.dataset.id)); },
+  resSave() {
+    const ch = Store.active(); const name = $("#res-name").value.trim(); if (!name) { toast("Name required."); return; }
+    const fields = { name, max: Math.max(1, +$("#res-max").value || 1), resetOn: $("#res-reset").value, note: $("#res-note").value.trim() };
+    const editing = actions._resEditId ? ch.resources.find((x) => x.id === actions._resEditId) : null;
+    if (editing) { Object.assign(editing, fields); editing.used = Math.min(editing.used, editing.max); }
+    else ch.resources.push({ id: Gx.uid(), used: 0, ...fields });
+    actions._resEditId = null; closeModal(); commit();
+  },
   resUse(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used < r.max) r.used++; commit(); },
   resRestore(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used > 0) r.used--; commit(); },
-  resDel(el) { const ch = Store.active(); ch.resources = ch.resources.filter((x) => x.id !== el.dataset.id); commit(); },
+  resDel(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); confirmDelete(`Delete the “${r ? r.name : "resource"}” tracker?`, () => { ch.resources = ch.resources.filter((x) => x.id !== el.dataset.id); commit(); }); },
 
   /* spells */
   spellList(el) { ui.spellFilter.list = el.dataset.list; render(); },
@@ -511,7 +567,35 @@ const actions = {
       <div class="modal-btns"><button class="btn primary" data-act="itemSave">Add</button></div>`, () => $("#it-name").focus()); },
   itemSave() { const ch = Store.active(); const name = $("#it-name").value.trim(); if (!name) return closeModal(); ch.inventory.push({ id: Gx.uid(), name, qty: +$("#it-qty").value || 1, acBonus: +$("#it-ac").value || 0, equipped: $("#it-eq").checked, notes: "" }); closeModal(); commit(); },
   equip(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); it.equipped = !it.equipped; commit(); },
-  itemDel(el) { const ch = Store.active(); ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); commit(); },
+  itemDel(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); confirmDelete(`Delete “${it ? it.name : "item"}”?`, () => { ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); commit(); }); },
+
+  /* weapons & attacks */
+  addWeapon() { weaponForm(null); },
+  weaponOpen(el) {
+    const ch = Store.active(); const i = +el.dataset.i; const w = ch.weapons[i];
+    const atk = (w.atk !== "" && w.atk != null) ? +w.atk : null;
+    modal(w.name, `
+      <p class="muted small">${w.damage ? esc(w.damage) + (w.damageType ? " " + esc(w.damageType) : "") + " damage" : "no damage set"}${w.notes ? " · " + esc(w.notes) : ""}</p>
+      <div class="cast-box">
+        <div class="cast-roll">
+          ${atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="dis">dis</button><button class="btn" data-act="wpnAtk" data-i="${i}" data-mode="normal">🎲 Attack ${sign(atk)}</button><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="adv">adv</button></span>` : '<span class="muted small">no to-hit set</span>'}
+        </div>
+        ${w.damage ? `<button class="btn primary" data-act="wpnDmg" data-i="${i}">Roll damage (${esc(w.damage)})</button>` : ""}
+        <div id="roll-out" class="roll-out"></div>
+        <div class="modal-btns"><button class="btn" data-act="weaponEdit" data-i="${i}">Edit</button><button class="btn danger" data-act="weaponDel" data-i="${i}">Delete</button></div>
+      </div>`);
+  },
+  wpnAtk(el) { const w = Store.active().weapons[+el.dataset.i]; const r = d20(+w.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; },
+  wpnDmg(el) { const w = Store.active().weapons[+el.dataset.i]; const r = rollDice(w.damage); if (!r) { toast("Damage like 1d8+3."); return; } $("#roll-out").innerHTML = `Damage <b>${r.total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""} ${esc(w.damageType || "")}</small>`; },
+  weaponEdit(el) { weaponForm(Store.active().weapons[+el.dataset.i], +el.dataset.i); },
+  weaponDel(el) { const ch = Store.active(); const i = +el.dataset.i; const w = ch.weapons[i]; confirmDelete(`Delete “${w ? w.name : "weapon"}”?`, () => { ch.weapons.splice(i, 1); closeModal(); commit(); }); },
+  weaponSave() {
+    const ch = Store.active(); const name = $("#wp-name").value.trim(); if (!name) { toast("Name required."); return; }
+    const data = { name, atk: $("#wp-atk").value.trim(), damage: $("#wp-dmg").value.trim(), damageType: $("#wp-type").value.trim(), notes: $("#wp-notes").value.trim() };
+    if (actions._wpnEditIdx != null && ch.weapons[actions._wpnEditIdx]) Object.assign(ch.weapons[actions._wpnEditIdx], data);
+    else { if (!ch.weapons) ch.weapons = []; ch.weapons.push({ id: Gx.uid(), ...data }); }
+    actions._wpnEditIdx = null; closeModal(); commit();
+  },
 
   /* concentration */
   dropConc() { const ch = Store.active(); ch.spells.concentratingOn = null; commit(); },
@@ -567,6 +651,38 @@ function rollHitDie(die) {
   const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con);
   c.hitDiceUsed++; c.hpCur = Math.min(c.hpMax, c.hpCur + heal); commit();
   toast(`Hit die d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`);
+}
+
+/* two-step delete guard so a single tap never destroys data */
+let _confirmCb = null;
+function confirmDelete(msg, onYes) {
+  _confirmCb = onYes;
+  modal("Please confirm", `<p>${esc(msg)}</p><p class="muted small">This can't be undone.</p>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn danger" data-act="confirmYes">Delete</button></div>`);
+}
+actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModal(); if (cb) cb(); };
+
+function resForm(r) {
+  actions._resEditId = r ? r.id : null;
+  modal(r ? "Edit resource" : "Add resource tracker", `
+    <label class="fld"><span>Name</span><input id="res-name" placeholder="e.g. Rage, Ki, Channel Divinity" value="${r ? esc(r.name) : ""}"></label>
+    <label class="fld"><span>Max uses</span><input id="res-max" type="number" min="1" value="${r ? r.max : 3}"></label>
+    <label class="fld"><span>Resets on</span><select id="res-reset"><option value="long"${r && r.resetOn === "long" ? " selected" : ""}>Long rest</option><option value="short"${r && r.resetOn === "short" ? " selected" : ""}>Short rest</option></select></label>
+    <label class="fld"><span>Note (optional)</span><textarea id="res-note" rows="2" placeholder="what it does, reminders…">${r && r.note ? esc(r.note) : ""}</textarea></label>
+    <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
+}
+
+function weaponForm(w, idx) {
+  actions._wpnEditIdx = (idx != null) ? idx : null;
+  modal(w ? "Edit weapon" : "Add weapon / attack", `
+    <label class="fld"><span>Name *</span><input id="wp-name" placeholder="Longsword, Dagger, Fire Bolt…" value="${w ? esc(w.name) : ""}"></label>
+    <div class="grid2">
+      <label class="fld"><span>To hit (+)</span><input id="wp-atk" type="number" placeholder="e.g. 5" value="${w && w.atk != null ? esc(w.atk) : ""}"></label>
+      <label class="fld"><span>Damage</span><input id="wp-dmg" placeholder="1d8+3" value="${w ? esc(w.damage) : ""}"></label>
+    </div>
+    <label class="fld"><span>Damage type</span><input id="wp-type" placeholder="slashing, fire…" value="${w ? esc(w.damageType) : ""}"></label>
+    <label class="fld"><span>Notes (properties, range)</span><input id="wp-notes" placeholder="versatile, finesse, 20/60 ft…" value="${w ? esc(w.notes) : ""}"></label>
+    <div class="modal-btns"><button class="btn primary" data-act="weaponSave">${w ? "Save" : "Add"}</button></div>`, () => $("#wp-name").focus());
 }
 function spellListRowsHtml(ch) {
   const f = ui.spellFilter; let pool = f.list === "available" ? classSpells(ch) : (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
@@ -687,9 +803,10 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=9").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=10").catch(() => {}));
 (async function boot() {
   Store.load();
+  Party.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
   if (Store.active()) { ui.screen = "sheet"; }
   render();
