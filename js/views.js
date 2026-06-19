@@ -406,29 +406,38 @@ function spellListRowsHtml(ch) {
   return pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.</p>`;
 }
 
-function tabGear(ch) {
-  const inv = (ch.inventory || []).map((it) => {
+function itemRowsHtml(ch, items, listKey) {
+  return (items || []).map((it) => {
     const tags = [];
-    if (it.acBonus) tags.push(`AC ${sign(+it.acBonus)}`); // legacy field
+    if (it.acBonus) tags.push(`AC ${sign(+it.acBonus)}`);
     (it.bonuses || []).forEach((b) => tags.push(`${sign(b.value)} ${FEAT_TARGET_LABEL[b.target] || b.target}`));
     (it.adv || []).forEach((t) => tags.push(`ADV ${ADV_LABEL[t] || t}`));
-    return `<div class="item" ${ui.reorder ? `data-sortid="${esc(it.id)}"` : ""}>${handle()}
-      <button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" title="equipped — applies its bonuses">${it.equipped ? "✓" : ""}</button>
+    const carried = listKey === "inventory";
+    const equip = carried ? `<button class="eq ${it.equipped ? "on" : ""}" data-act="equip" data-id="${it.id}" data-list="${listKey}" title="equipped — applies its bonuses">${it.equipped ? "✓" : ""}</button>` : "";
+    return `<div class="item" ${ui.reorder ? `data-sortid="${esc(it.id)}"` : ""}>${handle()}${equip}
       <div class="it-main">
-        <span class="it-name">${esc(it.name)}${it.qty > 1 ? ` ×${it.qty}` : ""}${!it.equipped && tags.length ? ' <em class="it-off">(unequipped)</em>' : ""}</span>
-        ${tags.length ? `<span class="it-tags">${tags.map((t) => `<span class="it-tag${it.equipped ? "" : " off"}">${esc(t)}</span>`).join("")}</span>` : ""}
+        <span class="it-name">${esc(it.name)}${it.qty > 1 ? ` ×${it.qty}` : ""}${carried && !it.equipped && tags.length ? ' <em class="it-off">(unequipped)</em>' : ""}</span>
+        ${tags.length ? `<span class="it-tags">${tags.map((t) => `<span class="it-tag${carried && !it.equipped ? " off" : ""}">${esc(t)}</span>`).join("")}</span>` : ""}
       </div>
-      <button class="opt-btn" data-act="itemOptions" data-id="${it.id}">⋯</button>
+      <button class="opt-btn" data-act="itemOptions" data-id="${it.id}" data-list="${listKey}">⋯</button>
     </div>`;
   }).join("") || `<span class="muted">empty</span>`;
+}
+function tabGear(ch) {
+  const cur = ch.currency || { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
+  const coin = (k, l) => `<label class="coin"><span>${l}</span><input type="number" min="0" inputmode="numeric" data-bind="currency.${k}" value="${cur[k] || 0}"></label>`;
   return `
     <div class="armor-row">
       <label>Armor base AC <input type="number" placeholder="(unarmored)" data-bind="combat.armorBaseAC" value="${ch.combat.armorBaseAC ?? ""}"></label>
       <label class="chk"><input type="checkbox" data-bind="combat.shield" ${ch.combat.shield ? "checked" : ""}> Shield (+2)</label>
     </div>
     <p class="muted small">Tick an item's box to <b>equip</b> it — its bonuses &amp; advantage then apply automatically (AC now ${Calc.armorClass(ch)}).</p>
-    <h3 class="sec">Inventory <button class="mini" data-act="addItem">+ add</button></h3>
-    <div class="items" ${ui.reorder ? 'data-sortlist="inventory"' : ""}>${inv}</div>`;
+    <h3 class="sec">Coins</h3>
+    <div class="coins">${coin("pp", "PP")}${coin("gp", "GP")}${coin("ep", "EP")}${coin("sp", "SP")}${coin("cp", "CP")}</div>
+    <h3 class="sec">Inventory <span class="hdr-btns"><button class="mini" data-act="itemReceive">⬇ receive</button><button class="mini" data-act="addItem">+ add</button></span></h3>
+    <div class="items" ${ui.reorder ? 'data-sortlist="inventory"' : ""}>${itemRowsHtml(ch, ch.inventory, "inventory")}</div>
+    <h3 class="sec">Bag of Holding <button class="mini" data-act="addBagItem">+ add</button></h3>
+    <div class="items" ${ui.reorder ? 'data-sortlist="bag"' : ""}>${itemRowsHtml(ch, ch.bag, "bag")}</div>`;
 }
 
 function tabNotes(ch) {

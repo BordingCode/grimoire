@@ -72,7 +72,9 @@ function newCharacter({ name, edition, cls, level }) {
     },
     resources: [],                 // {id,name,max,used,resetOn:'long'|'short',note}
     weapons: [],                   // {id,name,atk,damage,damageType,notes}
-    inventory: [],                 // {id,name,qty,equipped,acBonus,notes}
+    inventory: [],                 // carried items {id,name,qty,equipped,acBonus,notes,bonuses,adv}
+    bag: [],                       // Bag of Holding (stored items, same shape)
+    currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },  // platinum/gold/electrum/silver/copper
     features: [],                  // {id,name,desc} — fighting styles, feats, traits, class features
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote

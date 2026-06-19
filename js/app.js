@@ -16,8 +16,8 @@ const Party = {
 
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=32").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=32").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=33").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=33").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -245,26 +245,64 @@ const actions = {
   },
 
   /* gear */
-  addItem() { itemForm(null); },
-  itemOptions(el) { const it = Store.active().inventory.find((x) => x.id === el.dataset.id); optionsMenu(it ? it.name : "Item", "item", `data-id="${el.dataset.id}"`); },
-  itemEdit(el) { itemForm(Store.active().inventory.find((x) => x.id === el.dataset.id)); },
+  addItem() { itemForm(null, "inventory"); },
+  addBagItem() { itemForm(null, "bag"); },
+  itemOptions(el) {
+    const list = el.dataset.list || "inventory"; const id = el.dataset.id;
+    const it = (Store.active()[list] || []).find((x) => x.id === id);
+    const other = list === "inventory" ? "Bag of Holding" : "carried";
+    const da = `data-id="${id}" data-list="${list}"`;
+    modal(it ? it.name : "Item", `<div class="menu-list">
+      <button class="btn ghost" data-act="itemEdit" ${da}>✎ Edit</button>
+      <button class="btn ghost" data-act="itemMove" ${da}>↔ Move to ${other}</button>
+      <button class="btn ghost" data-act="itemGive" ${da}>🎁 Give to a player</button>
+      <button class="btn danger" data-act="itemDel" ${da}>🗑 Delete</button>
+    </div>`);
+  },
+  itemEdit(el) { const list = el.dataset.list || "inventory"; itemForm((Store.active()[list] || []).find((x) => x.id === el.dataset.id), list); },
+  itemMove(el) {
+    const ch = Store.active(); const from = el.dataset.list || "inventory"; const to = from === "inventory" ? "bag" : "inventory";
+    const i = (ch[from] || []).findIndex((x) => x.id === el.dataset.id); if (i < 0) return;
+    const [it] = ch[from].splice(i, 1); if (to === "bag") it.equipped = false;
+    (ch[to] = ch[to] || []).push(it); closeModal(); commit(); toast(`Moved to ${to === "bag" ? "Bag of Holding" : "carried"}.`);
+  },
   itemBonusAdd() { const m = itemCapture(); actions._itemBonuses.push({ target: "ac", value: "" }); renderItemForm(m); },
   itemBonusRemove(el) { const m = itemCapture(); actions._itemBonuses.splice(+el.dataset.i, 1); renderItemForm(m); },
   itemAdvAdd() { const m = itemCapture(); actions._itemAdv.push("save.all"); renderItemForm(m); },
   itemAdvRemove(el) { const m = itemCapture(); actions._itemAdv.splice(+el.dataset.i, 1); renderItemForm(m); },
   itemSave() {
     const ch = Store.active(); const cap = itemCapture(); const name = (cap.name || "").trim(); if (!name) { toast("Name required."); return; }
+    const list = actions._itemList || "inventory";
     const bonuses = actions._itemBonuses
       .filter((b) => b.target && b.value !== "" && b.value != null && !isNaN(+b.value))
       .map((b) => ({ target: b.target, value: +b.value }));
     const adv = [...new Set(actions._itemAdv.filter(Boolean))];
     const data = { name, qty: +cap.qty || 1, equipped: !!cap.equipped, bonuses, adv };
-    const ed = actions._itemEditId ? ch.inventory.find((x) => x.id === actions._itemEditId) : null;
-    if (ed) Object.assign(ed, data); else ch.inventory.push({ id: Gx.uid(), notes: "", acBonus: 0, ...data });
-    actions._itemEditId = null; actions._itemBonuses = []; actions._itemAdv = []; closeModal(); commit();
+    if (!ch[list]) ch[list] = [];
+    const ed = actions._itemEditId ? ch[list].find((x) => x.id === actions._itemEditId) : null;
+    if (ed) Object.assign(ed, data); else ch[list].push({ id: Gx.uid(), notes: "", acBonus: 0, ...data });
+    actions._itemEditId = null; actions._itemBonuses = []; actions._itemAdv = []; actions._itemList = null; closeModal(); commit();
   },
-  equip(el) { const ch = Store.active(); const it = ch.inventory.find((x) => x.id === el.dataset.id); it.equipped = !it.equipped; commit(); },
-  itemDel(el) { const ch = Store.active(); ch.inventory = ch.inventory.filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item deleted."); },
+  equip(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; const it = (ch[list] || []).find((x) => x.id === el.dataset.id); if (it) { it.equipped = !it.equipped; commit(); } },
+  itemDel(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; ch[list] = (ch[list] || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item deleted."); },
+  itemGive(el) {
+    const ch = Store.active(); const list = el.dataset.list || "inventory"; const it = (ch[list] || []).find((x) => x.id === el.dataset.id); if (!it) return;
+    const code = "GRIM1:" + btoa(encodeURIComponent(JSON.stringify({ name: it.name, qty: it.qty, notes: it.notes || "", acBonus: it.acBonus || 0, bonuses: it.bonuses || [], adv: it.adv || [] })));
+    modal("Give “" + it.name + "”", `
+      <p class="muted small">Send this code to the other player — they tap “⬇ receive” on their Gear tab and paste it.</p>
+      <textarea id="give-code" rows="4" readonly>${esc(code)}</textarea>
+      <div class="modal-btns"><button class="btn" data-act="giveCopy">Copy code</button><button class="btn danger" data-act="giveRemove" data-id="${it.id}" data-list="${list}">I gave it away (remove)</button></div>`);
+  },
+  giveCopy() { const t = $("#give-code"); if (t && navigator.clipboard) navigator.clipboard.writeText(t.value).then(() => toast("Code copied — send it to the other player.")).catch(() => { t.select(); }); else if (t) { t.select(); toast("Select and copy the code."); } },
+  giveRemove(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; ch[list] = (ch[list] || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Item removed (given away)."); },
+  itemReceive() { modal("Receive an item", `<p class="muted small">Paste the code another player sent you.</p><textarea id="recv-code" rows="4" placeholder="GRIM1:…"></textarea><div class="modal-btns"><button class="btn primary" data-act="recvAdd">Add to inventory</button></div>`, () => $("#recv-code").focus()); },
+  recvAdd() {
+    const code = ($("#recv-code").value || "").trim(); let o = null;
+    try { if (code.startsWith("GRIM1:")) o = JSON.parse(decodeURIComponent(atob(code.slice(6)))); } catch {}
+    if (!o || !o.name) { toast("That code isn't valid."); return; }
+    const ch = Store.active(); ch.inventory.push({ id: Gx.uid(), name: o.name, qty: +o.qty || 1, equipped: false, acBonus: +o.acBonus || 0, notes: o.notes || "", bonuses: o.bonuses || [], adv: o.adv || [] });
+    closeModal(); commit(); toast(`Received ${o.name}.`);
+  },
 
   /* weapons & attacks */
   addWeapon() { weaponForm(null); },
@@ -441,8 +479,9 @@ function renderFeatureForm(name, desc) {
     <div class="modal-btns"><button class="btn primary" data-act="featureSave">${actions._featEditId ? "Save" : "Add"}</button></div>`, () => $("#ft-name").focus());
 }
 
-function itemForm(it) {
+function itemForm(it, listKey) {
   actions._itemEditId = it ? it.id : null;
+  actions._itemList = listKey || "inventory";
   actions._itemBonuses = it && it.bonuses ? it.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
   actions._itemAdv = it && it.adv ? [...it.adv] : [];
   renderItemForm(it ? { name: it.name, qty: it.qty, equipped: it.equipped } : { name: "", qty: 1, equipped: false });
@@ -783,7 +822,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=32");
+      const reg = await navigator.serviceWorker.register("sw.js?v=33");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

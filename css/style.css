@@ -257,6 +257,11 @@ input[type=checkbox] { width: auto; }
 .it-tag { font-size: .68rem; font-weight: 700; color: var(--gold); background: rgba(255,216,107,.12); border: 1px solid rgba(255,216,107,.35); border-radius: 999px; padding: 1px 8px; }
 .it-tag.off { color: var(--muted); background: transparent; border-color: var(--line); }
 .it-eq-chk { align-self: end; }
+.hdr-btns { float: right; display: flex; gap: 6px; }
+.coins { display: flex; gap: 8px; }
+.coin { flex: 1; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.coin span { font-size: .72rem; color: var(--muted); font-weight: 700; }
+.coin input { text-align: center; padding: 8px 2px; }
 .eq { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--line); background: none; color: var(--good); cursor: pointer; }
 .eq.on { border-color: var(--good); }
 .del { background: none; border: none; color: var(--bad); font-size: 1rem; cursor: pointer; }
