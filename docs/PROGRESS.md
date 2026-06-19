@@ -108,9 +108,11 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 ## v23: all PHB subclasses (names)
 - RULES.SUBCLASSES expanded to every PHB subclass per class (+Artificer's 4). Spell table kept for the 4 SRD spell-granters (auto-spells, marked ✦ in picker); the rest are `null` = name-only (recorded + shown on sheet header, spells added via All tab). Only NAMES added (titles uncopyrightable); non-SRD spell lists/features NOT bundled by design.
 
+## v24: Xanathar's + Tasha's subclass names
+- EXTRA_SUBCLASSES merge block in rules.js adds XGE & TCE subclass names per class (108 subclasses total) as name-only nulls, without touching SRD spell tables. Same copyright stance: names only.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
-- [ ] Optional: add expansion-book subclass names (Xanathar's/Tasha's) on request — same name-only treatment.
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
 - [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
