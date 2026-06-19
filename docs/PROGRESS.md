@@ -111,6 +111,10 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 ## v24: Xanathar's + Tasha's subclass names
 - EXTRA_SUBCLASSES merge block in rules.js adds XGE & TCE subclass names per class (108 subclasses total) as name-only nulls, without touching SRD spell tables. Same copyright stance: names only.
 
+## v25: any subclass fully works via player-entered spells
+- Non-SRD subclasses get a Subclass tab + "Set subclass spells" picker (actions.editSubSpells/ssToggle/ssSearch/ssDone; subListHtml). Ticked spells → ch.subSpells → behave like always-prepared subclass spells (subclassSpells() falls back to ch.subSpells when no built-in table; subclassHasBuiltin() helper). Picker note = ownership attestation. LEGAL because the player enters content they own; Grimoire still bundles only SRD. subSpells synced via link mental group.
+- NOTE on the "ship-it-behind-a-checkbox" request: declined — distributing copyrighted text is infringement regardless of recipient ownership, and it'd sit in the public repo. The player-entry path achieves the same result legally.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
 - [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
