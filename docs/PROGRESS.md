@@ -50,9 +50,17 @@
 Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots clean (0 errors, 658 spells). Grimoire is in the Bording Hub.
 **Next collaborative session:** Phase 4 cloud linking — see `docs/LINKING.md` (design ready; needs Mathias present to deploy the Cloudflare Worker + confirm the parameter-group UX). Then Phase 5 polish.
 
-## NOT yet done / next steps (in priority order)
-- [ ] Phase 4: cloud linking (Cloudflare Worker + link code, per-parameter sharing). Account: see memory reference_cloudflare_account (token ~/.cloudflare-token). Newest-wins. NOTE: build worker code + frontend, but DEPLOY step (touches user's CF account, outward-facing) left for when user is present/approves.
-- [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet, hit-dice spend UI on short rest.
+## Phase 4 — Character linking (cloud sync) — DONE & LIVE ✅
+- Cloudflare Worker deployed: **https://grimoire-sync.mathiasjob.workers.dev** (worker/index.js, KV namespace LINKS id 607fb02528244acb86c681de239bcaf3). Newest-wins relay keyed by link code.
+- `js/link.js` — per-parameter group sync (Physical/Resources/Mental/Identity/Gear) + presets (Share everything / Shape-shift body-only); debounced auto-push on change; pull on boot + visibilitychange; manual pull/push; unlink. Char menu → "Link with another player".
+- TOKEN NOTE: `~/.cloudflare-token` is a shell export line — `source ~/.cloudflare-token` (don't read field-by-field). Then `cd worker && npx wrangler deploy` to redeploy.
+- `worker/dev-mock.js` = local Node stand-in (workerd won't run on the Pi, so `wrangler dev` fails with tcmalloc OOM — use the mock for local tests, set localStorage `grimoire.worker=http://localhost:8787`).
+- Verified end-to-end on the LIVE site + worker: join pulls partner char, HP edits sync, shape-shift shares body not mind.
+- Current cache: **v8**.
+
+## NOT yet done / next steps
+- [ ] Phase 5 polish: subclass auto-spells, multiclass slots, leveling helper, printable sheet.
+- [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual). Add a "Pull now" reminder in the sheet header when linked?
 
 ## Known limitations / decisions to remember
 - Spell damage dice aren't in SRD data cleanly → cast modal has a damage field that REMEMBERS what you type per spell (localStorage `grimoire.dmg.v1`). Not auto-filled first time. (Could enhance build_spells to capture casting_options damage later.)
