@@ -10,6 +10,32 @@ function classSpells(ch) {
   const names = Calc.classList(ch).map((c) => c.cls.toLowerCase());
   return spellPool(ch).filter((s) => s.custom || (s.classes || []).some((c) => names.includes(c.toLowerCase())));
 }
+// non-bundled official spells (from the look-up index) castable by this character's
+// classes and not already in their book — shown greyed in the "Find more" tab.
+function indexStubs(ch) {
+  const idx = Grimoire.spellIndex || [];
+  if (!idx.length) return [];
+  const have = new Set(spellPool(ch).map((s) => s.name.toLowerCase()));
+  const classes = Calc.classList(ch).map((c) => c.cls.toLowerCase());
+  return idx
+    .filter((s) => !have.has(s.name.toLowerCase()) && (s.classes || []).some((c) => classes.includes(c.toLowerCase())))
+    .map((s) => ({ id: idxId(s.name), name: s.name, level: s.level, school: s.school, source: s.source, stub: true }));
+}
+// shared pool builder for the spellbook (used by the full render AND live search)
+function spellPoolForList(ch) {
+  const f = ui.spellFilter;
+  let pool;
+  if (f.list === "available") pool = classSpells(ch);
+  else if (f.list === "all") pool = spellPool(ch);
+  else if (f.list === "find") pool = indexStubs(ch);
+  else if (f.list === "subclass") pool = subclassSpells(ch);
+  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subclassSpells(ch)].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
+  else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
+  if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
+  if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
+  if (!["prepared", "known", "favorites"].includes(f.list)) pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  return pool;
+}
 function classSummary(ch) {
   const list = Calc.classList(ch);
   if (list.length <= 1) return ch.cls;
@@ -340,23 +366,20 @@ function spellListSection(ch) {
   const f = ui.spellFilter;
   const subSpells = subclassSpells(ch);
   Grimoire._subSet = new Set(subSpells.map((s) => s.id));
-  const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
+  const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"], ["find", "Find more"]];
   if (ch.subclass) lists.splice(2, 0, ["subclass", "Subclass"]);
-  let pool;
-  if (f.list === "available") pool = classSpells(ch);
-  else if (f.list === "all") pool = spellPool(ch);
-  else if (f.list === "subclass") pool = subSpells;
-  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subSpells].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
-  else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
-  if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
-  if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
-  // keep the player's chosen order in curated lists; auto-sort the browse lists
-  if (!["prepared", "known", "favorites"].includes(f.list)) pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  const pool = spellPoolForList(ch);
   const levels = `<option value="all">All levels</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(f.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrips" : "Level " + i}</option>`).join("");
   const subEditBanner = (f.list === "subclass" && ch.subclass && !subclassHasBuiltin(ch))
     ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">Set subclass spells</button></div>`
     : "";
-  const rows = subEditBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}</p>`);
+  const findBanner = f.list === "find"
+    ? `<p class="muted small pad">Official spells not bundled (only free SRD ships). Tap one to look it up &amp; paste it in. Class/level are from a community index — confirm at the source.</p>`
+    : "";
+  const emptyMsg = f.list === "find"
+    ? "No matching spells — everything for your class at this filter is already in your book."
+    : `No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}`;
+  const rows = subEditBanner + findBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">${emptyMsg}</p>`);
   return `
     <h3 class="sec">Spellbook <button class="mini" data-act="addCustom">+ hand-add</button> <button class="mini" data-act="pasteSpells">paste</button></h3>
     <div class="spell-filters">
@@ -370,6 +393,15 @@ function spellListSection(ch) {
 }
 
 function spellRow(ch, s) {
+  if (s.stub) {
+    const lvl = s.level === 0 ? "Cantrip" : "L" + s.level;
+    return `<div class="spell stub">
+      <button class="spell-main" data-act="spellDetail" data-id="${esc(s.id)}">
+        <span class="sp-name">${esc(s.name)} <em class="ext">${esc(s.source)}</em></span>
+        <span class="sp-meta">${lvl} · ${esc(s.school)} · not included — tap to add</span>
+      </button>
+    </div>`;
+  }
   const isSub = Grimoire._subSet && Grimoire._subSet.has(s.id);
   const isFav = ch.spells.favorites.includes(s.id);
   const isPrep = ch.spells.prepared.includes(s.id) || isSub;
@@ -393,17 +425,7 @@ function spellRow(ch, s) {
 }
 
 function spellListRowsHtml(ch) {
-  const f = ui.spellFilter;
-  let pool;
-  if (f.list === "available") pool = classSpells(ch);
-  else if (f.list === "all") pool = spellPool(ch);
-  else if (f.list === "subclass") pool = subclassSpells(ch);
-  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subclassSpells(ch)].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
-  else pool = (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
-  if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
-  if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
-  if (!["prepared", "known", "favorites"].includes(f.list)) pool.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-  return pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.</p>`;
+  return spellPoolForList(ch).map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.</p>`;
 }
 
 function itemRowsHtml(ch, items, listKey) {

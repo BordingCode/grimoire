@@ -15,6 +15,8 @@ function mdToHtml(s) {
 function sign(n) { return (n >= 0 ? "+" : "") + n; }
 // Official-source look-up: D&D Beyond search (just a link — no scraping/bundling of their text).
 function ddbSearchUrl(name) { return "https://www.dndbeyond.com/search?q=" + encodeURIComponent(name || ""); }
+// stable id for a look-up-index (non-bundled) spell, from its name
+function idxId(name) { return "idx-" + String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-"); }
 function dmgMemory() { try { return JSON.parse(localStorage.getItem(DMG_KEY)) || {}; } catch { return {}; } }
 function setDmgMemory(id, expr) { const m = dmgMemory(); m[id] = expr; localStorage.setItem(DMG_KEY, JSON.stringify(m)); }
 

@@ -235,6 +235,8 @@ input[type=checkbox] { width: auto; }
 .spell-main.pick { width: 100%; border-bottom: 1px solid var(--line); }
 .spell-main.pick.on .sp-name { color: var(--gold); font-weight: 700; }
 .sp-meta { font-size: .75rem; color: var(--muted); }
+.spell.stub .sp-name { color: var(--muted); }
+.sp-name .ext { color: var(--muted); font-style: normal; font-size: .65rem; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
 .spell-acts { display: flex; gap: 4px; }
 .ic { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: .85rem; font-weight: 700; cursor: pointer; }
 .ic.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }

@@ -15,11 +15,13 @@ const Party = {
 };
 
 async function loadSpells() {
-  const [a, b] = await Promise.all([
+  const [a, b, idx] = await Promise.all([
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
+    fetch("data/spell-index.json?v=37").then((r) => r.json()).catch(() => []),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
+  Grimoire.spellIndex = idx || [];   // factual name index for the "Find more" look-up tab
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
@@ -208,7 +210,7 @@ const actions = {
   slot(el) { const ch = Store.active(); const lvl = +el.dataset.lvl, k = +el.dataset.k; const s = ch.spells.slots[lvl]; s.used = (k < s.used) ? k : k + 1; commit(); },
   pactSlot(el) { const ch = Store.active(); const k = +el.dataset.k; ch.spells.pact.used = (k < ch.spells.pact.used) ? k : k + 1; commit(); },
 
-  spellDetail(el) { openSpell(Store.active(), el.dataset.id); },
+  spellDetail(el) { const id = el.dataset.id; if (id.startsWith("idx-")) return openStub(id); openSpell(Store.active(), id); },
 
   addCustom() {
     modal("Hand-add a spell", `
@@ -656,6 +658,18 @@ function weaponForm(w, idx) {
 }
 
 /* spell detail + cast */
+/* a non-bundled spell from the look-up index: name/level/school only, no rules text */
+function openStub(id) {
+  const s = (Grimoire.spellIndex || []).find((x) => idxId(x.name) === id);
+  if (!s) return;
+  const lvl = s.level === 0 ? "Cantrip" : "Level " + s.level;
+  modal(s.name, `
+    <p class="sp-line">${lvl} · ${esc(s.school)} · <span class="muted">${esc(s.source)}</span></p>
+    <p class="muted small">Not bundled — Grimoire only ships the free SRD spells. Class &amp; level here come from a community index, so confirm the details at the source. Then paste the full text to add it to this character (stays on your phone).</p>
+    <p class="sp-lookup"><a href="${ddbSearchUrl(s.name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button><button class="btn primary" data-act="pasteSpells">Paste the text to add it</button></div>`);
+}
+
 function openSpell(ch, id) {
   const s = findSpell(ch, id); if (!s) return;
   const comp = [s.components?.v && "V", s.components?.s && "S", s.components?.m && "M"].filter(Boolean).join(", ") || "—";
@@ -920,6 +934,9 @@ document.addEventListener("click", (e) => {
   const fn = actions[t.dataset.act]; if (fn) { e.preventDefault(); fn(t); }
 });
 document.addEventListener("input", (e) => {
+  // data-act inputs (e.g. spell search) — fire as you type
+  const a = e.target.closest("[data-act]");
+  if (a && actions[a.dataset.act]) { actions[a.dataset.act](a); return; }
   const t = e.target.closest("[data-bind]"); if (!t) return;
   const ch = Store.active(); if (!ch) return;
   let v = t.type === "checkbox" ? t.checked : t.value;
@@ -929,6 +946,9 @@ document.addEventListener("input", (e) => {
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
 });
 document.addEventListener("change", (e) => {
+  // data-act selects (e.g. spell level filter) — fire on change
+  const a = e.target.closest("[data-act]");
+  if (a && actions[a.dataset.act]) { actions[a.dataset.act](a); return; }
   const cl = e.target.closest('[data-act="clsLevel"]');
   if (cl) {
     const ch = Store.active(); const i = +cl.dataset.i; const v = Math.max(1, Math.min(20, +cl.value || 1));
