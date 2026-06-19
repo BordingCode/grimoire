@@ -97,13 +97,18 @@ function exportCharacter(ch) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* Import from a parsed object; assigns a fresh id so it never clobbers an existing one. */
-function importCharacter(obj) {
+/* Import from a parsed object; assigns a fresh id so it never clobbers an existing one.
+   If the file carries embedded session media (_media), restore the blobs into IndexedDB. */
+async function importCharacter(obj) {
   if (!obj || !obj.abilities || !obj.cls) throw new Error("Not a Grimoire character file.");
+  const media = Array.isArray(obj._media) ? obj._media : [];
   const ch = JSON.parse(JSON.stringify(obj));
+  delete ch._media;
   ch.id = uid();
   ch.importedAt = nowStamp();
-  return Store.add(ch);
+  Store.add(ch);
+  if (media.length && window.Media) { for (const m of media) { try { await Media.put({ ...m, charId: ch.id }); } catch (e) {} } }
+  return ch;
 }
 
 window.Store = Store;

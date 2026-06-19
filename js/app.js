@@ -4,7 +4,7 @@
 "use strict";
 
 const Grimoire = { spells: { "2014": [], "2024": [] } };
-const ui = { screen: "home", tab: "stats", reorder: false, spellFilter: { q: "", level: "all", list: "available" } };
+const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" } };
 
 /* team kill-count tracker (local to this device, separate from characters) */
 const Party = {
@@ -208,6 +208,10 @@ const actions = {
   prep(el) { toggleList("prepared", el.dataset.id); },
   know(el) { toggleList("known", el.dataset.id); },
   slot(el) { const ch = Store.active(); const lvl = +el.dataset.lvl, k = +el.dataset.k; const s = ch.spells.slots[lvl]; s.used = (k < s.used) ? k : k + 1; commit(); },
+  toggleEditSlots() { ui.editSlots = !ui.editSlots; render(); },
+  slotInc(el) { const ch = Store.active(); const i = +el.dataset.lvl; ch.overrides["slotMax." + i] = Math.min(20, Calc.spellSlots(ch)[i].max + 1); commit(); },
+  slotDec(el) { const ch = Store.active(); const i = +el.dataset.lvl; ch.overrides["slotMax." + i] = Math.max(0, Calc.spellSlots(ch)[i].max - 1); commit(); },
+  slotReset(el) { const ch = Store.active(); delete ch.overrides["slotMax." + el.dataset.lvl]; commit(); },
   pactSlot(el) { const ch = Store.active(); const k = +el.dataset.k; ch.spells.pact.used = (k < ch.spells.pact.used) ? k : k + 1; commit(); },
 
   spellDetail(el) { const id = el.dataset.id; if (id.startsWith("idx-")) return openStub(id); openSpell(Store.active(), id); },
@@ -362,7 +366,13 @@ const actions = {
         <button class="btn danger" data-act="deleteChar">Delete character</button>
       </div>`);
   },
-  exportChar() { Gx.exportCharacter(Store.active()); closeModal(); toast("Exported. Keep it as a backup or send it to share."); },
+  async exportChar() {
+    const ch = Store.active();
+    const out = JSON.parse(JSON.stringify(ch));
+    try { out._media = window.Media ? await Media.forChar(ch.id) : []; } catch (e) { out._media = []; }
+    Gx.exportCharacter(out); closeModal();
+    toast(`Exported${out._media && out._media.length ? ` with ${out._media.length} session picture${out._media.length === 1 ? "" : "s"}` : ""}. Keep it as a backup or send it to share.`);
+  },
   renameChar() { const ch = Store.active(); modal("Rename", `<input id="rn" value="${esc(ch.name)}"><div class="modal-btns"><button class="btn primary" data-act="renameSave">Save</button></div>`, () => $("#rn").focus()); },
   renameSave() { const ch = Store.active(); ch.name = $("#rn").value.trim() || ch.name; closeModal(); commit(); },
   manageClasses() {
@@ -474,7 +484,7 @@ const actions = {
   },
   deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
-  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); toast("Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
+  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { try { await importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); toast("Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
 
   closeModal() { closeModal(); },
 };
@@ -840,12 +850,157 @@ actions.photoPick = () => {
   inp.onchange = () => {
     const f = inp.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = () => { const img = new Image(); img.onload = () => { Store.active().portrait = downscaleImage(img); commit(); if (window.LINK) LINK.schedulePush(Store.active()); closeModal(); toast("Photo added."); }; img.onerror = () => toast("Couldn't read that image."); img.src = r.result; };
+    r.onload = () => { const img = new Image(); img.onload = () => { Store.active().portrait = downscaleImage(img, 1024); commit(); if (window.LINK) LINK.schedulePush(Store.active()); closeModal(); toast("Photo added."); }; img.onerror = () => toast("Couldn't read that image."); img.src = r.result; };
     r.readAsDataURL(f);
   };
   inp.click();
 };
 actions.photoRemove = () => { const ch = Store.active(); ch.portrait = ""; commit(); if (window.LINK) LINK.schedulePush(ch); closeModal(); };
+
+/* ===================================================================== */
+/*  SESSION BOOK (per-character journal: text + photos + drawings)        */
+/*  Text/metadata live in the character (localStorage); image blobs live  */
+/*  in IndexedDB (Media), so they never blow the small localStorage cap.  */
+/* ===================================================================== */
+function activeSession() { const ch = Store.active(); return ch && (ch.sessions || []).find((s) => s.id === ui.sessionId); }
+
+actions.newSession = () => {
+  const ch = Store.active(); if (!ch.sessions) ch.sessions = [];
+  const d = new Date();
+  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const s = { id: "s" + Gx.uid(), date: iso, title: "", text: "", media: [] };
+  ch.sessions.push(s); Store.save();
+  ui.sessionId = s.id; ui.screen = "session"; render();
+};
+actions.openSession = (el) => { ui.sessionId = el.dataset.id; ui.screen = "session"; render(); };
+actions.sessionBack = () => { ui.screen = "sheet"; ui.tab = "sessions"; ui.sessionId = null; render(); };
+actions.sessionTitle = (el) => { const s = activeSession(); if (s) { s.title = el.value; Store.save(); } };
+actions.sessionDate = (el) => { const s = activeSession(); if (s) { s.date = el.value; Store.save(); } };
+actions.sessionText = (el) => { const s = activeSession(); if (s) { s.text = el.value; Store.save(); } };
+actions.sessionDelete = (el) => {
+  const ch = Store.active(); const s = (ch.sessions || []).find((x) => x.id === el.dataset.id); if (!s) return;
+  confirmDelete(`Delete this session${s.title ? ` “${s.title}”` : ""} and its photos/drawings?`, async () => {
+    for (const m of (s.media || [])) { try { await Media.del(m.id); } catch (e) {} }
+    ch.sessions = ch.sessions.filter((x) => x.id !== s.id); Store.save();
+    ui.screen = "sheet"; ui.tab = "sessions"; ui.sessionId = null; render();
+  });
+};
+async function addSessionMedia(sid, type, dataUrl) {
+  const ch = Store.active(); const s = (ch.sessions || []).find((x) => x.id === sid); if (!s) return;
+  const id = "m" + Gx.uid();
+  await Media.put({ id, charId: ch.id, type, data: dataUrl, created: nowStamp() });
+  if (!s.media) s.media = []; s.media.push({ id, type, caption: "" });
+  Store.save(); render(); toast(type === "photo" ? "Photo added." : "Drawing saved.");
+}
+actions.sessionAddPhoto = (el) => {
+  const sid = el.dataset.id;
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { const img = new Image(); img.onload = async () => { try { await addSessionMedia(sid, "photo", downscaleImage(img, 1280)); } catch (e) { toast("Couldn't save the photo (storage full?)."); } }; img.onerror = () => toast("Couldn't read that image."); img.src = r.result; };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+};
+actions.sessionDraw = (el) => {
+  const sid = el.dataset.id;
+  openDrawPad(async (dataUrl) => { try { await addSessionMedia(sid, "drawing", dataUrl); } catch (e) { toast("Couldn't save the drawing."); } });
+};
+actions.mediaView = async (el) => {
+  let rec = null; try { rec = await Media.get(el.dataset.mid); } catch (e) {}
+  if (!rec) { toast("Image not found on this device."); return; }
+  modal("", `<img class="media-full" src="${rec.data}" alt=""><div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`);
+};
+actions.mediaDelete = (el) => {
+  const sid = el.dataset.sid, mid = el.dataset.mid;
+  confirmDelete("Delete this picture?", async () => {
+    const ch = Store.active(); const s = (ch.sessions || []).find((x) => x.id === sid); if (!s) return;
+    try { await Media.del(mid); } catch (e) {}
+    s.media = (s.media || []).filter((m) => m.id !== mid); Store.save(); render();
+  });
+};
+// after a session screen renders, fill thumbnails from IndexedDB (async)
+async function hydrateSessionMedia() {
+  const imgs = document.querySelectorAll("img[data-mid]:not([data-loaded])");
+  for (const img of imgs) {
+    img.dataset.loaded = "1";
+    try { const rec = await Media.get(img.dataset.mid); if (rec) img.src = rec.data; } catch (e) {}
+  }
+}
+
+/* ---------- Drawing pad: finger sketch, optional photo/map underneath ---------- */
+function openDrawPad(onSave) {
+  const COLORS = ["#1c1430", "#ffffff", "#e23b3b", "#2e7d32", "#1f6feb", "#f5a623"];
+  const SIZES = [3, 6, 12], SIZE_L = ["S", "M", "L"];
+  const wrap = document.createElement("div");
+  wrap.className = "drawpad";
+  wrap.innerHTML = `
+    <div class="dp-bar dp-top">
+      <button class="dp-btn" data-dp="cancel">Cancel</button>
+      <span class="dp-colors">${COLORS.map((c, i) => `<button class="dp-color${i === 0 ? " on" : ""}" data-dp="color" data-c="${c}" style="background:${c}"></button>`).join("")}</span>
+      <button class="dp-btn primary" data-dp="save">Save</button>
+    </div>
+    <div class="dp-canvas-wrap"><canvas class="dp-canvas"></canvas></div>
+    <div class="dp-bar dp-bottom">
+      <button class="dp-btn" data-dp="pen">Pen</button>
+      <button class="dp-btn" data-dp="erase">Eraser</button>
+      <button class="dp-btn" data-dp="size">Size: M</button>
+      <button class="dp-btn" data-dp="undo">Undo</button>
+      <button class="dp-btn" data-dp="clear">Clear</button>
+      <button class="dp-btn" data-dp="photo">Photo/map</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  const canvas = wrap.querySelector(".dp-canvas"), ctx = canvas.getContext("2d");
+  const strokesCv = document.createElement("canvas"), sctx = strokesCv.getContext("2d");
+  let bgImg = null, color = COLORS[0], erasing = false, sizeIdx = 1;
+  let strokes = [], cur = null, drawing = false;
+
+  function drawBg() {
+    ctx.fillStyle = "#fffdf7"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (bgImg) { const s = Math.min(canvas.width / bgImg.width, canvas.height / bgImg.height); const w = bgImg.width * s, h = bgImg.height * s; ctx.drawImage(bgImg, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h); }
+  }
+  function composite() { drawBg(); ctx.drawImage(strokesCv, 0, 0); }
+  function seg(a, b, st) { sctx.lineCap = "round"; sctx.lineJoin = "round"; sctx.globalCompositeOperation = st.erase ? "destination-out" : "source-over"; sctx.strokeStyle = st.color; sctx.lineWidth = st.size; sctx.beginPath(); sctx.moveTo(a.x, a.y); sctx.lineTo(b.x, b.y); sctx.stroke(); }
+  function dot(p, st) { sctx.globalCompositeOperation = st.erase ? "destination-out" : "source-over"; sctx.fillStyle = st.color; sctx.beginPath(); sctx.arc(p.x, p.y, st.size / 2, 0, Math.PI * 2); sctx.fill(); }
+  function paint(st) { if (st.pts.length === 1) dot(st.pts[0], st); else for (let i = 1; i < st.pts.length; i++) seg(st.pts[i - 1], st.pts[i], st); }
+  function redraw() { sctx.clearRect(0, 0, strokesCv.width, strokesCv.height); sctx.globalCompositeOperation = "source-over"; for (const st of strokes) paint(st); composite(); }
+  function fit() { const el = wrap.querySelector(".dp-canvas-wrap"); const w = el.clientWidth, h = el.clientHeight; canvas.width = w; canvas.height = h; strokesCv.width = w; strokesCv.height = h; redraw(); }
+  function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function markTool() { wrap.querySelector('[data-dp="pen"]').classList.toggle("on", !erasing); wrap.querySelector('[data-dp="erase"]').classList.toggle("on", erasing); }
+
+  canvas.addEventListener("pointerdown", (e) => { e.preventDefault(); try { canvas.setPointerCapture(e.pointerId); } catch (x) {} drawing = true; cur = { color, size: SIZES[sizeIdx], erase: erasing, pts: [pos(e)] }; strokes.push(cur); dot(cur.pts[0], cur); composite(); });
+  canvas.addEventListener("pointermove", (e) => { if (!drawing) return; e.preventDefault(); const p = pos(e); const a = cur.pts[cur.pts.length - 1]; cur.pts.push(p); seg(a, p, cur); composite(); });
+  const end = () => { drawing = false; cur = null; };
+  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+
+  function pickBg() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { bgImg = im; redraw(); }; im.src = r.result; }; r.readAsDataURL(f); }; inp.click(); }
+  function close() { wrap.remove(); window.removeEventListener("resize", fit); }
+  function save() {
+    const out = document.createElement("canvas"); out.width = canvas.width; out.height = canvas.height; const o = out.getContext("2d");
+    o.fillStyle = "#fffdf7"; o.fillRect(0, 0, out.width, out.height);
+    if (bgImg) { const s = Math.min(out.width / bgImg.width, out.height / bgImg.height); const w = bgImg.width * s, h = bgImg.height * s; o.drawImage(bgImg, (out.width - w) / 2, (out.height - h) / 2, w, h); }
+    o.drawImage(strokesCv, 0, 0);
+    const data = out.toDataURL("image/jpeg", 0.85); close(); onSave(data);
+  }
+
+  wrap.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-dp]"); if (!b) return;
+    const a = b.dataset.dp;
+    if (a === "cancel") close();
+    else if (a === "save") save();
+    else if (a === "color") { color = b.dataset.c; erasing = false; wrap.querySelectorAll(".dp-color").forEach((x) => x.classList.toggle("on", x === b)); markTool(); }
+    else if (a === "pen") { erasing = false; markTool(); }
+    else if (a === "erase") { erasing = true; markTool(); }
+    else if (a === "size") { sizeIdx = (sizeIdx + 1) % SIZES.length; b.textContent = "Size: " + SIZE_L[sizeIdx]; }
+    else if (a === "undo") { strokes.pop(); redraw(); }
+    else if (a === "clear") { strokes = []; redraw(); }
+    else if (a === "photo") pickBg();
+  });
+  window.addEventListener("resize", fit);
+  requestAnimationFrame(() => { fit(); markTool(); });
+}
 
 /* ---------- appearance (dark/light + accent) ---------- */
 actions.appearance = () => {
@@ -977,7 +1132,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=33");
+      const reg = await navigator.serviceWorker.register("sw.js?v=40");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

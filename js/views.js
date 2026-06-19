@@ -96,8 +96,10 @@ function render() {
   if (ui.screen === "home") app.innerHTML = viewHome();
   else if (ui.screen === "new") app.innerHTML = viewNew();
   else if (ui.screen === "party") app.innerHTML = viewParty();
+  else if (ui.screen === "session") app.innerHTML = viewSession(Store.active());
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
-  if (typeof applyTheme === "function") applyTheme(ui.screen === "sheet" ? Store.active() : null);
+  if (typeof applyTheme === "function") applyTheme((ui.screen === "sheet" || ui.screen === "session") ? Store.active() : null);
+  if (ui.screen === "session" && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
   if (typeof initSortables === "function") initSortables();
 }
 // drag-handle markup, shown only in Arrange mode (ui.reorder)
@@ -177,13 +179,14 @@ function viewNew() {
 /* ---- Sheet (tabbed) ---- */
 function viewSheet(ch) {
   if (!ch) { ui.screen = "home"; return viewHome(); }
-  const tabs = [["stats", "Stats"], ["combat", "Combat"], ["spells", "Spells"], ["gear", "Gear"], ["notes", "Notes"]];
+  const tabs = [["stats", "Stats"], ["combat", "Combat"], ["spells", "Spells"], ["gear", "Gear"], ["notes", "Notes"], ["sessions", "Log"]];
   let body = "";
   if (ui.tab === "stats") body = tabStats(ch);
   else if (ui.tab === "combat") body = tabCombat(ch);
   else if (ui.tab === "spells") body = tabSpells(ch);
   else if (ui.tab === "gear") body = tabGear(ch);
   else if (ui.tab === "notes") body = tabNotes(ch);
+  else if (ui.tab === "sessions") body = tabSessions(ch);
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
@@ -243,13 +246,6 @@ function tabStats(ch) {
     <div class="lines">${saves}</div>
     <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
     <div class="lines">${skills}</div>
-    <h3 class="sec">Proficiencies &amp; Languages</h3>
-    <div class="prof-box">
-      <label class="fld"><span>Languages</span><textarea class="prof-ta" data-bind="proficiencies.languages" rows="2" placeholder="Common, Elvish, Thieves’ Cant…">${esc(prof.languages || "")}</textarea></label>
-      <label class="fld"><span>Armor</span><textarea class="prof-ta" data-bind="proficiencies.armor" rows="1" placeholder="Light, medium, shields…">${esc(prof.armor || "")}</textarea></label>
-      <label class="fld"><span>Weapons</span><textarea class="prof-ta" data-bind="proficiencies.weapons" rows="1" placeholder="Simple, martial, longswords…">${esc(prof.weapons || "")}</textarea></label>
-      <label class="fld"><span>Tools</span><textarea class="prof-ta" data-bind="proficiencies.tools" rows="1" placeholder="Thieves’ tools, herbalism kit, lute…">${esc(prof.tools || "")}</textarea></label>
-    </div>
     <h3 class="sec">Features &amp; traits <button class="mini" data-act="addFeature">+ add</button></h3>
     <div class="features" ${ui.reorder ? 'data-sortlist="features"' : ""}>${(ch.features || []).map((f) => `
       <div class="feat" ${ui.reorder ? `data-sortid="${esc(f.id)}"` : ""}>
@@ -257,7 +253,14 @@ function tabStats(ch) {
           <button class="opt-btn" data-act="featureOptions" data-id="${f.id}">⋯</button></div>
         ${f.desc ? `<div class="feat-desc">${esc(f.desc)}</div>` : ""}
         ${(f.bonuses && f.bonuses.length) || (f.adv && f.adv.length) ? `<div class="feat-tags">${(f.bonuses || []).map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}${(f.adv || []).map((t) => `<span class="feat-tag adv-tag">ADV ${esc(ADV_LABEL[t] || t)}</span>`).join("")}</div>` : ""}
-      </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>`;
+      </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>
+    <h3 class="sec">Proficiencies &amp; Languages</h3>
+    <div class="prof-box">
+      <label class="fld"><span>Languages</span><textarea class="prof-ta" data-bind="proficiencies.languages" rows="2" placeholder="Common, Elvish, Thieves’ Cant…">${esc(prof.languages || "")}</textarea></label>
+      <label class="fld"><span>Armor</span><textarea class="prof-ta" data-bind="proficiencies.armor" rows="1" placeholder="Light, medium, shields…">${esc(prof.armor || "")}</textarea></label>
+      <label class="fld"><span>Weapons</span><textarea class="prof-ta" data-bind="proficiencies.weapons" rows="1" placeholder="Simple, martial, longswords…">${esc(prof.weapons || "")}</textarea></label>
+      <label class="fld"><span>Tools</span><textarea class="prof-ta" data-bind="proficiencies.tools" rows="1" placeholder="Thieves’ tools, herbalism kit, lute…">${esc(prof.tools || "")}</textarea></label>
+    </div>`;
 }
 
 function tabCombat(ch) {
@@ -338,15 +341,30 @@ function tabSpells(ch) {
       <button class="btn" data-act="addCustom">+ Add a spell</button></div>` + spellListSection(ch);
   }
   const slots = Calc.spellSlots(ch), pact = Calc.pactMagic(ch);
+  const editingSlots = ui.editSlots;
   let slotHtml = "";
-  for (let i = 1; i <= 9; i++) {
-    if (!slots[i].max) continue;
-    const pips = Array.from({ length: slots[i].max }, (_, k) => `<button class="slot ${k < slots[i].used ? "used" : ""}" data-act="slot" data-lvl="${i}" data-k="${k}"></button>`).join("");
-    slotHtml += `<div class="slot-row"><span class="slvl" data-act="override" data-key="slotMax.${i}" data-label="Level ${i} slots" data-auto="${slots[i].max}">L${i}</span><span class="pips">${pips}</span></div>`;
-  }
-  if (pact) {
-    const pips = Array.from({ length: pact.max }, (_, k) => `<button class="slot pact ${k < pact.used ? "used" : ""}" data-act="pactSlot" data-k="${k}"></button>`).join("");
-    slotHtml += `<div class="slot-row"><span class="slvl">Pact L${pact.level}</span><span class="pips">${pips}</span><small class="muted">short rest</small></div>`;
+  if (editingSlots) {
+    // edit mode: +/- the max per level (incl. levels currently at 0), with revert-to-auto
+    for (let i = 1; i <= 9; i++) {
+      const overridden = ch.overrides && ch.overrides["slotMax." + i] != null && ch.overrides["slotMax." + i] !== "";
+      slotHtml += `<div class="slot-erow">
+        <span class="slvl">L${i}</span>
+        <button class="step" data-act="slotDec" data-lvl="${i}">−</button>
+        <span class="slot-n ${overridden ? "ovr" : ""}">${slots[i].max}</span>
+        <button class="step" data-act="slotInc" data-lvl="${i}">+</button>
+        ${overridden ? `<button class="btn small-b" data-act="slotReset" data-lvl="${i}">auto</button>` : `<span class="auto-spacer"></span>`}
+      </div>`;
+    }
+  } else {
+    for (let i = 1; i <= 9; i++) {
+      if (!slots[i].max) continue;
+      const pips = Array.from({ length: slots[i].max }, (_, k) => `<button class="slot ${k < slots[i].used ? "used" : ""}" data-act="slot" data-lvl="${i}" data-k="${k}"></button>`).join("");
+      slotHtml += `<div class="slot-row"><span class="slvl" data-act="override" data-key="slotMax.${i}" data-label="Level ${i} slots" data-auto="${slots[i].max}">L${i}</span><span class="pips">${pips}</span></div>`;
+    }
+    if (pact) {
+      const pips = Array.from({ length: pact.max }, (_, k) => `<button class="slot pact ${k < pact.used ? "used" : ""}" data-act="pactSlot" data-k="${k}"></button>`).join("");
+      slotHtml += `<div class="slot-row"><span class="slvl">Pact L${pact.level}</span><span class="pips">${pips}</span><small class="muted">short rest</small></div>`;
+    }
   }
   const casters = Calc.castingClasses(ch);
   let headHtml;
@@ -366,7 +384,9 @@ function tabSpells(ch) {
   }
   return `
     ${headHtml}
-    <div class="slots">${slotHtml || '<p class="muted">No spell slots at this level.</p>'}</div>
+    <div class="slots-head"><span class="slots-title">Spell slots</span><button class="mini" data-act="toggleEditSlots">${editingSlots ? "done" : "edit"}</button></div>
+    ${editingSlots ? '<p class="muted small">Tap − / + to set how many slots you have at each level (for items, feats or homebrew). “auto” reverts to the rules default.</p>' : ""}
+    <div class="slots">${slotHtml || (editingSlots ? "" : '<p class="muted">No spell slots at this level.</p>')}</div>
     ${spellListSection(ch)}`;
 }
 
@@ -482,4 +502,57 @@ function tabNotes(ch) {
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
     : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
   return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests, session notes…">${esc(ch.notes)}</textarea>`;
+}
+
+/* ---- Session book (per-character journal: text + photos + drawings) ---- */
+function sessionDateLabel(d) {
+  if (!d) return "";
+  const parts = String(d).split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`; // dd/mm/yyyy
+  return d;
+}
+function tabSessions(ch) {
+  const list = (ch.sessions || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.id > a.id ? 1 : -1));
+  const cards = list.map((s) => {
+    const n = (s.media || []).length;
+    const snippet = (s.text || "").replace(/\s+/g, " ").trim().slice(0, 90);
+    return `<button class="session-card" data-act="openSession" data-id="${esc(s.id)}">
+      <div class="sc-top"><span class="sc-title">${esc(s.title || "Untitled session")}</span><span class="sc-date">${esc(sessionDateLabel(s.date))}</span></div>
+      ${snippet ? `<div class="sc-snip">${esc(snippet)}${(s.text || "").length > 90 ? "…" : ""}</div>` : `<div class="sc-snip muted">No notes yet</div>`}
+      ${n ? `<div class="sc-meta">${n} picture${n === 1 ? "" : "s"}</div>` : ""}
+    </button>`;
+  }).join("");
+  return `
+    <div class="sessions-head">
+      <h3 class="sec">Session log</h3>
+      <button class="btn primary" data-act="newSession">+ New session</button>
+    </div>
+    <p class="muted small">Notes, photos &amp; drawings for each game session — saved on this phone and in your backup export.</p>
+    <div class="session-list">${cards || `<p class="muted pad">No sessions yet. Tap “+ New session” after your next game.</p>`}</div>`;
+}
+
+function viewSession(ch) {
+  if (!ch) { ui.screen = "home"; return viewHome(); }
+  const s = (ch.sessions || []).find((x) => x.id === ui.sessionId);
+  if (!s) { ui.screen = "sheet"; ui.tab = "sessions"; return viewSheet(ch); }
+  const media = (s.media || []).map((m) => `
+    <div class="media-thumb">
+      <img data-mid="${esc(m.id)}" data-act="mediaView" data-sid="${esc(s.id)}" alt="${esc(m.caption || m.type)}">
+      <button class="media-del" data-act="mediaDelete" data-sid="${esc(s.id)}" data-mid="${esc(m.id)}" title="delete">✕</button>
+    </div>`).join("");
+  return `
+    <header class="topbar">
+      <button class="back" data-act="sessionBack">‹</button>
+      <div class="sheet-id"><span class="s-name">Session log</span><span class="s-sub">${esc(ch.name)}</span></div>
+    </header>
+    <div class="screen">
+      <label class="fld"><span>Title</span><input id="ses-title" data-act="sessionTitle" data-id="${esc(s.id)}" value="${esc(s.title || "")}" placeholder="e.g. The Sunken Crypt"></label>
+      <label class="fld"><span>Date</span><input type="date" data-act="sessionDate" data-id="${esc(s.id)}" value="${esc(s.date || "")}"></label>
+      <label class="fld"><span>Notes</span><textarea class="notes session-notes" data-act="sessionText" data-id="${esc(s.id)}" rows="8" placeholder="What happened this session…">${esc(s.text || "")}</textarea></label>
+      <div class="media-actions">
+        <button class="btn" data-act="sessionAddPhoto" data-id="${esc(s.id)}">Add photo</button>
+        <button class="btn" data-act="sessionDraw" data-id="${esc(s.id)}">New drawing</button>
+      </div>
+      <div class="media-grid">${media || `<p class="muted small">No photos or drawings yet.</p>`}</div>
+    </div>`;
 }
