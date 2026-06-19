@@ -314,7 +314,7 @@ input[type=checkbox] { width: auto; }
 .wpn-go { font-size: 1.2rem; }
 
 /* resource note */
-.res-note { font-size: .8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+.res-note { font-size: .8rem; color: var(--muted); margin-top: 4px; font-style: italic; white-space: pre-wrap; }
 
 /* kill count */
 .kill-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
