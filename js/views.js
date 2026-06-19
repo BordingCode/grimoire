@@ -10,15 +10,15 @@ function classSpells(ch) {
   const names = Calc.classList(ch).map((c) => c.cls.toLowerCase());
   return spellPool(ch).filter((s) => s.custom || (s.classes || []).some((c) => names.includes(c.toLowerCase())));
 }
-// non-bundled official spells (from the look-up index) castable by this character's
-// classes and not already in their book — shown greyed in the "Find more" tab.
-function indexStubs(ch) {
+// non-bundled official spells (from the look-up index) not already in the book —
+// shown greyed in "All spells". classFiltered=true limits to the character's classes.
+function indexStubs(ch, classFiltered) {
   const idx = Grimoire.spellIndex || [];
   if (!idx.length) return [];
   const have = new Set(spellPool(ch).map((s) => s.name.toLowerCase()));
   const classes = Calc.classList(ch).map((c) => c.cls.toLowerCase());
   return idx
-    .filter((s) => !have.has(s.name.toLowerCase()) && (s.classes || []).some((c) => classes.includes(c.toLowerCase())))
+    .filter((s) => !have.has(s.name.toLowerCase()) && (!classFiltered || (s.classes || []).some((c) => classes.includes(c.toLowerCase()))))
     .map((s) => ({ id: idxId(s.name), name: s.name, level: s.level, school: s.school, source: s.source, stub: true }));
 }
 // shared pool builder for the spellbook (used by the full render AND live search)
@@ -26,15 +26,30 @@ function spellPoolForList(ch) {
   const f = ui.spellFilter;
   let pool;
   if (f.list === "available") pool = classSpells(ch);
-  else if (f.list === "all") pool = spellPool(ch);
-  else if (f.list === "find") pool = indexStubs(ch);
+  else if (f.list === "all") pool = [...spellPool(ch), ...indexStubs(ch, false)];  // every spell in the game (SRD in full + the rest as look-up stubs)
   else if (f.list === "subclass") pool = subclassSpells(ch);
   else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subclassSpells(ch)].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
   else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
-  if (!["prepared", "known", "favorites"].includes(f.list)) pool = pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-  return pool;
+  return pool.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));  // always by level, then A–Z
+}
+// render a sorted pool as rows grouped under level headers (Cantrips, Level 1, …)
+function spellRowsWithHeaders(ch, pool) {
+  let html = "", lastLvl = null;
+  for (const s of pool) {
+    if (s.level !== lastLvl) { lastLvl = s.level; html += `<div class="spell-lvl-head">${s.level === 0 ? "Cantrips" : "Level " + s.level}</div>`; }
+    html += spellRow(ch, s);
+  }
+  return html;
+}
+// smartest spellbook tab to land on: the spells you can actually cast now
+// (Prepared for preparers / Known for the rest), else the class list to pick from.
+function defaultSpellList(ch) {
+  if (!ch) return "available";
+  if ((ch.spells.prepared || []).length || subclassSpells(ch).length) return "prepared";
+  if ((ch.spells.known || []).length) return "known";
+  return "available";
 }
 function classSummary(ch) {
   const list = Calc.classList(ch);
@@ -391,20 +406,18 @@ function spellListSection(ch) {
   const f = ui.spellFilter;
   const subSpells = subclassSpells(ch);
   Grimoire._subSet = new Set(subSpells.map((s) => s.id));
-  const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"], ["find", "Find more"]];
+  const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
   if (ch.subclass) lists.splice(2, 0, ["subclass", "Subclass"]);
   const pool = spellPoolForList(ch);
   const levels = `<option value="all">All levels</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(f.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrips" : "Level " + i}</option>`).join("");
   const subEditBanner = (f.list === "subclass" && ch.subclass && !subclassHasBuiltin(ch))
     ? `<div class="sub-edit"><span class="muted small">${esc(ch.subclass)} — your own list</span><button class="btn small-b" data-act="editSubSpells">Set subclass spells</button></div>`
     : "";
-  const findBanner = f.list === "find"
-    ? `<p class="muted small pad">Official spells not bundled (only free SRD ships). Tap one to look it up &amp; paste it in. Class/level are from a community index — confirm at the source.</p>`
+  const allBanner = f.list === "all"
+    ? `<p class="muted small pad">Every spell in the game. Greyed ones aren’t bundled (only free SRD ships) — tap to look it up &amp; paste the text in. Class/level for those come from a community index.</p>`
     : "";
-  const emptyMsg = f.list === "find"
-    ? "No matching spells — everything for your class at this filter is already in your book."
-    : `No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}`;
-  const rows = subEditBanner + findBanner + (pool.map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">${emptyMsg}</p>`);
+  const emptyMsg = `No spells.${f.list === "subclass" ? " Tap “Set subclass spells” to add the ones your subclass grants." : f.list === "available" ? "" : " Add some from the Class list."}`;
+  const rows = subEditBanner + allBanner + (spellRowsWithHeaders(ch, pool) || `<p class="muted pad">${emptyMsg}</p>`);
   return `
     <h3 class="sec">Spellbook <button class="mini" data-act="addCustom">+ hand-add</button> <button class="mini" data-act="pasteSpells">paste</button></h3>
     <div class="spell-filters">
@@ -414,7 +427,7 @@ function spellListSection(ch) {
         <select data-act="spellLevel">${levels}</select>
       </div>
     </div>
-    <div class="spell-rows" ${ui.reorder && ["prepared", "known", "favorites"].includes(f.list) ? `data-sortlist="spell:${f.list}"` : ""}>${rows}</div>`;
+    <div class="spell-rows">${rows}</div>`;
 }
 
 function spellRow(ch, s) {
@@ -433,10 +446,8 @@ function spellRow(ch, s) {
   const isKnown = ch.spells.known.includes(s.id);
   const lvl = s.level === 0 ? "Cantrip" : "L" + s.level;
   const tags = [s.concentration ? "C" : "", s.ritual ? "R" : ""].filter(Boolean).join(" ");
-  const curated = ["prepared", "known", "favorites"].includes(ui.spellFilter.list);
-  const draggable = ui.reorder && curated && (ch.spells[ui.spellFilter.list] || []).includes(s.id);
-  return `<div class="spell" ${draggable ? `data-sortid="${esc(s.id)}"` : ""}>
-    ${draggable ? handle() : ""}
+  return `<div class="spell">
+
     <button class="spell-main" data-act="spellDetail" data-id="${esc(s.id)}">
       <span class="sp-name">${esc(s.name)} ${s.custom ? '<em class="hb">homebrew</em>' : ""}${isSub ? '<em class="sub-badge">subclass</em>' : ""}</span>
       <span class="sp-meta">${lvl} · ${esc(s.school)}${tags ? " · " + tags : ""}</span>
@@ -450,7 +461,7 @@ function spellRow(ch, s) {
 }
 
 function spellListRowsHtml(ch) {
-  return spellPoolForList(ch).map((s) => spellRow(ch, s)).join("") || `<p class="muted pad">No spells.</p>`;
+  return spellRowsWithHeaders(ch, spellPoolForList(ch)) || `<p class="muted pad">No spells.</p>`;
 }
 
 function itemRowsHtml(ch, items, listKey) {

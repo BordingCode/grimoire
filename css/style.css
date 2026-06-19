@@ -234,6 +234,8 @@ input[type=checkbox] { width: auto; }
 .filter-row select { flex: 0 0 130px; }
 
 .spell-rows { display: flex; flex-direction: column; }
+.spell-lvl-head { position: sticky; top: 0; z-index: 1; background: var(--bg); color: var(--accent-2); font-weight: 700; font-size: .8rem; letter-spacing: .3px; padding: 8px 2px 4px; border-bottom: 2px solid var(--accent-soft); margin-top: 6px; }
+.spell-lvl-head:first-child { margin-top: 0; }
 .spell { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); }
 .spell-main { flex: 1; background: none; border: none; text-align: left; padding: 11px 2px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
 .sp-name { font-weight: 600; }

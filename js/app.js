@@ -18,7 +18,7 @@ async function loadSpells() {
   const [a, b, idx] = await Promise.all([
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
-    fetch("data/spell-index.json?v=37").then((r) => r.json()).catch(() => []),
+    fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
   ]);
   // The bundled SRD data is missing class tags for Paladin (and Artificer), and lists
   // only one class on many spells. Merge in the fuller class lists from the index so
@@ -31,7 +31,7 @@ async function loadSpells() {
   });
   enrich(a); enrich(b);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
-  Grimoire.spellIndex = idx || [];   // factual name index for the "Find more" look-up tab
+  Grimoire.spellIndex = idx || [];   // factual name index powering the non-SRD stubs in "All spells"
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
@@ -81,7 +81,7 @@ const actions = {
   partyUnkill(el) { const m = Party.members.find((x) => x.id === el.dataset.id); if (m && m.kills > 0) { m.kills--; Party.save(); render(); } },
   partyRemove(el) { const m = Party.members.find((x) => x.id === el.dataset.id); confirmDelete(`Remove ${m ? m.name : "this member"} from the kill count?`, () => { Party.members = Party.members.filter((x) => x.id !== el.dataset.id); Party.save(); render(); }); },
   partyReset() { if (confirm("Reset everyone's kills to 0?")) { Party.members.forEach((m) => (m.kills = 0)); Party.save(); render(); } },
-  open(el) { Store.setActive(el.dataset.id); ui.screen = "sheet"; ui.tab = "stats"; render(); },
+  open(el) { Store.setActive(el.dataset.id); ui.screen = "sheet"; ui.tab = "stats"; ui.spellFilter.list = defaultSpellList(Store.active()); render(); },
   tab(el) { ui.tab = el.dataset.tab; render(); },
 
   createChar() {
@@ -99,7 +99,7 @@ const actions = {
     ch.combat.hpMax = die + con + (ch.level - 1) * (Math.floor(die / 2) + 1 + con);
     ch.combat.hpCur = ch.combat.hpMax;
     Store.add(ch);
-    ui.screen = "sheet"; ui.tab = "stats"; render();
+    ui.screen = "sheet"; ui.tab = "stats"; ui.spellFilter.list = defaultSpellList(Store.active()); render();
   },
 
   override(el) {
@@ -494,7 +494,7 @@ const actions = {
   },
   async deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { if (window.Media) { try { for (const m of await Media.forChar(ch.id)) { try { await Media.del(m.id); } catch (e) {} } } catch (e) {} } Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
-  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { try { await importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); const f = importCharacter.lastMediaFailed || 0; toast(f ? `Imported, but ${f} picture${f === 1 ? "" : "s"} couldn't be saved (storage full).` : "Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
+  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { try { await importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; ui.spellFilter.list = defaultSpellList(Store.active()); render(); const f = importCharacter.lastMediaFailed || 0; toast(f ? `Imported, but ${f} picture${f === 1 ? "" : "s"} couldn't be saved (storage full).` : "Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
 
   closeModal() { closeModal(); },
 };
@@ -1145,7 +1145,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=41");
+      const reg = await navigator.serviceWorker.register("sw.js?v=42");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
@@ -1162,7 +1162,7 @@ if ("serviceWorker" in navigator) {
   Store.load();
   Party.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
-  if (Store.active()) { ui.screen = "sheet"; }
+  if (Store.active()) { ui.screen = "sheet"; ui.spellFilter.list = defaultSpellList(Store.active()); }
   render();
   if (window.LINK) LINK.afterBoot();
   if (window.PARTY) PARTY.afterBoot();
