@@ -85,8 +85,13 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - ch.subclass set in Classes & levels manager (options from SRD subclasses of the char's classes). subclassSpells(ch) resolves names→edition pool, level-gated. Spellbook "Subclass" tab + badge; auto-prepared (P on), unioned into Prepared view, NOT counted vs prepared limit. Synced via link identity group.
 - Non-SRD subclasses (Tempest, Archfey, etc.) = copyright, add via "All" tab.
 
+## Spell tab verified (v17)
+- Comprehensive class×level test vs official 5e tables: 0 failures. Full casters (Bard/Cleric/Druid/Sorcerer/Wizard) L1–20, half casters (Paladin/Ranger) L1–20, Artificer, Warlock pact, DC/attack, prepared counts, all-class render.
+- BUG FIXED: Paladin/Ranger showed 2 slots at level 1; they have no spellcasting until L2. casterLevel single-class half non-Artificer now contributes 0 below level 2 (Artificer still casts at L1; multiclass uses floor).
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet. (Subclass auto-spells limited to SRD by design.)
+- [ ] Minor cosmetic: preparedCount shows ≥1 even for a level-1 Paladin/Ranger (who can't prepare yet) — harmless since they have 0 slots.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
 - [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
 - [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual).
