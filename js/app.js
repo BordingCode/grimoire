@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=14").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=14").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=15").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=15").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -345,9 +345,10 @@ function tabSpells(ch) {
 
 function spellListSection(ch) {
   const f = ui.spellFilter;
-  const lists = [["available", "Class list"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
+  const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
   let pool;
   if (f.list === "available") pool = classSpells(ch);
+  else if (f.list === "all") pool = spellPool(ch);
   else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
@@ -726,6 +727,7 @@ const FEAT_TARGETS = [
   ["spellDC", "Spell save DC"], ["spellAttack", "Spell attack"],
   ["passivePerception", "Passive Perception"], ["hpMax", "Max HP"],
   ["skill.all", "All skill checks"],
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ["slot." + n, `Extra level-${n} spell slot`]),
   ...Object.keys(RULES.SKILLS).map((s) => ["skill." + s, s + " (skill)"]),
 ];
 const FEAT_TARGET_LABEL = Object.fromEntries(FEAT_TARGETS);
@@ -781,7 +783,7 @@ function weaponForm(w, idx) {
     <div class="modal-btns"><button class="btn primary" data-act="weaponSave">${w ? "Save" : "Add"}</button></div>`, () => $("#wp-name").focus());
 }
 function spellListRowsHtml(ch) {
-  const f = ui.spellFilter; let pool = f.list === "available" ? classSpells(ch) : (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
+  const f = ui.spellFilter; let pool = f.list === "available" ? classSpells(ch) : f.list === "all" ? spellPool(ch) : (ch.spells[f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
   pool.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
@@ -899,7 +901,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=14").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=15").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

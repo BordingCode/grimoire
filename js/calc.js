@@ -111,7 +111,7 @@ const Calc = {
     const table = cl >= 1 ? (RULES.FULL_SLOTS[cl] || ZERO9) : ZERO9;
     const out = {};
     for (let i = 1; i <= 9; i++) {
-      const auto = table[i - 1] || 0;
+      const auto = (table[i - 1] || 0) + this.featBonus(ch, "slot." + i); // + extra slots from features/items
       const max = ov(ch, "slotMax." + i, ch.spells.slots[i]?.override ?? auto);
       out[i] = { max, used: Math.min(ch.spells.slots[i]?.used || 0, max) };
     }
