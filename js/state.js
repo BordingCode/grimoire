@@ -107,7 +107,9 @@ async function importCharacter(obj) {
   ch.id = uid();
   ch.importedAt = nowStamp();
   Store.add(ch);
-  if (media.length && window.Media) { for (const m of media) { try { await Media.put({ ...m, charId: ch.id }); } catch (e) {} } }
+  let failed = 0;
+  if (media.length && window.Media) { for (const m of media) { try { await Media.put({ ...m, charId: ch.id }); } catch (e) { failed++; } } }
+  importCharacter.lastMediaFailed = failed;
   return ch;
 }
 

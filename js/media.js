@@ -26,11 +26,13 @@ const Media = (() => {
   }
   function store(mode) { return open().then((db) => db.transaction(STORE, mode).objectStore(STORE)); }
   const wrap = (req) => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+  const _cache = new Map(); // id -> dataURL, so we don't re-read IndexedDB on every render
 
   return {
-    async put(rec) { const os = await store("readwrite"); await wrap(os.put(rec)); return rec; },
-    async get(id) { const os = await store("readonly"); return (await wrap(os.get(id))) || null; },
-    async del(id) { const os = await store("readwrite"); return wrap(os.delete(id)); },
+    async put(rec) { const os = await store("readwrite"); await wrap(os.put(rec)); _cache.set(rec.id, rec.data); return rec; },
+    async get(id) { if (_cache.has(id)) return { id, data: _cache.get(id) }; const os = await store("readonly"); const rec = (await wrap(os.get(id))) || null; if (rec) _cache.set(id, rec.data); return rec; },
+    peek(id) { return _cache.has(id) ? _cache.get(id) : null; },   // sync cache hit (null if not loaded yet)
+    async del(id) { _cache.delete(id); const os = await store("readwrite"); return wrap(os.delete(id)); },
     // all media records for a character (used by export + cleanup on delete)
     async forChar(charId) {
       const os = await store("readonly");

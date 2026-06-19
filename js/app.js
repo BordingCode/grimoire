@@ -20,6 +20,16 @@ async function loadSpells() {
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
     fetch("data/spell-index.json?v=37").then((r) => r.json()).catch(() => []),
   ]);
+  // The bundled SRD data is missing class tags for Paladin (and Artificer), and lists
+  // only one class on many spells. Merge in the fuller class lists from the index so
+  // multiclass casters (e.g. Paladin) get a correct class list.
+  const idxClasses = {};
+  (idx || []).forEach((s) => { idxClasses[s.name.toLowerCase()] = s.classes || []; });
+  const enrich = (arr) => arr.forEach((sp) => {
+    const ic = idxClasses[sp.name.toLowerCase()];
+    if (ic && ic.length) sp.classes = [...new Set([...(sp.classes || []), ...ic])];
+  });
+  enrich(a); enrich(b);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
   Grimoire.spellIndex = idx || [];   // factual name index for the "Find more" look-up tab
 }
@@ -482,9 +492,9 @@ const actions = {
       <div class="modal-btns"><button class="btn primary" data-act="closeModal">Done</button></div>`,
       () => render());
   },
-  deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
+  async deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { if (window.Media) { try { for (const m of await Media.forChar(ch.id)) { try { await Media.del(m.id); } catch (e) {} } } catch (e) {} } Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
-  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { try { await importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); toast("Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
+  importFile() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => { try { await importCharacter(JSON.parse(r.result)); ui.screen = "sheet"; ui.tab = "stats"; render(); const f = importCharacter.lastMediaFailed || 0; toast(f ? `Imported, but ${f} picture${f === 1 ? "" : "s"} couldn't be saved (storage full).` : "Character imported."); } catch (e) { toast("Couldn't read that file."); } }; r.readAsText(f); }; inp.click(); },
 
   closeModal() { closeModal(); },
 };
@@ -873,7 +883,7 @@ actions.newSession = () => {
   ui.sessionId = s.id; ui.screen = "session"; render();
 };
 actions.openSession = (el) => { ui.sessionId = el.dataset.id; ui.screen = "session"; render(); };
-actions.sessionBack = () => { ui.screen = "sheet"; ui.tab = "sessions"; ui.sessionId = null; render(); };
+actions.sessionBack = () => { ui.screen = "sheet"; ui.tab = "notes"; ui.sessionId = null; render(); };
 actions.sessionTitle = (el) => { const s = activeSession(); if (s) { s.title = el.value; Store.save(); } };
 actions.sessionDate = (el) => { const s = activeSession(); if (s) { s.date = el.value; Store.save(); } };
 actions.sessionText = (el) => { const s = activeSession(); if (s) { s.text = el.value; Store.save(); } };
@@ -882,7 +892,7 @@ actions.sessionDelete = (el) => {
   confirmDelete(`Delete this session${s.title ? ` “${s.title}”` : ""} and its photos/drawings?`, async () => {
     for (const m of (s.media || [])) { try { await Media.del(m.id); } catch (e) {} }
     ch.sessions = ch.sessions.filter((x) => x.id !== s.id); Store.save();
-    ui.screen = "sheet"; ui.tab = "sessions"; ui.sessionId = null; render();
+    ui.screen = "sheet"; ui.tab = "notes"; ui.sessionId = null; render();
   });
 };
 async function addSessionMedia(sid, type, dataUrl) {
@@ -905,7 +915,7 @@ actions.sessionAddPhoto = (el) => {
 };
 actions.sessionDraw = (el) => {
   const sid = el.dataset.id;
-  openDrawPad(async (dataUrl) => { try { await addSessionMedia(sid, "drawing", dataUrl); } catch (e) { toast("Couldn't save the drawing."); } });
+  openDrawPad((dataUrl) => addSessionMedia(sid, "drawing", dataUrl)); // errors propagate to the pad so it keeps your art
 };
 actions.mediaView = async (el) => {
   let rec = null; try { rec = await Media.get(el.dataset.mid); } catch (e) {}
@@ -922,10 +932,10 @@ actions.mediaDelete = (el) => {
 };
 // after a session screen renders, fill thumbnails from IndexedDB (async)
 async function hydrateSessionMedia() {
-  const imgs = document.querySelectorAll("img[data-mid]:not([data-loaded])");
-  for (const img of imgs) {
-    img.dataset.loaded = "1";
-    try { const rec = await Media.get(img.dataset.mid); if (rec) img.src = rec.data; } catch (e) {}
+  for (const img of document.querySelectorAll("img[data-mid]")) {
+    const cached = Media.peek(img.dataset.mid);
+    if (cached) { img.src = cached; continue; }
+    try { const rec = await Media.get(img.dataset.mid); if (rec && document.contains(img)) img.src = rec.data; } catch (e) {}
   }
 }
 
@@ -977,12 +987,15 @@ function openDrawPad(onSave) {
 
   function pickBg() { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { bgImg = im; redraw(); }; im.src = r.result; }; r.readAsDataURL(f); }; inp.click(); }
   function close() { wrap.remove(); window.removeEventListener("resize", fit); }
-  function save() {
+  async function save() {
     const out = document.createElement("canvas"); out.width = canvas.width; out.height = canvas.height; const o = out.getContext("2d");
     o.fillStyle = "#fffdf7"; o.fillRect(0, 0, out.width, out.height);
     if (bgImg) { const s = Math.min(out.width / bgImg.width, out.height / bgImg.height); const w = bgImg.width * s, h = bgImg.height * s; o.drawImage(bgImg, (out.width - w) / 2, (out.height - h) / 2, w, h); }
     o.drawImage(strokesCv, 0, 0);
-    const data = out.toDataURL("image/jpeg", 0.85); close(); onSave(data);
+    const data = out.toDataURL("image/jpeg", 0.85);
+    const btn = wrap.querySelector('[data-dp="save"]'); if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+    try { await onSave(data); close(); }   // only close on success so the drawing isn't lost if storage fails
+    catch (e) { if (btn) { btn.disabled = false; btn.textContent = "Save"; } toast("Couldn't save — storage may be full. Your drawing is still here."); }
   }
 
   wrap.addEventListener("click", (e) => {
@@ -1132,7 +1145,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=40");
+      const reg = await navigator.serviceWorker.register("sw.js?v=41");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

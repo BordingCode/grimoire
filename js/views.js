@@ -179,14 +179,13 @@ function viewNew() {
 /* ---- Sheet (tabbed) ---- */
 function viewSheet(ch) {
   if (!ch) { ui.screen = "home"; return viewHome(); }
-  const tabs = [["stats", "Stats"], ["combat", "Combat"], ["spells", "Spells"], ["gear", "Gear"], ["notes", "Notes"], ["sessions", "Log"]];
+  const tabs = [["stats", "Stats"], ["combat", "Combat"], ["spells", "Spells"], ["gear", "Gear"], ["notes", "Notes"]];
   let body = "";
   if (ui.tab === "stats") body = tabStats(ch);
   else if (ui.tab === "combat") body = tabCombat(ch);
   else if (ui.tab === "spells") body = tabSpells(ch);
   else if (ui.tab === "gear") body = tabGear(ch);
   else if (ui.tab === "notes") body = tabNotes(ch);
-  else if (ui.tab === "sessions") body = tabSessions(ch);
   return `
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
@@ -213,26 +212,24 @@ function tabStats(ch) {
   const ab = RULES.ABILITIES.map((a) => `
     <div class="ab-card">
       <span class="ab-name">${a.toUpperCase()}</span>
-      <input class="ab-score" type="number" min="1" max="30" data-bind="abilities.${a}" value="${ch.abilities[a]}">
       <span class="ab-mod">${sign(Calc.abilityMod(ch, a))}</span>
+      <input class="ab-score" type="number" min="1" max="30" data-bind="abilities.${a}" value="${ch.abilities[a]}" aria-label="${a.toUpperCase()} score">
     </div>`).join("");
   const saves = RULES.ABILITIES.map((a) => {
     const adv = Calc.advSources(ch, "save." + a).length > 0;
     return `<div class="line">
+      <span class="line-v" data-act="override" data-key="save.${a}" data-label="${RULES.ABILITY_NAMES[a]} save" data-auto="${Calc.saveBonus(ch, a)}">${sign(Calc.saveBonus(ch, a))}</span>
       <button class="dot ${ch.saveProf[a] ? "on" : ""}" data-act="toggleSave" data-ab="${a}" title="proficient"></button>
       <span class="line-l">${RULES.ABILITY_NAMES[a]}${adv ? ' <em class="adv-mark" title="advantage from a feature">ADV</em>' : ""}</span>
-      <span class="line-v" data-act="override" data-key="save.${a}" data-label="${RULES.ABILITY_NAMES[a]} save" data-auto="${Calc.saveBonus(ch, a)}">${sign(Calc.saveBonus(ch, a))}</span>
-      <button class="line-roll" data-act="rollSave" data-ab="${a}" title="roll">roll</button>
     </div>`;
   }).join("");
   const skills = Object.keys(RULES.SKILLS).map((s) => {
     const p = ch.skillProf[s] || 0;
     const adv = Calc.advSources(ch, "skill." + s).length > 0;
     return `<div class="line">
+      <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span>
       <button class="dot ${p === 1 ? "on" : ""} ${p === 2 ? "exp" : ""}" data-act="cycleSkill" data-skill="${esc(s)}" title="none → proficient → expertise"></button>
       <span class="line-l">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em>${adv ? ' <em class="adv-mark">ADV</em>' : ""}</span>
-      <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span>
-      <button class="line-roll" data-act="rollSkill" data-skill="${esc(s)}" title="roll">roll</button>
     </div>`;
   }).join("");
   return `
@@ -501,7 +498,7 @@ function tabNotes(ch) {
   const photo = ch.portrait
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
     : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
-  return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests, session notes…">${esc(ch.notes)}</textarea>`;
+  return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests…">${esc(ch.notes)}</textarea>${tabSessions(ch)}`;
 }
 
 /* ---- Session book (per-character journal: text + photos + drawings) ---- */
@@ -534,7 +531,7 @@ function tabSessions(ch) {
 function viewSession(ch) {
   if (!ch) { ui.screen = "home"; return viewHome(); }
   const s = (ch.sessions || []).find((x) => x.id === ui.sessionId);
-  if (!s) { ui.screen = "sheet"; ui.tab = "sessions"; return viewSheet(ch); }
+  if (!s) { ui.screen = "sheet"; ui.tab = "notes"; return viewSheet(ch); }
   const media = (s.media || []).map((m) => `
     <div class="media-thumb">
       <img data-mid="${esc(m.id)}" data-act="mediaView" data-sid="${esc(s.id)}" alt="${esc(m.caption || m.type)}">
