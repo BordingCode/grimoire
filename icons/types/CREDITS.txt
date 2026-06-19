@@ -1,0 +1,26 @@
+D&D Creature-Type Icons
+=======================
+
+Source: game-icons.net (https://game-icons.net)
+License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+
+Each icon below has been edited from the original: the black background
+rectangle was removed and the icon fill was changed to "currentColor" so the
+app can colour it via CSS. The viewBox (0 0 512 512) is unchanged.
+
+file              icon name              author       license
+------------------------------------------------------------------------
+beast.svg         wolf-head              Lorc         CC BY 3.0, game-icons.net
+undead.svg        skull-crossed-bones    Lorc         CC BY 3.0, game-icons.net
+elemental.svg     flame                  Carl Olsen   CC BY 3.0, game-icons.net
+fey.svg           fairy                  Lorc         CC BY 3.0, game-icons.net
+fiend.svg         daemon-skull           Lorc         CC BY 3.0, game-icons.net
+dragon.svg        dragon-head            Lorc         CC BY 3.0, game-icons.net
+construct.svg     mecha-head             Delapouite   CC BY 3.0, game-icons.net
+monstrosity.svg   hydra                  Lorc         CC BY 3.0, game-icons.net
+plant.svg         vine-leaf              Lorc         CC BY 3.0, game-icons.net
+ooze.svg          dripping-goo           Lorc         CC BY 3.0, game-icons.net
+aberration.svg    eyestalk               Lorc         CC BY 3.0, game-icons.net
+celestial.svg     angel-wings            Lorc         CC BY 3.0, game-icons.net
+giant.svg         ogre                   Delapouite   CC BY 3.0, game-icons.net
+humanoid.svg      person                 Delapouite   CC BY 3.0, game-icons.net

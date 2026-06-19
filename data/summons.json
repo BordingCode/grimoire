@@ -1,0 +1,1159 @@
+[
+{
+"name": "Baboon",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 3,
+"speed": "30 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 1,
+"damage": "1d4-1",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "baboon",
+"source": "SRD"
+},
+{
+"name": "Bat",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 1,
+"speed": "5 ft., fly 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 0,
+"damage": "1",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "bat",
+"source": "SRD"
+},
+{
+"name": "Cat",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 2,
+"speed": "40 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Claws",
+"atk": 0,
+"damage": "1",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "cat",
+"source": "SRD"
+},
+{
+"name": "Deer",
+"type": "beast",
+"cr": "0",
+"ac": 13,
+"hp": 4,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 2,
+"damage": "1d4",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "deer",
+"source": "SRD"
+},
+{
+"name": "Eagle",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 3,
+"speed": "10 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Talons",
+"atk": 4,
+"damage": "1d4+2",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "eagle",
+"source": "SRD"
+},
+{
+"name": "Hawk",
+"type": "beast",
+"cr": "0",
+"ac": 13,
+"hp": 1,
+"speed": "10 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Talons",
+"atk": 5,
+"damage": "1",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "hawk",
+"source": "SRD"
+},
+{
+"name": "Jackal",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 3,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 1,
+"damage": "1d4-1",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "jackal",
+"source": "SRD"
+},
+{
+"name": "Owl",
+"type": "beast",
+"cr": "0",
+"ac": 11,
+"hp": 1,
+"speed": "5 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Talons",
+"atk": 3,
+"damage": "1",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "owl",
+"source": "SRD"
+},
+{
+"name": "Rat",
+"type": "beast",
+"cr": "0",
+"ac": 10,
+"hp": 1,
+"speed": "20 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 0,
+"damage": "1",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "rat",
+"source": "SRD"
+},
+{
+"name": "Raven",
+"type": "beast",
+"cr": "0",
+"ac": 12,
+"hp": 1,
+"speed": "10 ft., fly 50 ft.",
+"attacks": [
+{
+"name": "Beak",
+"atk": 4,
+"damage": "1",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "raven",
+"source": "SRD"
+},
+{
+"name": "Camel",
+"type": "beast",
+"cr": "1/8",
+"ac": 9,
+"hp": 15,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d4",
+"type": "bludgeoning",
+"notes": ""
+}
+],
+"icon": "camel",
+"source": "SRD"
+},
+{
+"name": "Giant Rat",
+"type": "beast",
+"cr": "1/8",
+"ac": 12,
+"hp": 7,
+"speed": "30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d4+2",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "rat",
+"source": "SRD"
+},
+{
+"name": "Giant Weasel",
+"type": "beast",
+"cr": "1/8",
+"ac": 13,
+"hp": 9,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d4+3",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "weasel",
+"source": "SRD"
+},
+{
+"name": "Mastiff",
+"type": "beast",
+"cr": "1/8",
+"ac": 12,
+"hp": 5,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 3,
+"damage": "1d6+1",
+"type": "piercing",
+"notes": "DC 11 STR save or knocked prone"
+}
+],
+"icon": "dog",
+"source": "SRD"
+},
+{
+"name": "Mule",
+"type": "beast",
+"cr": "1/8",
+"ac": 10,
+"hp": 11,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Hooves",
+"atk": 2,
+"damage": "1d4+2",
+"type": "bludgeoning",
+"notes": ""
+}
+],
+"icon": "mule",
+"source": "SRD"
+},
+{
+"name": "Poisonous Snake",
+"type": "beast",
+"cr": "1/8",
+"ac": 13,
+"hp": 2,
+"speed": "30 ft., swim 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1",
+"type": "piercing",
+"notes": "DC 10 CON save or +1d4 (2.5) poison (half on success)"
+}
+],
+"icon": "snake",
+"source": "SRD"
+},
+{
+"name": "Pony",
+"type": "beast",
+"cr": "1/8",
+"ac": 10,
+"hp": 11,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Hooves",
+"atk": 4,
+"damage": "2d4+2",
+"type": "bludgeoning",
+"notes": ""
+}
+],
+"icon": "pony",
+"source": "SRD"
+},
+{
+"name": "Boar",
+"type": "beast",
+"cr": "1/4",
+"ac": 11,
+"hp": 11,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Tusk",
+"atk": 3,
+"damage": "1d6+1",
+"type": "slashing",
+"notes": "+1d6 if moved 20 ft. straight; DC 11 STR save or prone"
+}
+],
+"icon": "boar",
+"source": "SRD"
+},
+{
+"name": "Constrictor Snake",
+"type": "beast",
+"cr": "1/4",
+"ac": 12,
+"hp": 13,
+"speed": "30 ft., swim 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Constrict",
+"atk": 4,
+"damage": "1d8+2",
+"type": "bludgeoning",
+"notes": "grappled (escape DC 14), restrained"
+}
+],
+"icon": "snake",
+"source": "SRD"
+},
+{
+"name": "Elk",
+"type": "beast",
+"cr": "1/4",
+"ac": 10,
+"hp": 13,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Ram",
+"atk": 5,
+"damage": "1d6+3",
+"type": "bludgeoning",
+"notes": "+2d6 if moved 20 ft.; DC 13 STR save or prone"
+},
+{
+"name": "Hooves",
+"atk": 5,
+"damage": "2d4+3",
+"type": "bludgeoning",
+"notes": "only vs prone target"
+}
+],
+"icon": "elk",
+"source": "SRD"
+},
+{
+"name": "Giant Badger",
+"type": "beast",
+"cr": "1/4",
+"ac": 10,
+"hp": 13,
+"speed": "30 ft., burrow 10 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 3,
+"damage": "1d6+1",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claws",
+"atk": 3,
+"damage": "2d4+1",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "badger",
+"source": "SRD"
+},
+{
+"name": "Giant Bat",
+"type": "beast",
+"cr": "1/4",
+"ac": 13,
+"hp": 22,
+"speed": "10 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "bat",
+"source": "SRD"
+},
+{
+"name": "Giant Frog",
+"type": "beast",
+"cr": "1/4",
+"ac": 11,
+"hp": 18,
+"speed": "30 ft., swim 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 3,
+"damage": "1d6+1",
+"type": "piercing",
+"notes": "grappled (escape DC 11); Medium or smaller can be swallowed"
+}
+],
+"icon": "frog",
+"source": "SRD"
+},
+{
+"name": "Giant Lizard",
+"type": "beast",
+"cr": "1/4",
+"ac": 12,
+"hp": 19,
+"speed": "30 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d8+2",
+"type": "piercing",
+"notes": ""
+}
+],
+"icon": "lizard",
+"source": "SRD"
+},
+{
+"name": "Giant Owl",
+"type": "beast",
+"cr": "1/4",
+"ac": 12,
+"hp": 19,
+"speed": "5 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Talons",
+"atk": 3,
+"damage": "2d6+1",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "owl",
+"source": "SRD"
+},
+{
+"name": "Giant Poisonous Snake",
+"type": "beast",
+"cr": "1/4",
+"ac": 14,
+"hp": 11,
+"speed": "30 ft., swim 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 6,
+"damage": "1d4+4",
+"type": "piercing",
+"notes": "DC 11 CON save or +3d6 poison (half on success)"
+}
+],
+"icon": "snake",
+"source": "SRD"
+},
+{
+"name": "Giant Wolf Spider",
+"type": "beast",
+"cr": "1/4",
+"ac": 13,
+"hp": 11,
+"speed": "40 ft., climb 40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 3,
+"damage": "1d6+1",
+"type": "piercing",
+"notes": "DC 11 CON save or +2d6 poison (half on success)"
+}
+],
+"icon": "spider",
+"source": "SRD"
+},
+{
+"name": "Panther",
+"type": "beast",
+"cr": "1/4",
+"ac": 12,
+"hp": 13,
+"speed": "50 ft., climb 40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claw",
+"atk": 4,
+"damage": "1d4+2",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "panther",
+"source": "SRD"
+},
+{
+"name": "Pseudodragon",
+"type": "dragon",
+"cr": "1/4",
+"ac": 13,
+"hp": 7,
+"speed": "15 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d4+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Sting",
+"atk": 4,
+"damage": "1d4+2",
+"type": "piercing",
+"notes": "DC 11 CON save or poisoned 1h (unconscious if fails by 5+)"
+}
+],
+"icon": "dragon",
+"source": "SRD"
+},
+{
+"name": "Riding Horse",
+"type": "beast",
+"cr": "1/4",
+"ac": 10,
+"hp": 13,
+"speed": "60 ft.",
+"attacks": [
+{
+"name": "Hooves",
+"atk": 5,
+"damage": "2d4+3",
+"type": "bludgeoning",
+"notes": ""
+}
+],
+"icon": "horse",
+"source": "SRD"
+},
+{
+"name": "Skeleton",
+"type": "undead",
+"cr": "1/4",
+"ac": 13,
+"hp": 13,
+"speed": "30 ft.",
+"attacks": [
+{
+"name": "Shortsword",
+"atk": 4,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Shortbow",
+"atk": 4,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": "ranged 80/320 ft."
+}
+],
+"icon": "skeleton",
+"source": "SRD"
+},
+{
+"name": "Sprite",
+"type": "fey",
+"cr": "1/4",
+"ac": 15,
+"hp": 2,
+"speed": "10 ft., fly 40 ft.",
+"attacks": [
+{
+"name": "Longsword",
+"atk": 2,
+"damage": "1",
+"type": "slashing",
+"notes": ""
+},
+{
+"name": "Shortbow",
+"atk": 6,
+"damage": "1",
+"type": "piercing",
+"notes": "ranged 40/160 ft.; DC 10 CON save or poisoned 1 min (unconscious if 5 or lower)"
+}
+],
+"icon": "sprite",
+"source": "SRD"
+},
+{
+"name": "Wolf",
+"type": "beast",
+"cr": "1/4",
+"ac": 13,
+"hp": 11,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "2d4+2",
+"type": "piercing",
+"notes": "DC 11 STR save or knocked prone"
+}
+],
+"icon": "wolf",
+"source": "SRD"
+},
+{
+"name": "Zombie",
+"type": "undead",
+"cr": "1/4",
+"ac": 8,
+"hp": 22,
+"speed": "20 ft.",
+"attacks": [
+{
+"name": "Slam",
+"atk": 3,
+"damage": "1d6+1",
+"type": "bludgeoning",
+"notes": ""
+}
+],
+"icon": "zombie",
+"source": "SRD"
+},
+{
+"name": "Ape",
+"type": "beast",
+"cr": "1/2",
+"ac": 12,
+"hp": 19,
+"speed": "30 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Fist",
+"atk": 5,
+"damage": "1d6+3",
+"type": "bludgeoning",
+"notes": ""
+},
+{
+"name": "Rock",
+"atk": 5,
+"damage": "1d6+3",
+"type": "bludgeoning",
+"notes": "ranged 25/50 ft."
+}
+],
+"icon": "ape",
+"source": "SRD"
+},
+{
+"name": "Black Bear",
+"type": "beast",
+"cr": "1/2",
+"ac": 11,
+"hp": 19,
+"speed": "40 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 3,
+"damage": "1d6+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claws",
+"atk": 3,
+"damage": "2d4+2",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "bear",
+"source": "SRD"
+},
+{
+"name": "Crocodile",
+"type": "beast",
+"cr": "1/2",
+"ac": 12,
+"hp": 19,
+"speed": "20 ft., swim 20 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 4,
+"damage": "1d10+2",
+"type": "piercing",
+"notes": "grappled (escape DC 12), restrained"
+}
+],
+"icon": "crocodile",
+"source": "SRD"
+},
+{
+"name": "Giant Goat",
+"type": "beast",
+"cr": "1/2",
+"ac": 11,
+"hp": 19,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Ram",
+"atk": 5,
+"damage": "2d4+3",
+"type": "bludgeoning",
+"notes": "+2d4 if moved 20 ft.; DC 13 STR save or prone"
+}
+],
+"icon": "goat",
+"source": "SRD"
+},
+{
+"name": "Warhorse",
+"type": "beast",
+"cr": "1/2",
+"ac": 11,
+"hp": 19,
+"speed": "60 ft.",
+"attacks": [
+{
+"name": "Hooves",
+"atk": 6,
+"damage": "2d6+4",
+"type": "bludgeoning",
+"notes": "only vs prone target"
+}
+],
+"icon": "horse",
+"source": "SRD"
+},
+{
+"name": "Brown Bear",
+"type": "beast",
+"cr": "1",
+"ac": 11,
+"hp": 34,
+"speed": "40 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d8+4",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claws",
+"atk": 5,
+"damage": "2d6+4",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "bear",
+"source": "SRD"
+},
+{
+"name": "Dire Wolf",
+"type": "beast",
+"cr": "1",
+"ac": 14,
+"hp": 37,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "2d6+3",
+"type": "piercing",
+"notes": "DC 13 STR save or knocked prone"
+}
+],
+"icon": "wolf",
+"source": "SRD"
+},
+{
+"name": "Giant Eagle",
+"type": "beast",
+"cr": "1",
+"ac": 13,
+"hp": 26,
+"speed": "10 ft., fly 80 ft.",
+"attacks": [
+{
+"name": "Beak",
+"atk": 5,
+"damage": "1d6+3",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Talons",
+"atk": 5,
+"damage": "2d6+3",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "eagle",
+"source": "SRD"
+},
+{
+"name": "Giant Spider",
+"type": "beast",
+"cr": "1",
+"ac": 14,
+"hp": 26,
+"speed": "30 ft., climb 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d8+3",
+"type": "piercing",
+"notes": "DC 11 CON save or +2d8 poison (half on success)"
+}
+],
+"icon": "spider",
+"source": "SRD"
+},
+{
+"name": "Giant Vulture",
+"type": "beast",
+"cr": "1",
+"ac": 10,
+"hp": 22,
+"speed": "10 ft., fly 60 ft.",
+"attacks": [
+{
+"name": "Beak",
+"atk": 4,
+"damage": "2d4+2",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Talons",
+"atk": 4,
+"damage": "2d6+2",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "vulture",
+"source": "SRD"
+},
+{
+"name": "Imp",
+"type": "fiend",
+"cr": "1",
+"ac": 13,
+"hp": 10,
+"speed": "20 ft., fly 40 ft.",
+"attacks": [
+{
+"name": "Sting (Bite in Beast Form)",
+"atk": 5,
+"damage": "1d4+3",
+"type": "piercing",
+"notes": "DC 11 CON save or +3d6 poison (half on success)"
+}
+],
+"icon": "imp",
+"source": "SRD"
+},
+{
+"name": "Lion",
+"type": "beast",
+"cr": "1",
+"ac": 12,
+"hp": 26,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d8+3",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claw",
+"atk": 5,
+"damage": "1d6+3",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "lion",
+"source": "SRD"
+},
+{
+"name": "Quasit",
+"type": "fiend",
+"cr": "1",
+"ac": 13,
+"hp": 7,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Claw (Bite in Beast Form)",
+"atk": 4,
+"damage": "1d4+3",
+"type": "piercing",
+"notes": "DC 10 CON save or +2d4 poison & poisoned 1 min (half/no poison on success)"
+}
+],
+"icon": "imp",
+"source": "SRD"
+},
+{
+"name": "Tiger",
+"type": "beast",
+"cr": "1",
+"ac": 12,
+"hp": 37,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 5,
+"damage": "1d10+3",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Claw",
+"atk": 5,
+"damage": "1d8+3",
+"type": "slashing",
+"notes": ""
+}
+],
+"icon": "tiger",
+"source": "SRD"
+},
+{
+"name": "Giant Boar",
+"type": "beast",
+"cr": "2",
+"ac": 12,
+"hp": 42,
+"speed": "40 ft.",
+"attacks": [
+{
+"name": "Tusk",
+"atk": 5,
+"damage": "2d6+3",
+"type": "slashing",
+"notes": "+2d6 if moved 20 ft. straight; DC 13 STR save or prone"
+}
+],
+"icon": "boar",
+"source": "SRD"
+},
+{
+"name": "Giant Constrictor Snake",
+"type": "beast",
+"cr": "2",
+"ac": 12,
+"hp": 60,
+"speed": "30 ft., swim 30 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 6,
+"damage": "2d6+4",
+"type": "piercing",
+"notes": ""
+},
+{
+"name": "Constrict",
+"atk": 6,
+"damage": "2d8+4",
+"type": "bludgeoning",
+"notes": "grappled (escape DC 16), restrained"
+}
+],
+"icon": "snake",
+"source": "SRD"
+},
+{
+"name": "Air Elemental",
+"type": "elemental",
+"cr": "5",
+"ac": 15,
+"hp": 90,
+"speed": "fly 90 ft.",
+"attacks": [
+{
+"name": "Slam",
+"atk": 8,
+"damage": "2d8+5",
+"type": "bludgeoning",
+"notes": "2 attacks (multiattack)"
+}
+],
+"icon": "air",
+"source": "SRD"
+},
+{
+"name": "Earth Elemental",
+"type": "elemental",
+"cr": "5",
+"ac": 17,
+"hp": 126,
+"speed": "30 ft., burrow 30 ft.",
+"attacks": [
+{
+"name": "Slam",
+"atk": 8,
+"damage": "2d8+5",
+"type": "bludgeoning",
+"notes": "2 attacks (multiattack)"
+}
+],
+"icon": "earth",
+"source": "SRD"
+},
+{
+"name": "Fire Elemental",
+"type": "elemental",
+"cr": "5",
+"ac": 13,
+"hp": 102,
+"speed": "50 ft.",
+"attacks": [
+{
+"name": "Touch",
+"atk": 6,
+"damage": "2d6+3",
+"type": "fire",
+"notes": "target ignites: 1d10 fire/turn until doused"
+}
+],
+"icon": "fire",
+"source": "SRD"
+},
+{
+"name": "Giant Crocodile",
+"type": "beast",
+"cr": "5",
+"ac": 14,
+"hp": 85,
+"speed": "30 ft., swim 50 ft.",
+"attacks": [
+{
+"name": "Bite",
+"atk": 8,
+"damage": "3d10+5",
+"type": "piercing",
+"notes": "grappled (escape DC 16), restrained"
+},
+{
+"name": "Tail",
+"atk": 8,
+"damage": "2d8+5",
+"type": "bludgeoning",
+"notes": "targets not grappled; DC 16 STR save or prone"
+}
+],
+"icon": "crocodile",
+"source": "SRD"
+},
+{
+"name": "Water Elemental",
+"type": "elemental",
+"cr": "5",
+"ac": 14,
+"hp": 114,
+"speed": "30 ft., swim 90 ft.",
+"attacks": [
+{
+"name": "Slam",
+"atk": 7,
+"damage": "2d8+4",
+"type": "bludgeoning",
+"notes": "2 attacks (multiattack)"
+}
+],
+"icon": "water",
+"source": "SRD"
+}
+]

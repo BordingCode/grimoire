@@ -15,11 +15,13 @@ const Party = {
 };
 
 async function loadSpells() {
-  const [a, b, idx] = await Promise.all([
+  const [a, b, idx, sl] = await Promise.all([
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
     fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
+    fetch("data/summons.json?v=43").then((r) => r.json()).catch(() => []),
   ]);
+  Grimoire.summonLib = sl || [];   // bundled SRD creature stat library for the Summons picker
   // The bundled SRD data is missing class tags for Paladin (and Artificer), and lists
   // only one class on many spells. Merge in the fuller class lists from the index so
   // multiclass casters (e.g. Paladin) get a correct class list.
@@ -1015,6 +1017,124 @@ function openDrawPad(onSave) {
   requestAnimationFrame(() => { fit(); markTool(); });
 }
 
+/* ===================================================================== */
+/*  SUMMONS — per-character; SRD library + custom; HP management in/out of combat */
+/* ===================================================================== */
+function activeSummon(id) { const ch = Store.active(); return ch && (ch.summons || []).find((s) => s.id === id); }
+function makeSummon(def, count) {
+  return { id: "sm" + Gx.uid(), name: def.name, ac: def.ac, speed: def.speed || "", attacks: JSON.parse(JSON.stringify(def.attacks || [])), hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), notes: def.notes || "", icon: def.icon || "", photo: null, conc: false };
+}
+function summonLibRows(q) {
+  const lib = Grimoire.summonLib || [];
+  const list = q ? lib.filter((d) => d.name.toLowerCase().includes(q.toLowerCase())) : lib;
+  return list.map((d) => `<button class="sum-pick" data-act="summonLibPick" data-name="${esc(d.name)}"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · AC ${d.ac} · ${d.hp} HP</span></button>`).join("") || `<p class="muted small pad">No match — use “Custom summon”.</p>`;
+}
+actions.openSummons = () => { ui.screen = "summons"; render(); };
+actions.summonBack = () => { ui.screen = "sheet"; ui.tab = "combat"; render(); };
+actions.summonAdd = () => {
+  modal("Add summon", `
+    <p class="muted small">Pick a creature (SRD stats) or add a custom one — then choose how many.</p>
+    <input class="search" id="sum-search" data-act="summonSearch" placeholder="Search creatures…">
+    <div class="sum-lib" id="sum-lib">${summonLibRows("")}</div>
+    <div class="modal-btns"><button class="btn" data-act="summonCustom">Custom summon</button></div>`, () => $("#sum-search").focus());
+};
+actions.summonSearch = (el) => { const box = $("#sum-lib"); if (box) box.innerHTML = summonLibRows(el.value); };
+actions.summonLibPick = (el) => {
+  const def = (Grimoire.summonLib || []).find((d) => d.name === el.dataset.name); if (!def) return;
+  amountPrompt(`How many ${def.name}?`, "Count (e.g. 8 for Conjure Animals)", (n) => {
+    const ch = Store.active(); if (!ch.summons) ch.summons = []; const c = Math.max(1, n || 1);
+    ch.summons.push(makeSummon(def, c)); commit(); toast(`Added ${c}× ${def.name}.`);
+  });
+};
+actions.summonStep = (el) => { const s = activeSummon(el.dataset.id); if (!s) return; const i = +el.dataset.i; s.hps[i] = Math.max(0, Math.min(s.hpMax, s.hps[i] + (+el.dataset.d || 0))); commit(); };
+actions.summonDmg = (el) => { const s = activeSummon(el.dataset.id); if (!s) return; const i = +el.dataset.i; amountPrompt("Damage", "How much damage?", (n) => { s.hps[i] = Math.max(0, s.hps[i] - (n || 0)); commit(); }); };
+actions.summonKill = (el) => { const s = activeSummon(el.dataset.id); if (!s) return; s.hps.splice(+el.dataset.i, 1); commit(); };
+actions.summonAddOne = (el) => { const s = activeSummon(el.dataset.id); if (!s) return; s.hps.push(s.hpMax); commit(); };
+actions.summonDismissAll = () => { confirmDelete("Dismiss ALL summons?", async () => { const ch = Store.active(); for (const s of (ch.summons || [])) if (s.photo) { try { await Media.del(s.photo); } catch (e) {} } ch.summons = []; commit(); }); };
+actions.summonOptions = (el) => {
+  const s = activeSummon(el.dataset.id); if (!s) return;
+  modal(s.name, `<div class="menu-list">
+    <button class="btn ghost" data-act="summonEdit" data-id="${esc(s.id)}">Edit stats / count</button>
+    <button class="btn ghost" data-act="summonPhoto" data-id="${esc(s.id)}">${s.photo ? "Change picture" : "Add picture"}</button>
+    ${s.photo ? `<button class="btn ghost" data-act="summonPhotoRemove" data-id="${esc(s.id)}">Remove picture</button>` : ""}
+    <button class="btn danger" data-act="summonRemove" data-id="${esc(s.id)}">Remove summon</button>
+  </div>`);
+};
+actions.summonRemove = (el) => { const id = el.dataset.id; confirmDelete("Remove this summon?", async () => { const ch = Store.active(); const s = (ch.summons || []).find((x) => x.id === id); if (s && s.photo) { try { await Media.del(s.photo); } catch (e) {} } ch.summons = (ch.summons || []).filter((x) => x.id !== id); commit(); }); };
+actions.summonEdit = (el) => {
+  const s = activeSummon(el.dataset.id); if (!s) return; actions._sumEditId = s.id;
+  modal("Edit summon", `
+    <label class="fld"><span>Name</span><input id="se-name" value="${esc(s.name)}"></label>
+    <div class="grid2">
+      <label class="fld"><span>Count</span><input id="se-count" type="number" min="0" value="${s.hps.length}"></label>
+      <label class="fld"><span>AC</span><input id="se-ac" type="number" value="${s.ac}"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Max HP each</span><input id="se-hp" type="number" min="1" value="${s.hpMax}"></label>
+      <label class="fld"><span>Speed</span><input id="se-speed" value="${esc(s.speed || "")}"></label>
+    </div>
+    <label class="fld"><span>Notes</span><textarea id="se-notes" rows="2">${esc(s.notes || "")}</textarea></label>
+    <label class="chk"><input type="checkbox" id="se-conc" ${s.conc ? "checked" : ""}> Concentration</label>
+    <label class="chk"><input type="checkbox" id="se-full"> Set all to full HP</label>
+    <p class="muted small">Mighty Summoner / higher-level scaling: raise “Max HP each”, then tick “Set all to full HP”.</p>
+    <div class="modal-btns"><button class="btn primary" data-act="summonEditSave">Save</button></div>`, () => $("#se-name").focus());
+};
+actions.summonEditSave = () => {
+  const s = activeSummon(actions._sumEditId); if (!s) { closeModal(); return; }
+  s.name = $("#se-name").value.trim() || s.name;
+  s.ac = +$("#se-ac").value || s.ac;
+  s.hpMax = Math.max(1, +$("#se-hp").value || s.hpMax);
+  s.speed = $("#se-speed").value.trim();
+  s.notes = $("#se-notes").value.trim();
+  s.conc = $("#se-conc").checked;
+  const cnt = Math.max(0, +$("#se-count").value || 0), full = $("#se-full").checked;
+  while (s.hps.length > cnt) s.hps.pop();
+  while (s.hps.length < cnt) s.hps.push(s.hpMax);
+  s.hps = s.hps.map((hp) => full ? s.hpMax : Math.min(hp, s.hpMax));
+  actions._sumEditId = null; closeModal(); commit();
+};
+actions.summonCustom = () => {
+  modal("Custom summon", `
+    <label class="fld"><span>Name *</span><input id="sc-name" placeholder="e.g. Spectral Wolf"></label>
+    <div class="grid2">
+      <label class="fld"><span>Count</span><input id="sc-count" type="number" min="1" value="1"></label>
+      <label class="fld"><span>AC</span><input id="sc-ac" type="number" value="12"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Max HP each</span><input id="sc-hp" type="number" min="1" value="10"></label>
+      <label class="fld"><span>Speed</span><input id="sc-speed" placeholder="30 ft."></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Attack</span><input id="sc-atkname" placeholder="Bite"></label>
+      <label class="fld"><span>To-hit</span><input id="sc-atk" type="number" value="0"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Damage</span><input id="sc-dmg" placeholder="1d6+2"></label>
+      <label class="fld"><span>Type</span><input id="sc-dtype" placeholder="piercing"></label>
+    </div>
+    <label class="fld"><span>Notes</span><textarea id="sc-notes" rows="2" placeholder="special abilities, riders…"></textarea></label>
+    <div class="modal-btns"><button class="btn primary" data-act="summonCustomSave">Add</button></div>`, () => $("#sc-name").focus());
+};
+actions.summonCustomSave = () => {
+  const name = $("#sc-name").value.trim(); if (!name) { toast("Name required."); return; }
+  const count = Math.max(1, +$("#sc-count").value || 1), hp = Math.max(1, +$("#sc-hp").value || 1);
+  const atks = []; const an = $("#sc-atkname").value.trim();
+  if (an) atks.push({ name: an, atk: +$("#sc-atk").value || 0, damage: $("#sc-dmg").value.trim(), type: $("#sc-dtype").value.trim(), notes: "" });
+  const ch = Store.active(); if (!ch.summons) ch.summons = [];
+  ch.summons.push({ id: "sm" + Gx.uid(), name, ac: +$("#sc-ac").value || 10, speed: $("#sc-speed").value.trim(), attacks: atks, hpMax: hp, hps: Array(count).fill(hp), notes: $("#sc-notes").value.trim(), icon: "", photo: null, conc: false });
+  closeModal(); commit(); toast(`Added ${count}× ${name}.`);
+};
+actions.summonPhoto = (el) => {
+  const id = el.dataset.id; closeModal();
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = async () => {
+    try { const s = activeSummon(id); if (!s) return; if (s.photo) { try { await Media.del(s.photo); } catch (e) {} } const mid = "m" + Gx.uid(); await Media.put({ id: mid, charId: Store.active().id, type: "summon", data: downscaleImage(img, 640), created: nowStamp() }); s.photo = mid; commit(); }
+    catch (e) { toast("Couldn't save the picture (storage full?)."); }
+  }; img.onerror = () => toast("Couldn't read that image."); img.src = r.result; }; r.readAsDataURL(f); };
+  inp.click();
+};
+actions.summonPhotoRemove = (el) => { const s = activeSummon(el.dataset.id); if (!s || !s.photo) return; const mid = s.photo; s.photo = null; closeModal(); commit(); Media.del(mid).catch(() => {}); };
+
 /* ---------- appearance (dark/light + accent) ---------- */
 actions.appearance = () => {
   const ch = Store.active();
@@ -1145,7 +1265,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=42");
+      const reg = await navigator.serviceWorker.register("sw.js?v=43");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {

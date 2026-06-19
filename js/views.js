@@ -112,9 +112,10 @@ function render() {
   else if (ui.screen === "new") app.innerHTML = viewNew();
   else if (ui.screen === "party") app.innerHTML = viewParty();
   else if (ui.screen === "session") app.innerHTML = viewSession(Store.active());
+  else if (ui.screen === "summons") app.innerHTML = viewSummons(Store.active());
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
-  if (typeof applyTheme === "function") applyTheme((ui.screen === "sheet" || ui.screen === "session") ? Store.active() : null);
-  if (ui.screen === "session" && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
+  if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons"].includes(ui.screen) ? Store.active() : null);
+  if (["session", "summons"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
   if (typeof initSortables === "function") initSortables();
 }
 // drag-handle markup, shown only in Arrange mode (ui.reorder)
@@ -142,8 +143,8 @@ function viewHome() {
     </div>`;
 }
 
-/* ---- Kill count (team) ---- */
-function viewParty() {
+/* ---- Kill count (team) — shared list, also embedded in the Notes tab ---- */
+function killCountSection() {
   const sorted = [...Party.members].sort((a, b) => b.kills - a.kills);
   const rows = sorted.map((m, idx) => `
     <div class="kill-row">
@@ -157,15 +158,17 @@ function viewParty() {
       </div>
     </div>`).join("") || `<p class="empty">No one yet. Add your party below — then tap +1 each time they down a foe.</p>`;
   return `
-    <header class="topbar"><button class="back" data-act="goHome">‹</button><h1>Kill count</h1></header>
-    <div class="screen">
       <div class="kill-list">${rows}</div>
       <div class="kill-add">
         <input id="party-name" placeholder="Add a party member…" maxlength="24">
         <button class="btn" data-act="partyAdd">Add</button>
       </div>
-      ${Party.members.length ? `<button class="btn ghost reset-kills" data-act="partyReset">Reset all kills to 0</button>` : ""}
-    </div>`;
+      ${Party.members.length ? `<button class="btn ghost reset-kills" data-act="partyReset">Reset all kills to 0</button>` : ""}`;
+}
+function viewParty() {
+  return `
+    <header class="topbar"><button class="back" data-act="goHome">‹</button><h1>Kill count</h1></header>
+    <div class="screen">${killCountSection()}</div>`;
 }
 
 /* ---- New character ---- */
@@ -325,6 +328,8 @@ function tabCombat(ch) {
     </div>
     <h3 class="sec">Weapons &amp; attacks <button class="mini" data-act="addWeapon">+ add</button></h3>
     <div class="weapons" ${ui.reorder ? 'data-sortlist="weapons"' : ""}>${weapons}</div>
+    <h3 class="sec">Summons</h3>
+    <button class="btn" data-act="openSummons">Manage summons${(() => { const n = (ch.summons || []).reduce((t, s) => t + (s.hps ? s.hps.length : 0), 0); return n ? ` · ${n} active` : ""; })()}</button>
     <div class="death">
       <span>Death saves</span>
       <span class="ds">✓ ${[0,1,2].map((i)=>`<button class="pip ${c.death.succ>i?"on good":""}" data-act="death" data-t="succ" data-i="${i}"></button>`).join("")}</span>
@@ -509,7 +514,8 @@ function tabNotes(ch) {
   const photo = ch.portrait
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
     : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
-  return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests…">${esc(ch.notes)}</textarea>${tabSessions(ch)}`;
+  return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests…">${esc(ch.notes)}</textarea>${tabSessions(ch)}
+    <h3 class="sec">Kill count</h3>${killCountSection()}`;
 }
 
 /* ---- Session book (per-character journal: text + photos + drawings) ---- */
@@ -524,11 +530,14 @@ function tabSessions(ch) {
   const cards = list.map((s) => {
     const n = (s.media || []).length;
     const snippet = (s.text || "").replace(/\s+/g, " ").trim().slice(0, 90);
-    return `<button class="session-card" data-act="openSession" data-id="${esc(s.id)}">
-      <div class="sc-top"><span class="sc-title">${esc(s.title || "Untitled session")}</span><span class="sc-date">${esc(sessionDateLabel(s.date))}</span></div>
-      ${snippet ? `<div class="sc-snip">${esc(snippet)}${(s.text || "").length > 90 ? "…" : ""}</div>` : `<div class="sc-snip muted">No notes yet</div>`}
-      ${n ? `<div class="sc-meta">${n} picture${n === 1 ? "" : "s"}</div>` : ""}
-    </button>`;
+    return `<div class="session-card-wrap">
+      <button class="session-card" data-act="openSession" data-id="${esc(s.id)}">
+        <div class="sc-top"><span class="sc-title">${esc(s.title || "Untitled session")}</span><span class="sc-date">${esc(sessionDateLabel(s.date))}</span></div>
+        ${snippet ? `<div class="sc-snip">${esc(snippet)}${(s.text || "").length > 90 ? "…" : ""}</div>` : `<div class="sc-snip muted">No notes yet</div>`}
+        ${n ? `<div class="sc-meta">${n} picture${n === 1 ? "" : "s"}</div>` : ""}
+      </button>
+      <button class="session-del-x" data-act="sessionDelete" data-id="${esc(s.id)}" title="delete session">✕</button>
+    </div>`;
   }).join("");
   return `
     <div class="sessions-head">
@@ -562,5 +571,46 @@ function viewSession(ch) {
         <button class="btn" data-act="sessionDraw" data-id="${esc(s.id)}">New drawing</button>
       </div>
       <div class="media-grid">${media || `<p class="muted small">No photos or drawings yet.</p>`}</div>
+      <button class="btn danger session-del" data-act="sessionDelete" data-id="${esc(s.id)}">Delete this session</button>
+    </div>`;
+}
+
+/* ---- Summons manager (per-character; SRD library + custom; manages HP in/out of combat) ---- */
+function summonCard(ch, s) {
+  const n = (s.hps || []).length;
+  const atks = (s.attacks || []).map((a) => `<div class="sm-atk"><b>${esc(a.name)}</b> ${a.atk >= 0 ? "+" : ""}${a.atk} · ${esc(a.damage)} ${esc(a.type || "")}${a.notes ? ` <span class="muted">— ${esc(a.notes)}</span>` : ""}</div>`).join("");
+  const insts = (s.hps || []).map((hp, i) => `
+    <div class="sm-inst ${hp <= 0 ? "down" : ""}">
+      <span class="sm-inst-hp" data-act="summonDmg" data-id="${esc(s.id)}" data-i="${i}" title="tap to take damage">${hp}<small>/${s.hpMax}</small></span>
+      <button data-act="summonStep" data-id="${esc(s.id)}" data-i="${i}" data-d="-1" title="-1">−</button>
+      <button data-act="summonStep" data-id="${esc(s.id)}" data-i="${i}" data-d="1" title="+1">+</button>
+      <button class="del" data-act="summonKill" data-id="${esc(s.id)}" data-i="${i}" title="remove this one">✕</button>
+    </div>`).join("");
+  return `<div class="summon-card">
+    <div class="sm-head">
+      ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}">photo</button>`}
+      <div class="sm-title"><span class="sm-name">${esc(s.name)}${n > 1 ? ` ×${n}` : ""}</span><span class="sm-meta">AC ${s.ac} · ${esc(s.speed || "")}${s.conc ? " · concentration" : ""}</span></div>
+      <button class="opt-btn" data-act="summonOptions" data-id="${esc(s.id)}">⋯</button>
+    </div>
+    ${atks ? `<div class="sm-atks">${atks}</div>` : ""}
+    ${s.notes ? `<div class="sm-notes muted">${esc(s.notes)}</div>` : ""}
+    <div class="sm-insts">${insts || '<span class="muted small">all defeated</span>'}<button class="btn small-b sm-addone" data-act="summonAddOne" data-id="${esc(s.id)}">+1</button></div>
+  </div>`;
+}
+function viewSummons(ch) {
+  if (!ch) { ui.screen = "home"; return viewHome(); }
+  const sums = ch.summons || [];
+  const cards = sums.map((s) => summonCard(ch, s)).join("") || `<p class="muted pad">No summons active. Tap “+ Add summon” when you cast Conjure Animals, Find Familiar, Animate Dead, etc.</p>`;
+  return `
+    <header class="topbar">
+      <button class="back" data-act="summonBack">‹</button>
+      <div class="sheet-id"><span class="s-name">Summons</span><span class="s-sub">${esc(ch.name)}</span></div>
+    </header>
+    <div class="screen">
+      <div class="summon-actions">
+        <button class="btn primary" data-act="summonAdd">+ Add summon</button>
+        ${sums.length ? `<button class="btn ghost" data-act="summonDismissAll">Dismiss all</button>` : ""}
+      </div>
+      <div class="summon-list">${cards}</div>
     </div>`;
 }

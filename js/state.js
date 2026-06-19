@@ -80,6 +80,7 @@ function newCharacter({ name, edition, cls, level }) {
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote
     proficiencies: { languages: "", armor: "", weapons: "", tools: "" },  // freeform proficiency/language notes
     sessions: [],                  // session-book entries: {id,date,title,text,media:[{id,type,caption}]} — media blobs live in IndexedDB (device-only)
+    summons: [],                   // active summons: {id,name,count,ac,speed,attacks,hpMax,hps:[],notes,photo,conc} — device-only photos in IndexedDB
     notes: "",
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
