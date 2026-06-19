@@ -92,6 +92,14 @@ input, select, textarea, button { font: inherit; color: inherit; }
 .swatch { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
 .swatch.on { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
 
+/* full-palette theme picker — each card previews that class's colour world */
+.theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.theme-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px; border: 2px solid var(--line); border-radius: 12px; background: var(--tc-bg); color: var(--tc-ink); cursor: pointer; }
+.theme-card.on { border-color: var(--tc-accent); box-shadow: 0 0 0 2px var(--tc-accent); }
+.theme-card .theme-swatch { width: 100%; height: 26px; border-radius: 8px; background: var(--tc-panel); display: flex; align-items: center; justify-content: center; }
+.theme-card .theme-swatch i { width: 16px; height: 16px; border-radius: 50%; background: var(--tc-accent); display: block; }
+.theme-card .theme-name { font-size: .72rem; font-weight: 600; line-height: 1.1; text-align: center; }
+
 /* buttons */
 .btn {
   background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);

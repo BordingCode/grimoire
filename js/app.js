@@ -49,7 +49,9 @@ function applyTheme(ch) {
   const root = document.documentElement;
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   root.dataset.theme = mode;
-  const t = ch && Grimoire.themes && Grimoire.themes[ch.cls] && Grimoire.themes[ch.cls][mode];
+  // a character wears its class theme by default, but can pick any class's look (ch.theme)
+  const themeCls = (ch && ch.theme) || (ch && ch.cls);
+  const t = ch && Grimoire.themes && Grimoire.themes[themeCls] && Grimoire.themes[themeCls][mode];
   if (!t) { THEME_VARS.forEach((v) => root.style.removeProperty(v)); return; }
   const p = { ...t };
   // the Appearance accent picker (ch.accent) still overrides just the accent pair
@@ -1191,17 +1193,34 @@ actions.appearance = () => {
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
   const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
+  // full-palette theme picker: every class's look is choosable, not just your own
+  const curTheme = ch.theme || ch.cls;
+  const themes = Grimoire.themes || {};
+  const themeCards = Object.keys(themes).map((cls) => {
+    const t = themes[cls][mode] || themes[cls].dark;
+    const on = curTheme === cls ? "on" : "";
+    const note = cls === ch.cls ? " (class)" : "";
+    return `<button class="theme-card ${on}" data-act="setTheme" data-theme="${esc(cls)}" title="${esc(themes[cls].concept || cls)}"
+      style="--tc-bg:${t.bg};--tc-panel:${t.panel};--tc-accent:${t.accent};--tc-ink:${t.ink}">
+      <span class="theme-swatch"><i></i></span><span class="theme-name">${esc(cls)}${note}</span></button>`;
+  }).join("");
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
       <button class="btn ${mode === "dark" ? "primary" : "ghost"}" data-act="setMode" data-mode="dark">Dark</button>
       <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">Light</button>
     </div>
-    <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
+    <h3 class="sec">Theme <small>${ch.theme && ch.theme !== ch.cls ? esc(ch.theme) : "class default"}</small></h3>
+    <p class="muted small">Each class has its own colour world. Pick any look you like.</p>
+    <div class="theme-grid">${themeCards}</div>
+    ${ch.theme && ch.theme !== ch.cls ? `<button class="btn ghost" data-act="resetTheme">Use ${esc(ch.cls)} theme</button>` : ""}
+    <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "theme default"}</small></h3>
     <div class="swatches">${swatches}</div>
-    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use ${esc(ch.cls)} default</button>` : ""}`);
+    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use theme default</button>` : ""}`);
 };
 actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mode); render(); actions.appearance(); };
+actions.setTheme = (el) => { const ch = Store.active(); ch.theme = el.dataset.theme; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+actions.resetTheme = () => { const ch = Store.active(); ch.theme = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 

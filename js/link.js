@@ -13,7 +13,7 @@ const LINK = {
     physical: ["combat", "conditions"],
     resources: ["spells.slots", "spells.pact", "spells.concentratingOn", "resources"],
     mental: ["abilities", "saveProf", "skillProf", "proficiencies", "overrides", "features", "subSpells", "spells.known", "spells.prepared", "spells.favorites", "spells.abilityOverride", "customSpells"],
-    identity: ["name", "cls", "level", "multiclass", "subclass", "portrait", "accent", "edition", "notes"],
+    identity: ["name", "cls", "level", "multiclass", "subclass", "portrait", "accent", "theme", "edition", "notes"],
     gear: ["inventory", "weapons", "bag", "currency"],
   },
   LABELS: {
