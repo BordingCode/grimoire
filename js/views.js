@@ -206,6 +206,7 @@ function statChip(ch, key, label, value, opts = {}) {
 }
 
 function tabStats(ch) {
+  const prof = ch.proficiencies || (ch.proficiencies = { languages: "", armor: "", weapons: "", tools: "" });
   const ab = RULES.ABILITIES.map((a) => `
     <div class="ab-card">
       <span class="ab-name">${a.toUpperCase()}</span>
@@ -242,6 +243,13 @@ function tabStats(ch) {
     <div class="lines">${saves}</div>
     <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
     <div class="lines">${skills}</div>
+    <h3 class="sec">Proficiencies &amp; Languages</h3>
+    <div class="prof-box">
+      <label class="fld"><span>Languages</span><textarea class="prof-ta" data-bind="proficiencies.languages" rows="2" placeholder="Common, Elvish, Thieves’ Cant…">${esc(prof.languages || "")}</textarea></label>
+      <label class="fld"><span>Armor</span><textarea class="prof-ta" data-bind="proficiencies.armor" rows="1" placeholder="Light, medium, shields…">${esc(prof.armor || "")}</textarea></label>
+      <label class="fld"><span>Weapons</span><textarea class="prof-ta" data-bind="proficiencies.weapons" rows="1" placeholder="Simple, martial, longswords…">${esc(prof.weapons || "")}</textarea></label>
+      <label class="fld"><span>Tools</span><textarea class="prof-ta" data-bind="proficiencies.tools" rows="1" placeholder="Thieves’ tools, herbalism kit, lute…">${esc(prof.tools || "")}</textarea></label>
+    </div>
     <h3 class="sec">Features &amp; traits <button class="mini" data-act="addFeature">+ add</button></h3>
     <div class="features" ${ui.reorder ? 'data-sortlist="features"' : ""}>${(ch.features || []).map((f) => `
       <div class="feat" ${ui.reorder ? `data-sortid="${esc(f.id)}"` : ""}>

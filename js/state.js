@@ -78,6 +78,7 @@ function newCharacter({ name, edition, cls, level }) {
     features: [],                  // {id,name,desc} — fighting styles, feats, traits, class features
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote
+    proficiencies: { languages: "", armor: "", weapons: "", tools: "" },  // freeform proficiency/language notes
     notes: "",
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
