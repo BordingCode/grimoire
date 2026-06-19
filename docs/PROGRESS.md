@@ -128,6 +128,11 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - sw.js no longer auto-skipWaiting (waits); activates on page message "skipWaiting". app.js registration detects updatefound→installed (with controller) and shows a persistent toast with a Reload button (doUpdate). controllerchange reloads once, guarded by _doReload so first install never loops. Hourly reg.update() check. Verified end-to-end.
 - Takes effect from v30 onward (v29→v30 auto-updates via old skipWaiting; v30→v31+ shows the prompt).
 
+## v31–v33: portrait-in-notes, illustrative themes, HP damage/heal, force-update, currency/bag/transfer
+- v31: portrait banner on Notes; class emblem (CLASS_GLYPH) in header + accent glow (--accent-soft/faint) = illustrative class themes; Combat HP = Take damage/Heal (amount prompt, temp absorbs, heal caps, concentration check) + Set.
+- v32: home "↻ Update app (keeps characters)" = unregister SW + clear Cache Storage + reload (localStorage kept). For users stuck on stale cache.
+- v33: Coins (ch.currency pp/gp/ep/sp/cp) on Gear; Bag of Holding (ch.bag, storage, no equip); item actions are data-list aware (inventory|bag) with Move between; give/receive items via GRIM1: code (offline, any two players). currency+bag synced via link gear group.
+
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: leveling helper, printable sheet.
 - [ ] Possible: drag-to-reorder (touch) instead of move buttons, if desired.
