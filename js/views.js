@@ -312,6 +312,10 @@ function tabCombat(ch) {
       <div class="big-stat" data-act="override" data-key="ac" data-label="Armor Class" data-auto="${Calc.armorClass(ch)}"><b>${Calc.armorClass(ch)}</b><span>AC</span></div>
       <div class="big-stat"><b>${sign(Calc.initiative(ch))}</b><span>Init</span></div>
       <div class="big-stat" data-act="override" data-key="speed" data-label="Speed" data-auto="${Calc.speed(ch)}"><b>${Calc.speed(ch)}</b><span>Speed</span></div>
+      <button class="big-stat summon-btn" data-act="openSummons" title="Summons" aria-label="Summons">
+        <span class="sb-ic">${creatureIcon("beast")}</span>
+        ${(() => { const n = (ch.summons || []).reduce((t, s) => t + (s.hps ? s.hps.length : 0), 0); return n ? `<span class="sb-badge">${n}</span>` : ""; })()}
+      </button>
     </div>
     <div class="hp-block">
       <div class="hp-row"><span>Hit points</span>
@@ -328,8 +332,6 @@ function tabCombat(ch) {
     </div>
     <h3 class="sec">Weapons &amp; attacks <button class="mini" data-act="addWeapon">+ add</button></h3>
     <div class="weapons" ${ui.reorder ? 'data-sortlist="weapons"' : ""}>${weapons}</div>
-    <h3 class="sec">Summons</h3>
-    <button class="btn" data-act="openSummons">Manage summons${(() => { const n = (ch.summons || []).reduce((t, s) => t + (s.hps ? s.hps.length : 0), 0); return n ? ` · ${n} active` : ""; })()}</button>
     <div class="death">
       <span>Death saves</span>
       <span class="ds">✓ ${[0,1,2].map((i)=>`<button class="pip ${c.death.succ>i?"on good":""}" data-act="death" data-t="succ" data-i="${i}"></button>`).join("")}</span>

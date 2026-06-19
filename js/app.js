@@ -166,10 +166,10 @@ const actions = {
     const ch = Store.active(); const c = ch.combat;
     if (Calc.totalLevel(ch) - c.hitDiceUsed <= 0) { toast("No hit dice left."); return; }
     const dice = Object.keys(Calc.hitDicePool(ch)).map(Number).sort((a, b) => b - a);
-    if (dice.length === 1) return rollHitDie(dice[0]);
+    if (dice.length === 1) return spendHitDieManual(dice[0]);
     modal("Spend which hit die?", `<div class="modal-btns">${dice.map((d) => `<button class="btn" data-act="hitDiePick" data-die="${d}">d${d}</button>`).join("")}</div>`);
   },
-  hitDiePick(el) { closeModal(); rollHitDie(+el.dataset.die); },
+  hitDiePick(el) { closeModal(); spendHitDieManual(+el.dataset.die); },
   longRest() { const ch = Store.active(); const c = ch.combat;
     c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
     c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(Calc.totalLevel(ch) / 2)));
@@ -340,17 +340,14 @@ const actions = {
     modal(w.name, `
       <p class="muted small">${w.damage ? esc(w.damage) + (wDmgBon ? " " + sign(wDmgBon) : "") + (w.damageType ? " " + esc(w.damageType) : "") + " damage" : "no damage set"}${w.notes ? " · " + esc(w.notes) : ""}${(wAtkBon || wDmgBon) ? ` <span class="feat-incl">(incl. features)</span>` : ""}</p>
       <div class="cast-box">
-        <div class="cast-roll">
-          ${atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="dis">dis</button><button class="btn" data-act="wpnAtk" data-i="${i}" data-mode="normal">Attack ${sign(atk)}</button><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="adv">adv</button></span>` : '<span class="muted small">no to-hit set</span>'}
+        <div class="cast-info">
+          ${atk != null ? `<span class="cast-pill">Attack ${sign(atk)}</span>` : '<span class="muted small">no to-hit set</span>'}
+          ${w.damage ? `<span class="cast-pill">Damage ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}</span>` : ""}
         </div>
-        ${w.damage ? `<button class="btn primary" data-act="wpnDmg" data-i="${i}">Roll damage (${esc(w.damage)})</button>` : ""}
-        <div id="roll-out" class="roll-out"></div>
         <div class="wpn-opts-row"><button class="opt-btn" data-act="weaponOptions" data-i="${i}">⋯ Edit / Delete</button></div>
       </div>`);
   },
   weaponOptions(el) { const w = Store.active().weapons[+el.dataset.i]; optionsMenu(w ? w.name : "Weapon", "weapon", `data-i="${el.dataset.i}"`); },
-  wpnAtk(el) { const ch = Store.active(); const w = ch.weapons[+el.dataset.i]; const r = d20(+w.atk + Calc.featBonus(ch, "weaponAttack"), el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; },
-  wpnDmg(el) { const ch = Store.active(); const w = ch.weapons[+el.dataset.i]; const r = rollDice(w.damage); if (!r) { toast("Damage like 1d8+3."); return; } const bonus = Calc.featBonus(ch, "weaponDamage"); const total = r.total + bonus; $("#roll-out").innerHTML = `Damage <b>${total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""}${bonus ? " " + sign(bonus) + " feat" : ""} ${esc(w.damageType || "")}</small>`; },
   weaponEdit(el) { weaponForm(Store.active().weapons[+el.dataset.i], +el.dataset.i); },
   weaponDel(el) { const ch = Store.active(); ch.weapons.splice(+el.dataset.i, 1); closeModal(); commit(); toast("Weapon deleted."); },
   weaponSave() {
@@ -434,18 +431,14 @@ const actions = {
     modal("Level up", `
       <p class="muted small">Total level ${Calc.totalLevel(ch)}. Choose which class gains a level.</p>
       <label class="fld"><span>Class</span><select id="lvl-cls">${opts}</select></label>
-      <label class="fld"><span>Hit points gained</span>
-        <select id="lvl-hp">
-          <option value="avg">Average (recommended)</option>
-          <option value="roll">Roll the hit die</option>
-        </select></label>
-      <p class="muted small">Your CON modifier (${sign(con)}) is added to the roll, minimum 1 HP per level.</p>
+      <label class="fld"><span>HP rolled on the hit die</span><input id="lvl-hp-roll" type="number" min="1" inputmode="numeric" placeholder="leave blank for average"></label>
+      <p class="muted small">Roll your class's hit die and enter it (blank = average). CON ${sign(con)} is added, min 1 HP.</p>
       <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="levelApply">Level up</button></div>`);
   },
   levelApply() {
     const ch = Store.active();
     const idx = +$("#lvl-cls").value || 0;
-    const method = $("#lvl-hp").value;
+    const hpInput = $("#lvl-hp-roll").value;
     const list = Calc.classList(ch);
     const target = list[idx];
     if (!target) { closeModal(); return; }
@@ -462,7 +455,8 @@ const actions = {
     // hit points
     const die = (RULES.CLASSES[target.cls] || {}).hitDie || 8;
     const con = Calc.abilityMod(ch, "con");
-    const rolled = method === "roll" ? rollDice(`1d${die}`).total : Math.floor(die / 2) + 1;
+    const manual = hpInput !== "" && +hpInput > 0;
+    const rolled = manual ? +hpInput : Math.floor(die / 2) + 1;
     const gain = Math.max(1, rolled + con);
     ch.combat.hpMax = (ch.combat.hpMax || 0) + gain;
     ch.combat.hpCur = Math.min(Calc.maxHP(ch), (ch.combat.hpCur || 0) + gain);
@@ -472,7 +466,7 @@ const actions = {
     // build the "what changed" summary
     const after = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
     const lines = [];
-    const hpHow = method === "roll" ? `rolled ${rolled}` : `average ${rolled}`;
+    const hpHow = manual ? `rolled ${rolled}` : `average ${rolled}`;
     lines.push(`<b>+${gain} HP</b> (${hpHow} ${sign(con)} CON) — max HP now ${Calc.maxHP(ch)}.`);
     if (after.prof > before.prof) lines.push(`<b>Proficiency bonus</b> rises to ${sign(after.prof)}.`);
     const slotGains = [];
@@ -505,11 +499,13 @@ const actions = {
 
 /* ---------- shared action helpers ---------- */
 function toggleList(list, id) { const ch = Store.active(); const arr = ch.spells[list]; const i = arr.indexOf(id); if (i >= 0) arr.splice(i, 1); else arr.push(id); commit(); }
-function rollHitDie(die) {
-  const ch = Store.active(); const c = ch.combat; const con = Calc.abilityMod(ch, "con");
-  const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con);
-  c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(ch), c.hpCur + heal); commit();
-  toast(`Hit die d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`);
+function spendHitDieManual(die) {
+  const ch = Store.active(); const con = Calc.abilityMod(ch, "con");
+  amountPrompt(`Spend a d${die}`, `You rolled the d${die} — enter it (CON ${sign(con)} is added)`, (n) => {
+    const c = Store.active().combat; const heal = Math.max(1, (n || 0) + con);
+    c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(Store.active()), c.hpCur + heal); commit();
+    toast(`Spent d${die}: healed ${heal} (${n || 0} ${sign(con)} CON).`);
+  });
 }
 
 /* Parse pasted spell text → spell objects. Tolerant of D&D Beyond / PHB / 2024
@@ -698,7 +694,6 @@ function openSpell(ch, id) {
   const s = findSpell(ch, id); if (!s) return;
   const comp = [s.components?.v && "V", s.components?.s && "S", s.components?.m && "M"].filter(Boolean).join(", ") || "—";
   const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch);
-  const prefill = dmgMemory()[id] || s.damage || "";
   ui.openSpellId = id;
   modal(s.name, `
     <div class="sp-detail">
@@ -714,24 +709,16 @@ function openSpell(ch, id) {
       <div class="sp-desc"><p>${mdToHtml(s.desc)}</p></div>
       ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
       <div class="cast-box">
-        <div class="cast-roll">
-          ${s.attack && atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="dis">dis</button><button class="btn" data-act="castAttack" data-atk="${atk}" data-mode="normal">Attack ${sign(atk)}</button><button class="btn small-b" data-act="castAttack" data-atk="${atk}" data-mode="adv">adv</button></span>` : ""}
+        <div class="cast-info">
+          ${s.attack && atk != null ? `<span class="cast-pill">Spell attack ${sign(atk)}</span>` : ""}
           ${s.save ? `<span class="save-pill">Save: ${esc(s.save.toUpperCase())} vs DC ${dc}</span>` : ""}
+          ${s.damage ? `<span class="cast-pill">Damage ${esc(s.damage)}${s.damageType ? " " + esc(s.damageType) : ""}${s.upcast ? " (+upcast)" : ""}</span>` : ""}
         </div>
-        <div class="dmg-roll">
-          <input id="dmg-expr" placeholder="damage e.g. 8d6" value="${esc(prefill)}">
-          <button class="btn" data-act="castDamage" data-id="${esc(id)}">Roll</button>
-        </div>
-        ${s.damageType ? `<p class="muted small dmg-type">${esc(s.damageType)} damage${s.upcast ? " · upcasts automatically" : ""}</p>` : ""}
-        <div id="roll-out" class="roll-out"></div>
         ${s.level > 0 && Calc.isCaster(ch) ? `<button class="btn primary" data-act="castSpell" data-id="${esc(id)}" data-lvl="${s.level}">Cast (spend a slot)</button>` : ""}
         ${s.concentration ? `<button class="btn ghost" data-act="startConc" data-id="${esc(id)}">Concentrate</button>` : ""}
       </div>
     </div>`);
 }
-actions.castAttack = (el) => { const r = d20(+el.dataset.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; };
-
-/* concentration: prompt a CON save when a concentrating caster takes damage (DC = max 10, half damage) */
 /* HP take-damage / heal with an amount prompt (temp HP absorbs damage; heal caps at max) */
 function applyDamage(n) {
   n = Math.max(0, n | 0); if (!n) return;
@@ -760,66 +747,29 @@ function maybeConcentration(ch, dmg) {
   const dc = Math.max(10, Math.floor(dmg / 2));
   const sp = findSpell(ch, ch.spells.concentratingOn);
   const bonus = Calc.saveBonus(ch, "con");
-  const adv = [...Calc.advSources(ch, "save.con"), ...Calc.advSources(ch, "save.concentration")];
-  const hasAdv = adv.length > 0;
-  modal("Concentration check", `
+  const adv = [...new Set([...Calc.advSources(ch, "save.con"), ...Calc.advSources(ch, "save.concentration")])];
+  modal("Concentration", `
     <p>Took <b>${dmg}</b> damage while concentrating on <b>${esc(sp?.name || "a spell")}</b>.</p>
-    <p>Constitution save vs <b>DC ${dc}</b>.</p>
-    ${hasAdv ? `<p class="muted small">Advantage from: ${[...new Set(adv)].map(esc).join(", ")}</p>` : ""}
-    <div id="conc-out" class="roll-out"></div>
+    <p>Make a Constitution save vs <b>DC ${dc}</b> — your CON save ${sign(bonus)}${adv.length ? `, advantage from ${adv.map(esc).join(", ")}` : ""}.</p>
     <div class="modal-btns">
-      <button class="btn small-b" data-act="concRoll" data-dc="${dc}" data-mode="dis">dis</button>
-      <button class="btn ${hasAdv ? "" : "primary"}" data-act="concRoll" data-dc="${dc}" data-mode="normal">Roll CON ${sign(bonus)}</button>
-      <button class="btn ${hasAdv ? "primary" : "small-b"}" data-act="concRoll" data-dc="${dc}" data-mode="adv">adv</button>
+      <button class="btn primary" data-act="closeModal">Kept it</button>
+      <button class="btn danger" data-act="concDrop">Lost it</button>
     </div>`);
 }
-actions.concRoll = (el) => {
-  const ch = Store.active(); const dc = +el.dataset.dc; const bonus = Calc.saveBonus(ch, "con");
-  const r = d20(bonus, el.dataset.mode); const pass = r.total >= dc;
-  $("#conc-out").innerHTML = `Rolled <b>${r.total}</b> (d20 ${r.nat} ${sign(bonus)}) vs DC ${dc} — ${pass ? '<span class="held">held!</span>' : '<span class="lost">concentration lost</span>'}`;
-  if (!pass) { ch.spells.concentratingOn = null; Store.touch(); render(); }
-};
-actions.castDamage = (el) => { const expr = $("#dmg-expr").value.trim(); if (!expr) return; const r = rollDice(expr); if (!r) { toast("Use a form like 8d6 or 2d6+3."); return; } setDmgMemory(el.dataset.id, expr); $("#roll-out").innerHTML = `Damage <b>${r.total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""}</small>`; };
+actions.concDrop = () => { const ch = Store.active(); ch.spells.concentratingOn = null; closeModal(); commit(); toast("Concentration lost."); };
 actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
   const avail = []; for (let i = min; i <= 9; i++) if (slots[i].max - slots[i].used > 0) avail.push(i);
   if (!avail.length) { toast("No slots of level " + min + "+ left."); return; }
-  if (avail.length === 1 || avail[0] > min) { spendSlot(avail[0]); return; }
-  // offer upcast choice
-  const out = $("#roll-out");
-  out.innerHTML = `Cast at: ${avail.map((i) => `<button class="btn mini2" data-act="spend" data-lvl="${i}">L${i}</button>`).join(" ")}`;
+  if (avail.length === 1) { spendSlot(avail[0]); return; }
+  modal("Cast at which level?", `<div class="modal-btns">${avail.map((i) => `<button class="btn" data-act="spend" data-lvl="${i}">Level ${i}</button>`).join("")}</div>`);
 };
 actions.spend = (el) => spendSlot(+el.dataset.lvl);
 function spendSlot(lvl) {
-  const ch = Store.active(); ch.spells.slots[lvl].used++; Store.touch();
-  // auto-swap the damage field to the upcast value for this slot level, if known
-  const s = ui.openSpellId ? findSpell(ch, ui.openSpellId) : null;
-  const dmgIn = $("#dmg-expr");
-  if (s && s.upcast && s.upcast[lvl] && dmgIn) dmgIn.value = s.upcast[lvl];
-  const out = $("#roll-out");
-  if (out) out.innerHTML = `Cast — spent a level ${lvl} slot.${s && s.upcast && s.upcast[lvl] ? ` Damage set to <b>${esc(s.upcast[lvl])}</b>.` : (lvl > 1 ? " (upcast)" : "")}`;
-  toast(`Spent a level ${lvl} slot.`);
+  const ch = Store.active(); ch.spells.slots[lvl].used++; closeModal(); commit();
+  toast(`Cast — spent a level ${lvl} slot.`);
 }
-actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage, a CON save (DC = max(10, half damage)) is prompted in Combat."); };
-
-/* ---------- ability/save/skill check roller (with adv from features) ---------- */
-function rollCheck(label, bonus, advList) {
-  const hasAdv = advList && advList.length;
-  modal(label, `
-    ${hasAdv ? `<p class="muted small">Advantage from: ${advList.map(esc).join(", ")}</p>` : ""}
-    <div id="roll-out" class="roll-out">Roll ${esc(label)} (${sign(bonus)})</div>
-    <div class="modal-btns">
-      <button class="btn small-b" data-act="checkRoll" data-bonus="${bonus}" data-mode="dis" data-label="${esc(label)}">Disadv</button>
-      <button class="btn ${hasAdv ? "" : "primary"}" data-act="checkRoll" data-bonus="${bonus}" data-mode="normal" data-label="${esc(label)}">Roll ${sign(bonus)}</button>
-      <button class="btn ${hasAdv ? "primary" : ""}" data-act="checkRoll" data-bonus="${bonus}" data-mode="adv" data-label="${esc(label)}">Advantage</button>
-    </div>`);
-}
-actions.checkRoll = (el) => {
-  const r = d20(+el.dataset.bonus, el.dataset.mode); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : "";
-  $("#roll-out").innerHTML = `${esc(el.dataset.label)}: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — 20!" : r.fumble ? " — 1" : ""} ${sign(r.mod)})</small>`;
-};
-actions.rollSave = (el) => { const ch = Store.active(); const ab = el.dataset.ab; rollCheck(RULES.ABILITY_NAMES[ab] + " save", Calc.saveBonus(ch, ab), Calc.advSources(ch, "save." + ab)); };
-actions.rollSkill = (el) => { const ch = Store.active(); const s = el.dataset.skill; rollCheck(s + " check", Calc.skillBonus(ch, s), Calc.advSources(ch, "skill." + s)); };
+actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage you'll be prompted to keep or drop it."); };
 
 /* ---------- subclass spell picker (player enters their own owned content) ---------- */
 function subListHtml(ch, q) {
@@ -1287,7 +1237,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=44");
+      const reg = await navigator.serviceWorker.register("sw.js?v=45");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
