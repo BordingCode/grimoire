@@ -69,6 +69,7 @@ function newCharacter({ name, edition, cls, level }) {
     resources: [],                 // {id,name,max,used,resetOn:'long'|'short',note}
     weapons: [],                   // {id,name,atk,damage,damageType,notes}
     inventory: [],                 // {id,name,qty,equipped,acBonus,notes}
+    features: [],                  // {id,name,desc} — fighting styles, feats, traits, class features
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote
     notes: "",

@@ -265,6 +265,13 @@ input[type=checkbox] { width: auto; }
 .held { color: var(--good); font-weight: 700; }
 .lost { color: var(--bad); font-weight: 700; }
 
+/* features & traits */
+.features { display: flex; flex-direction: column; gap: 8px; }
+.feat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
+.feat-top { display: flex; align-items: center; justify-content: space-between; }
+.feat-name { font-weight: 700; }
+.feat-desc { font-size: .85rem; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+
 /* small options (⋯) button — secondary to the real function buttons */
 .opt-btn { background: none; border: none; color: var(--muted); font-size: 1.15rem; line-height: 1; padding: 2px 8px; cursor: pointer; border-radius: 6px; flex: none; }
 .opt-btn:active { background: var(--panel-2); }

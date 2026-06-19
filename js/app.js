@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=11").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=11").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=12").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=12").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -224,7 +224,14 @@ function tabStats(ch) {
     <h3 class="sec">Saving throws <small>tap dot = proficient</small></h3>
     <div class="lines">${saves}</div>
     <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
-    <div class="lines">${skills}</div>`;
+    <div class="lines">${skills}</div>
+    <h3 class="sec">Features &amp; traits <button class="mini" data-act="addFeature">+ add</button></h3>
+    <div class="features">${(ch.features || []).map((f) => `
+      <div class="feat">
+        <div class="feat-top"><span class="feat-name">${esc(f.name)}</span>
+          <button class="opt-btn" data-act="featureOptions" data-id="${f.id}">⋯</button></div>
+        ${f.desc ? `<div class="feat-desc">${esc(f.desc)}</div>` : ""}
+      </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>`;
 }
 
 function tabCombat(ch) {
@@ -446,6 +453,20 @@ const actions = {
 
   toggleSave(el) { const ch = Store.active(); const a = el.dataset.ab; ch.saveProf[a] = !ch.saveProf[a]; commit(); },
   cycleSkill(el) { const ch = Store.active(); const s = el.dataset.skill; ch.skillProf[s] = ((ch.skillProf[s] || 0) + 1) % 3; commit(); },
+
+  /* features & traits */
+  addFeature() { featureForm(null); },
+  featureOptions(el) { const f = (Store.active().features || []).find((x) => x.id === el.dataset.id); optionsMenu(f ? f.name : "Feature", "feature", `data-id="${el.dataset.id}"`); },
+  featureEdit(el) { featureForm((Store.active().features || []).find((x) => x.id === el.dataset.id)); },
+  featureDel(el) { const ch = Store.active(); ch.features = (ch.features || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Feature deleted."); },
+  featureSave() {
+    const ch = Store.active(); const name = $("#ft-name").value.trim(); if (!name) { toast("Name required."); return; }
+    const desc = $("#ft-desc").value.trim();
+    if (!ch.features) ch.features = [];
+    const ed = actions._featEditId ? ch.features.find((x) => x.id === actions._featEditId) : null;
+    if (ed) { ed.name = name; ed.desc = desc; } else ch.features.push({ id: Gx.uid(), name, desc });
+    actions._featEditId = null; closeModal(); commit();
+  },
 
   /* combat */
   hp(el) { const ch = Store.active(); const d = +el.dataset.d; const c = ch.combat;
@@ -683,6 +704,14 @@ function resForm(r) {
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
 }
 
+function featureForm(f) {
+  actions._featEditId = f ? f.id : null;
+  modal(f ? "Edit feature" : "Add feature / trait", `
+    <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${f ? esc(f.name) : ""}"></label>
+    <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="4" placeholder="e.g. +2 to damage rolls with a one-handed melee weapon. (Put the actual +numbers on the weapon / AC so rolls stay correct.)">${f ? esc(f.desc) : ""}</textarea></label>
+    <div class="modal-btns"><button class="btn primary" data-act="featureSave">${f ? "Save" : "Add"}</button></div>`, () => $("#ft-name").focus());
+}
+
 function itemForm(it) {
   actions._itemEditId = it ? it.id : null;
   modal(it ? "Edit item" : "Add item", `
@@ -826,7 +855,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=11").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=12").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
