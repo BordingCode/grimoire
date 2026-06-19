@@ -80,8 +80,13 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - FEAT_TARGETS gains slot.1..9 ("Extra level-N spell slot"); Calc.spellSlots adds featBonus("slot."+i) onto the computed table (override still wins). Handles Pearl of Power / subclass / item slots; persists across level-ups.
 - Spellbook "All spells" filter (list==="all" → spellPool) lets you add off-class bonus spells (subclass/item/feat) to Known/Prepared. Prepared count is a guide, not enforced, so always-prepared spells are fine.
 
+## Subclass auto-spells — DONE & LIVE ✅ (cache v16)
+- RULES.SUBCLASSES (SRD only): Cleric Life Domain, Paladin Oath of Devotion, Warlock The Fiend, Druid Circle of the Land ×8 lands. Spell-name tables by class level (71 names, verified present both editions).
+- ch.subclass set in Classes & levels manager (options from SRD subclasses of the char's classes). subclassSpells(ch) resolves names→edition pool, level-gated. Spellbook "Subclass" tab + badge; auto-prepared (P on), unioned into Prepared view, NOT counted vs prepared limit. Synced via link identity group.
+- Non-SRD subclasses (Tempest, Archfey, etc.) = copyright, add via "All" tab.
+
 ## NOT yet done / next steps
-- [ ] Phase 5 polish: subclass auto-spells (auto-add domain/circle/patron spells), leveling helper, printable sheet.
+- [ ] Phase 5 polish: leveling helper, printable sheet. (Subclass auto-spells limited to SRD by design.)
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
 - [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
 - [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual).
