@@ -76,8 +76,12 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Auto-bonuses: `Calc.featBonus(ch,target)` sums into AC, initiative, speed, saves (save.all + save.<ab>), spell DC/attack, passive perception, max HP (`Calc.maxHP`), and all-weapon attack/damage (weaponAttack/weaponDamage applied in weapon display + wpnAtk/wpnDmg). Overrides still win. Targets list = FEAT_TARGETS in app.js.
 - Cards show gold bonus tags; weapon attack/damage conditional ones (Archery/Dueling) advised to live on the specific weapon. Synced via link mental group.
 
+## v15: bonus slots + off-class spells
+- FEAT_TARGETS gains slot.1..9 ("Extra level-N spell slot"); Calc.spellSlots adds featBonus("slot."+i) onto the computed table (override still wins). Handles Pearl of Power / subclass / item slots; persists across level-ups.
+- Spellbook "All spells" filter (list==="all" → spellPool) lets you add off-class bonus spells (subclass/item/feat) to Known/Prepared. Prepared count is a guide, not enforced, so always-prepared spells are fine.
+
 ## NOT yet done / next steps
-- [ ] Phase 5 polish: subclass auto-spells, leveling helper, printable sheet.
+- [ ] Phase 5 polish: subclass auto-spells (auto-add domain/circle/patron spells), leveling helper, printable sheet.
 - [ ] Maybe: sync the kill-count across the group (own link code); auto-suggest party names from saved characters.
 - [ ] Multiclass nicety: hit-dice used isn't tracked per-die-size (single counter); HP not auto-recomputed when adding a class (user sets max HP manually — noted in the manager).
 - [ ] Optional: small auto-poll while a linked sheet is open (currently pulls on open + visibility + manual).
