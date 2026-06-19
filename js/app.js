@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=12").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=12").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=13").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=13").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -231,6 +231,7 @@ function tabStats(ch) {
         <div class="feat-top"><span class="feat-name">${esc(f.name)}</span>
           <button class="opt-btn" data-act="featureOptions" data-id="${f.id}">⋯</button></div>
         ${f.desc ? `<div class="feat-desc">${esc(f.desc)}</div>` : ""}
+        ${(f.bonuses && f.bonuses.length) ? `<div class="feat-tags">${f.bonuses.map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}</div>` : ""}
       </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>`;
 }
 
@@ -251,12 +252,15 @@ function tabCombat(ch) {
         <button data-act="resRestore" data-id="${r.id}">+</button>
       </div>
     </div>`).join("");
-  const weapons = (ch.weapons || []).map((w, i) => `
-    <button class="weapon" data-act="weaponOpen" data-i="${i}">
+  const wAtkBon = Calc.featBonus(ch, "weaponAttack"), wDmgBon = Calc.featBonus(ch, "weaponDamage");
+  const weapons = (ch.weapons || []).map((w, i) => {
+    const atk = (w.atk !== "" && w.atk != null) ? +w.atk + wAtkBon : null;
+    return `<button class="weapon" data-act="weaponOpen" data-i="${i}">
       <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
-        <span class="wpn-sub">${w.atk !== "" && w.atk != null ? sign(+w.atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
+        <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
       <span class="wpn-go">🎲</span>
-    </button>`).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
+    </button>`;
+  }).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
   const conc = ch.spells.concentratingOn ? (findSpell(ch, ch.spells.concentratingOn)?.name || "a spell") : null;
   return `
     <div class="combat-top">
@@ -266,7 +270,7 @@ function tabCombat(ch) {
     </div>
     <div class="hp-block">
       <div class="hp-row"><span>Hit points</span>
-        <span class="hp-now">${c.hpCur}<small>/${c.hpMax}</small>${c.hpTemp ? ` <em class="temp">+${c.hpTemp}</em>` : ""}</span></div>
+        <span class="hp-now">${c.hpCur}<small>/${Calc.maxHP(ch)}</small>${c.hpTemp ? ` <em class="temp">+${c.hpTemp}</em>` : ""}</span></div>
       <div class="hp-btns">
         <button data-act="hp" data-d="-5">−5</button><button data-act="hp" data-d="-1">−1</button>
         <button data-act="hp" data-d="1">+1</button><button data-act="hp" data-d="5">+5</button>
@@ -459,24 +463,30 @@ const actions = {
   featureOptions(el) { const f = (Store.active().features || []).find((x) => x.id === el.dataset.id); optionsMenu(f ? f.name : "Feature", "feature", `data-id="${el.dataset.id}"`); },
   featureEdit(el) { featureForm((Store.active().features || []).find((x) => x.id === el.dataset.id)); },
   featureDel(el) { const ch = Store.active(); ch.features = (ch.features || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Feature deleted."); },
+  featBonusAdd() { const meta = featCapture(); actions._featBonuses.push({ target: "ac", value: "" }); renderFeatureForm(meta.name, meta.desc); },
+  featBonusRemove(el) { const meta = featCapture(); actions._featBonuses.splice(+el.dataset.i, 1); renderFeatureForm(meta.name, meta.desc); },
   featureSave() {
     const ch = Store.active(); const name = $("#ft-name").value.trim(); if (!name) { toast("Name required."); return; }
+    featCapture();
+    const bonuses = actions._featBonuses
+      .filter((b) => b.target && b.value !== "" && b.value != null && !isNaN(+b.value))
+      .map((b) => ({ target: b.target, value: +b.value }));
     const desc = $("#ft-desc").value.trim();
     if (!ch.features) ch.features = [];
     const ed = actions._featEditId ? ch.features.find((x) => x.id === actions._featEditId) : null;
-    if (ed) { ed.name = name; ed.desc = desc; } else ch.features.push({ id: Gx.uid(), name, desc });
-    actions._featEditId = null; closeModal(); commit();
+    if (ed) { ed.name = name; ed.desc = desc; ed.bonuses = bonuses; } else ch.features.push({ id: Gx.uid(), name, desc, bonuses });
+    actions._featEditId = null; actions._featBonuses = []; closeModal(); commit();
   },
 
   /* combat */
   hp(el) { const ch = Store.active(); const d = +el.dataset.d; const c = ch.combat;
     if (d < 0 && c.hpTemp > 0) { const fromTemp = Math.min(c.hpTemp, -d); c.hpTemp -= fromTemp; const rest = -d - fromTemp; c.hpCur = Math.max(0, c.hpCur - rest); }
-    else c.hpCur = Math.max(0, Math.min(c.hpMax, c.hpCur + d));
+    else c.hpCur = Math.max(0, Math.min(Calc.maxHP(ch), c.hpCur + d));
     commit();
     if (d < 0) maybeConcentration(ch, -d);
   },
   hpEdit() { const ch = Store.active(); modal("Set current HP", `<input id="hp-in" type="number" value="${ch.combat.hpCur}"><div class="modal-btns"><button class="btn primary" data-act="hpSet">Set</button></div>`, () => $("#hp-in").focus()); },
-  hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(ch.combat.hpMax, +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
+  hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
   shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
@@ -489,7 +499,7 @@ const actions = {
   },
   hitDiePick(el) { closeModal(); rollHitDie(+el.dataset.die); },
   longRest() { const ch = Store.active(); const c = ch.combat;
-    c.hpCur = c.hpMax; c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
+    c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
     c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(ch.level / 2)));
     for (let i = 1; i <= 9; i++) ch.spells.slots[i].used = 0;
     ch.spells.pact.used = 0;
@@ -596,9 +606,10 @@ const actions = {
   addWeapon() { weaponForm(null); },
   weaponOpen(el) {
     const ch = Store.active(); const i = +el.dataset.i; const w = ch.weapons[i];
-    const atk = (w.atk !== "" && w.atk != null) ? +w.atk : null;
+    const wAtkBon = Calc.featBonus(ch, "weaponAttack"), wDmgBon = Calc.featBonus(ch, "weaponDamage");
+    const atk = (w.atk !== "" && w.atk != null) ? +w.atk + wAtkBon : null;
     modal(w.name, `
-      <p class="muted small">${w.damage ? esc(w.damage) + (w.damageType ? " " + esc(w.damageType) : "") + " damage" : "no damage set"}${w.notes ? " · " + esc(w.notes) : ""}</p>
+      <p class="muted small">${w.damage ? esc(w.damage) + (wDmgBon ? " " + sign(wDmgBon) : "") + (w.damageType ? " " + esc(w.damageType) : "") + " damage" : "no damage set"}${w.notes ? " · " + esc(w.notes) : ""}${(wAtkBon || wDmgBon) ? ` <span class="feat-incl">(incl. features)</span>` : ""}</p>
       <div class="cast-box">
         <div class="cast-roll">
           ${atk != null ? `<span class="atk-group"><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="dis">dis</button><button class="btn" data-act="wpnAtk" data-i="${i}" data-mode="normal">🎲 Attack ${sign(atk)}</button><button class="btn small-b" data-act="wpnAtk" data-i="${i}" data-mode="adv">adv</button></span>` : '<span class="muted small">no to-hit set</span>'}
@@ -609,8 +620,8 @@ const actions = {
       </div>`);
   },
   weaponOptions(el) { const w = Store.active().weapons[+el.dataset.i]; optionsMenu(w ? w.name : "Weapon", "weapon", `data-i="${el.dataset.i}"`); },
-  wpnAtk(el) { const w = Store.active().weapons[+el.dataset.i]; const r = d20(+w.atk, el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; },
-  wpnDmg(el) { const w = Store.active().weapons[+el.dataset.i]; const r = rollDice(w.damage); if (!r) { toast("Damage like 1d8+3."); return; } $("#roll-out").innerHTML = `Damage <b>${r.total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""} ${esc(w.damageType || "")}</small>`; },
+  wpnAtk(el) { const ch = Store.active(); const w = ch.weapons[+el.dataset.i]; const r = d20(+w.atk + Calc.featBonus(ch, "weaponAttack"), el.dataset.mode || "normal"); const pair = r.mode !== "normal" ? `[${r.a},${r.b}]→` : ""; $("#roll-out").innerHTML = `Attack: <b>${r.total}</b> <small>(${r.mode === "adv" ? "adv " : r.mode === "dis" ? "dis " : ""}d20 ${pair}${r.nat}${r.crit ? " — CRIT!" : r.fumble ? " — miss" : ""} ${sign(r.mod)})</small>`; },
+  wpnDmg(el) { const ch = Store.active(); const w = ch.weapons[+el.dataset.i]; const r = rollDice(w.damage); if (!r) { toast("Damage like 1d8+3."); return; } const bonus = Calc.featBonus(ch, "weaponDamage"); const total = r.total + bonus; $("#roll-out").innerHTML = `Damage <b>${total}</b> <small>[${r.rolls.join(", ")}]${r.mod ? " " + sign(r.mod) : ""}${bonus ? " " + sign(bonus) + " feat" : ""} ${esc(w.damageType || "")}</small>`; },
   weaponEdit(el) { weaponForm(Store.active().weapons[+el.dataset.i], +el.dataset.i); },
   weaponDel(el) { const ch = Store.active(); ch.weapons.splice(+el.dataset.i, 1); closeModal(); commit(); toast("Weapon deleted."); },
   weaponSave() {
@@ -673,7 +684,7 @@ function toggleList(list, id) { const ch = Store.active(); const arr = ch.spells
 function rollHitDie(die) {
   const ch = Store.active(); const c = ch.combat; const con = Calc.abilityMod(ch, "con");
   const roll = rollDice(`1d${die}`); const heal = Math.max(1, roll.total + con);
-  c.hitDiceUsed++; c.hpCur = Math.min(c.hpMax, c.hpCur + heal); commit();
+  c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(ch), c.hpCur + heal); commit();
   toast(`Hit die d${die} rolled ${roll.total} ${sign(con)} CON = healed ${heal}.`);
 }
 
@@ -704,12 +715,43 @@ function resForm(r) {
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
 }
 
+const FEAT_TARGETS = [
+  ["ac", "Armor Class"],
+  ["weaponAttack", "All weapon attack rolls"],
+  ["weaponDamage", "All weapon damage rolls"],
+  ["initiative", "Initiative"], ["speed", "Speed (ft)"],
+  ["save.all", "All saving throws"],
+  ["save.str", "STR saves"], ["save.dex", "DEX saves"], ["save.con", "CON saves"],
+  ["save.int", "INT saves"], ["save.wis", "WIS saves"], ["save.cha", "CHA saves"],
+  ["spellDC", "Spell save DC"], ["spellAttack", "Spell attack"],
+  ["passivePerception", "Passive Perception"], ["hpMax", "Max HP"],
+];
+const FEAT_TARGET_LABEL = Object.fromEntries(FEAT_TARGETS);
+
 function featureForm(f) {
   actions._featEditId = f ? f.id : null;
-  modal(f ? "Edit feature" : "Add feature / trait", `
-    <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${f ? esc(f.name) : ""}"></label>
-    <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="4" placeholder="e.g. +2 to damage rolls with a one-handed melee weapon. (Put the actual +numbers on the weapon / AC so rolls stay correct.)">${f ? esc(f.desc) : ""}</textarea></label>
-    <div class="modal-btns"><button class="btn primary" data-act="featureSave">${f ? "Save" : "Add"}</button></div>`, () => $("#ft-name").focus());
+  actions._featBonuses = f && f.bonuses ? f.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
+  renderFeatureForm(f ? f.name : "", f ? f.desc : "");
+}
+function featCapture() {
+  actions._featBonuses = [...document.querySelectorAll(".bonus-row")].map((r) => ({ target: r.querySelector("select").value, value: r.querySelector("input").value }));
+  return { name: $("#ft-name") ? $("#ft-name").value : "", desc: $("#ft-desc") ? $("#ft-desc").value : "" };
+}
+function renderFeatureForm(name, desc) {
+  const rows = actions._featBonuses.map((b, i) => `
+    <div class="bonus-row">
+      <select>${FEAT_TARGETS.map(([v, l]) => `<option value="${v}" ${b.target === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <input type="number" inputmode="numeric" placeholder="+/–" value="${b.value ?? ""}">
+      <button class="opt-btn" data-act="featBonusRemove" data-i="${i}">✕</button>
+    </div>`).join("");
+  modal(actions._featEditId ? "Edit feature" : "Add feature / trait", `
+    <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${esc(name)}"></label>
+    <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="3" placeholder="description / reminder…">${esc(desc)}</textarea></label>
+    <h3 class="sec">Auto bonuses <small>added to your sheet automatically</small></h3>
+    <div class="bonus-list">${rows || '<span class="muted small">none yet — e.g. +1 Armor Class, +2 all weapon damage</span>'}</div>
+    <button class="btn small-b add-bonus" data-act="featBonusAdd">+ add a bonus</button>
+    <p class="muted small">Tip: Archery (ranged only) or Dueling (one-handed only)? Put those on the specific weapon instead, since these apply to <i>all</i> weapons.</p>
+    <div class="modal-btns"><button class="btn primary" data-act="featureSave">${actions._featEditId ? "Save" : "Add"}</button></div>`, () => $("#ft-name").focus());
 }
 
 function itemForm(it) {
@@ -855,7 +897,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=12").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=13").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();

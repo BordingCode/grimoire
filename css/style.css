@@ -271,6 +271,14 @@ input[type=checkbox] { width: auto; }
 .feat-top { display: flex; align-items: center; justify-content: space-between; }
 .feat-name { font-weight: 700; }
 .feat-desc { font-size: .85rem; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.feat-tag { font-size: .72rem; font-weight: 700; color: var(--gold); background: rgba(255,216,107,.12); border: 1px solid rgba(255,216,107,.4); border-radius: 999px; padding: 2px 9px; }
+.feat-incl { color: var(--gold); }
+.bonus-list { display: flex; flex-direction: column; gap: 8px; }
+.bonus-row { display: flex; gap: 8px; align-items: center; }
+.bonus-row select { flex: 1; }
+.bonus-row input { width: 72px; text-align: center; }
+.add-bonus { align-self: flex-start; }
 
 /* small options (⋯) button — secondary to the real function buttons */
 .opt-btn { background: none; border: none; color: var(--muted); font-size: 1.15rem; line-height: 1; padding: 2px 8px; cursor: pointer; border-radius: 6px; flex: none; }

@@ -17,6 +17,15 @@ const Calc = {
 
   abilityMod(ch, ab) { return this.mod(ch.abilities[ab]); },
 
+  // sum of all feature auto-bonuses for a given target (e.g. "ac", "save.dex", "weaponDamage")
+  featBonus(ch, target) {
+    let sum = 0;
+    for (const f of (ch.features || [])) for (const b of (f.bonuses || [])) {
+      if (b.target === target) sum += (+b.value || 0);
+    }
+    return sum;
+  },
+
   // [{cls, level}] across primary + multiclass, skipping blanks.
   classList(ch) {
     return [{ cls: ch.cls, level: ch.level }, ...(ch.multiclass || [])].filter((c) => c.cls && c.level > 0);
@@ -29,7 +38,7 @@ const Calc = {
   classInfo(ch) { return RULES.CLASSES[ch.cls] || { caster: "none", saves: [] }; },
 
   saveBonus(ch, ab) {
-    const base = this.abilityMod(ch, ab) + (ch.saveProf[ab] ? this.prof(ch) : 0);
+    const base = this.abilityMod(ch, ab) + (ch.saveProf[ab] ? this.prof(ch) : 0) + this.featBonus(ch, "save.all") + this.featBonus(ch, "save." + ab);
     return ov(ch, "save." + ab, base);
   },
 
@@ -40,9 +49,10 @@ const Calc = {
     return ov(ch, "skill." + skill, base);
   },
 
-  passivePerception(ch) { return ov(ch, "passivePerception", 10 + this.skillBonus(ch, "Perception")); },
-  initiative(ch) { return ov(ch, "initiative", this.abilityMod(ch, "dex")); },
-  speed(ch) { return ov(ch, "speed", ch.combat.speed || 30); },
+  passivePerception(ch) { return ov(ch, "passivePerception", 10 + this.skillBonus(ch, "Perception") + this.featBonus(ch, "passivePerception")); },
+  initiative(ch) { return ov(ch, "initiative", this.abilityMod(ch, "dex") + this.featBonus(ch, "initiative")); },
+  speed(ch) { return ov(ch, "speed", (ch.combat.speed || 30) + this.featBonus(ch, "speed")); },
+  maxHP(ch) { return Math.max(0, (ch.combat.hpMax || 0) + this.featBonus(ch, "hpMax")); },
 
   unarmoredAC(ch) {
     // class unarmored defense from the PRIMARY class: Barbarian 10+Dex+Con, Monk 10+Dex+Wis
@@ -56,7 +66,7 @@ const Calc = {
     const auto = (ch.combat.armorBaseAC == null) ? this.unarmoredAC(ch) : ch.combat.armorBaseAC;
     const shield = ch.combat.shield ? 2 : 0;
     const gear = (ch.inventory || []).filter((i) => i.equipped).reduce((s, i) => s + (+i.acBonus || 0), 0);
-    return ov(ch, "ac", auto + shield + gear);
+    return ov(ch, "ac", auto + shield + gear + this.featBonus(ch, "ac"));
   },
 
   isCaster(ch) {
@@ -73,12 +83,12 @@ const Calc = {
   spellSaveDC(ch) {
     const ab = this.spellAbility(ch);
     if (!ab) return null;
-    return ov(ch, "spellDC", 8 + this.prof(ch) + this.abilityMod(ch, ab));
+    return ov(ch, "spellDC", 8 + this.prof(ch) + this.abilityMod(ch, ab) + this.featBonus(ch, "spellDC"));
   },
   spellAttack(ch) {
     const ab = this.spellAbility(ch);
     if (!ab) return null;
-    return ov(ch, "spellAtk", this.prof(ch) + this.abilityMod(ch, ab));
+    return ov(ch, "spellAtk", this.prof(ch) + this.abilityMod(ch, ab) + this.featBonus(ch, "spellAttack"));
   },
 
   // Combined multiclass spellcaster level (drives shared spell slots).
