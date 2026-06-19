@@ -45,7 +45,7 @@ const Calc = {
   skillBonus(ch, skill) {
     const ab = RULES.SKILLS[skill];
     const p = ch.skillProf[skill] || 0;
-    const base = this.abilityMod(ch, ab) + p * this.prof(ch);
+    const base = this.abilityMod(ch, ab) + p * this.prof(ch) + this.featBonus(ch, "skill.all") + this.featBonus(ch, "skill." + skill);
     return ov(ch, "skill." + skill, base);
   },
 

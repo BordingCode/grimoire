@@ -47,8 +47,8 @@ function d20(mod, mode = "normal") {
 /* ---------- spell data ---------- */
 async function loadSpells() {
   const [a, b] = await Promise.all([
-    fetch("data/spells-2014.json?v=13").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=13").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=14").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=14").then((r) => r.json()),
   ]);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
 }
@@ -725,6 +725,8 @@ const FEAT_TARGETS = [
   ["save.int", "INT saves"], ["save.wis", "WIS saves"], ["save.cha", "CHA saves"],
   ["spellDC", "Spell save DC"], ["spellAttack", "Spell attack"],
   ["passivePerception", "Passive Perception"], ["hpMax", "Max HP"],
+  ["skill.all", "All skill checks"],
+  ...Object.keys(RULES.SKILLS).map((s) => ["skill." + s, s + " (skill)"]),
 ];
 const FEAT_TARGET_LABEL = Object.fromEntries(FEAT_TARGETS);
 
@@ -897,7 +899,7 @@ document.addEventListener("change", (e) => {
 });
 
 /* boot */
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=13").catch(() => {}));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=14").catch(() => {}));
 (async function boot() {
   Store.load();
   Party.load();
