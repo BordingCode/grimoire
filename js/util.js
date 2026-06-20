@@ -11,8 +11,12 @@ function mdToHtml(s) {
   return t.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
 }
 function sign(n) { return (n >= 0 ? "+" : "") + n; }
-// Official-source look-up: D&D Beyond search (just a link — no scraping/bundling of their text).
-function ddbSearchUrl(name) { return "https://www.dndbeyond.com/search?q=" + encodeURIComponent(name || ""); }
+// Look-up link: the community D&D 5e Wikidot spell page (just a link — no scraping/bundling).
+// Slug = lowercase name, apostrophes dropped, every other run of non-alphanumerics → "-".
+function wikidotSpellUrl(name) {
+  const slug = (name || "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return "https://dnd5e.wikidot.com/spell:" + slug;
+}
 // stable id for a look-up-index (non-bundled) spell, from its name
 function idxId(name) { return "idx-" + String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-"); }
 

@@ -286,7 +286,7 @@ const actions = {
      published — it only lives on this device, same as hand-add. */
   pasteSpells() {
     modal("Paste spells", `
-      <p class="muted small">Copy one or more spells from a source you own (your book, PDF, or your D&amp;D Beyond page) and paste below. Include the “<i>3rd-level Evocation</i>” / “<i>Evocation cantrip</i>” line so each spell is recognised. Saved only on this phone — never uploaded.</p>
+      <p class="muted small">Copy a spell’s text from a source you own — e.g. its page on the <b>D&amp;D 5e Wikidot</b> (the “Look it up” link) — and paste below. Include the “<i>3rd-level Evocation</i>” / “<i>Evocation cantrip</i>” line so each spell is recognised; the Wikidot “Spell Lists” line sets which classes can cast it. Saved only on this phone — never uploaded.</p>
       <label class="fld"><span>Pasted text</span><textarea id="ps-text" rows="10" placeholder="Fireball\n3rd-level Evocation\nCasting Time: 1 action\nRange: 150 feet\nComponents: V, S, M (a tiny ball of bat guano and sulfur)\nDuration: Instantaneous\nA bright streak flashes from your pointing finger…\nAt Higher Levels. When you cast this spell using a slot of 4th level or higher…"></textarea></label>
       <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="pasteImport">Import</button></div>`,
       () => $("#ps-text").focus());
@@ -524,9 +524,10 @@ function spendHitDieManual(die) {
   });
 }
 
-/* Parse pasted spell text → spell objects. Tolerant of D&D Beyond / PHB / 2024
-   layouts. A spell is anchored by its level/school line ("3rd-level Evocation",
-   "Level 3 Evocation", or "Evocation cantrip"); the line above it is the name. */
+/* Parse pasted spell text → spell objects. Tolerant of D&D 5e Wikidot / D&D Beyond /
+   PHB / 2024 layouts. A spell is anchored by its level/school line ("3rd-level
+   Evocation", "Level 3 Evocation", or "Evocation cantrip"); the line above it is the
+   name. The Wikidot "Spell Lists." line (if present) sets the spell's class list. */
 function parseSpellsText(text, edition, defaultClass) {
   const LEVELED = /^(?:(\d+)(?:st|nd|rd|th)[\s-]*level|level\s+(\d+))\s+([a-zA-Z]+)/i;
   const CANTRIP = /^([a-zA-Z]+)\s+cantrip\b/i;
@@ -546,7 +547,7 @@ function parseSpellsText(text, edition, defaultClass) {
     const lm = lines[h].match(LEVELED), cm = lines[h].match(CANTRIP);
     const level = lm ? +(lm[1] || lm[2]) : 0;
     const school = lm ? lm[3] : (cm ? cm[1] : "");
-    let ct = "", range = "", comp = "", dur = "", material = "";
+    let ct = "", range = "", comp = "", dur = "", material = "", classesLine = "";
     const descLines = [];
     for (let i = h + 1; i < end; i++) {
       const l = lines[i]; let m;
@@ -555,18 +556,26 @@ function parseSpellsText(text, edition, defaultClass) {
       else if (m = l.match(/^range(?:\/area)?\s*[:.]?\s*(.+)/i)) range = m[1];
       else if (m = l.match(/^components?\s*[:.]?\s*(.+)/i)) { comp = m[1]; const pm = comp.match(/\(([^)]+)\)/); if (pm) material = pm[1]; }
       else if (m = l.match(/^duration\s*[:.]?\s*(.+)/i)) dur = m[1];
+      else if (m = l.match(/^spell list[s]?\s*[:.]?\s*(.+)/i)) classesLine = m[1]; // Wikidot "Spell Lists. Bard, Cleric, …"
+      else if (/^source\s*[:.]/i.test(l)) { /* ignore a Source: line inside the block */ }
       else descLines.push(l);
     }
     let desc = descLines.join("\n").trim(), higher = "";
     const hm = desc.match(/\b(?:at higher levels?|using a (?:higher[- ]level spell slot|spell slot of level)|cantrip upgrade)\b\s*[:.]?\s*/i);
     if (hm) { higher = desc.slice(hm.index + hm[0].length).trim(); desc = desc.slice(0, hm.index).trim(); }
+    // classes from the Wikidot "Spell Lists" line if present, else default to the character's class
+    let classes = [defaultClass];
+    if (classesLine) {
+      const cs = classesLine.split(/[,;]/).map((s) => s.replace(/\([^)]*\)/g, "").trim()).filter(Boolean);
+      if (cs.length) classes = cs;
+    }
     const cu = comp.toUpperCase();
     out.push({
       id: "hb-" + Gx.uid(), name, level, school,
       casting_time: ct, range, duration: dur,
       components: { v: /\bV\b/.test(cu), s: /\bS\b/.test(cu), m: /\bM\b/.test(cu) }, material,
-      classes: [defaultClass], concentration: /concentration/i.test(dur),
-      ritual: /\britual\b/i.test(lines[h]), save: null, attack: false,
+      classes, concentration: /concentration/i.test(dur),
+      ritual: /\britual\b/i.test(lines[h]) || /\britual\b/i.test(ct), save: null, attack: false,
       desc, higher_level: higher, edition,
       custom: true, sourceNote: "Pasted (local copy)", source: "Homebrew",
     });
@@ -746,7 +755,7 @@ function openStub(id) {
   modal(s.name, `
     <p class="sp-line">${lvl} · ${esc(s.school)} · <span class="muted">${esc(s.source)}</span></p>
     <p class="muted small">Not bundled — Grimoire only ships the free SRD spells. Class &amp; level here come from a community index, so confirm the details at the source. Then paste the full text to add it to this character (stays on your phone).</p>
-    <p class="sp-lookup"><a href="${ddbSearchUrl(s.name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
+    <p class="sp-lookup"><a href="${wikidotSpellUrl(s.name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
     <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button><button class="btn primary" data-act="pasteSpells">Paste the text to add it</button></div>`);
 }
 
@@ -765,7 +774,7 @@ function openSpell(ch, id) {
         <div><b>Components</b>${comp}${s.material ? " (" + esc(s.material) + ")" : ""}</div>
       </div>
       ${s.custom && s.sourceNote ? `<p class="sp-src">Source: ${esc(s.sourceNote)}</p>` : ""}
-      <p class="sp-lookup"><a href="${ddbSearchUrl(s.name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
+      <p class="sp-lookup"><a href="${wikidotSpellUrl(s.name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
       <div class="sp-desc"><p>${mdToHtml(s.desc)}</p></div>
       ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
       <div class="cast-box">
@@ -1177,7 +1186,7 @@ actions.summonStub = (el) => {
   modal(name, `
     <p class="sp-line">${c.cr && c.cr !== "—" ? "CR " + esc(c.cr) + " · " : ""}${esc(c.type || "")}${c.source ? ` · <span class="muted">${esc(c.source)}</span>` : ""}</p>
     <p class="muted small">Not bundled — Grimoire only ships free SRD creatures. Look up its stats, then add it as a custom summon.</p>
-    <p class="sp-lookup"><a href="${ddbSearchUrl(name)}" target="_blank" rel="noopener">Look it up on D&amp;D Beyond ↗</a></p>
+    <p class="sp-lookup"><a href="${wikidotSpellUrl(name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
     <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button><button class="btn primary" data-act="summonCustom" data-name="${esc(name)}" data-type="${esc(type)}">Add as custom</button></div>`);
 };
 actions.summonCustom = (el) => {
