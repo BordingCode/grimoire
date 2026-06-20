@@ -207,7 +207,7 @@ input[type=checkbox] { width: auto; }
 .cond { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 12px; display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
 .cond b { color: var(--gold); }
 .cond-name { background: none; border: none; color: var(--ink); font-size: .85rem; padding: 0; cursor: pointer; border-bottom: 1px dotted var(--muted); }
-.cond button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg-2); color: var(--ink); cursor: pointer; }
+.cond button:not(.cond-name) { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg-2); color: var(--ink); cursor: pointer; flex: none; padding: 0; line-height: 1; }
 
 .reslist { display: flex; flex-direction: column; gap: 8px; }
 .res { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
