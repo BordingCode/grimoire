@@ -146,6 +146,8 @@ function render() {
   if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons"].includes(ui.screen) ? Store.active() : null);
   if (["session", "summons"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
   if (typeof initSortables === "function") initSortables();
+  // remember where the user is so an app refresh resumes here instead of resetting to Stats
+  try { localStorage.setItem("grimoire.nav.v1", JSON.stringify({ screen: ui.screen, tab: ui.tab })); } catch (e) {}
 }
 // drag-handle markup, shown only in Arrange mode (ui.reorder)
 function handle() { return ui.reorder ? '<button class="drag-handle" title="drag to reorder">⠿</button>' : ""; }
@@ -674,6 +676,7 @@ function viewSummons(ch) {
       <div class="summon-actions">
         <button class="btn primary" data-act="summonAdd">+ Add summon</button>
         ${sums.length ? `<button class="btn ghost" data-act="summonDismissAll">Dismiss all</button>` : ""}
+        <button class="big-stat summon-btn" data-act="summonBack" title="Back to character" aria-label="Back to character"><span class="sb-ic">${creatureIcon("humanoid")}</span></button>
       </div>
       <div class="summon-list">${cards}</div>
     </div>`;

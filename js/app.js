@@ -1427,10 +1427,18 @@ let _swReg = null, _doReload = false;
 function showUpdatePrompt() {
   toast(`New version available. <button class="toast-btn" data-act="doUpdate">Reload</button>`, 999999);
 }
-actions.doUpdate = () => {
+actions.doUpdate = async () => {
   _doReload = true;
-  const w = _swReg && (_swReg.waiting || _swReg.installing);
-  if (w) w.postMessage("skipWaiting"); else location.reload();
+  let reg = _swReg;
+  try { reg = (await navigator.serviceWorker.getRegistration()) || _swReg; } catch (e) {}
+  const w = reg && (reg.waiting || reg.installing);
+  if (w) {
+    w.postMessage("skipWaiting");
+    // fallback: if the new worker doesn't take control quickly, reload anyway so the button never feels dead
+    setTimeout(() => { if (_doReload) location.reload(); }, 1500);
+  } else {
+    location.reload(); // no pending worker — just reload
+  }
 };
 if ("serviceWorker" in navigator) {
   // when the new SW takes control (after the user taps Reload), refresh once
@@ -1456,7 +1464,13 @@ if ("serviceWorker" in navigator) {
   Store.load();
   Party.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
-  if (Store.active()) { ui.screen = "sheet"; ui.spellFilter.list = defaultSpellList(Store.active()); }
+  if (Store.active()) {
+    // resume where the user left off (screen + tab) instead of always resetting to Stats
+    let nav = null; try { nav = JSON.parse(localStorage.getItem("grimoire.nav.v1") || "null"); } catch (e) {}
+    ui.screen = (nav && ["sheet", "summons", "session"].includes(nav.screen)) ? nav.screen : "sheet";
+    if (nav && ["stats", "combat", "spells", "gear", "notes"].includes(nav.tab)) ui.tab = nav.tab;
+    ui.spellFilter.list = defaultSpellList(Store.active());
+  }
   render();
   if (window.LINK) LINK.afterBoot();
   if (window.PARTY) PARTY.afterBoot();
