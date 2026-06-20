@@ -380,19 +380,32 @@ const actions = {
   /* char menu */
   charMenu() {
     const ch = Store.active();
+    const killsOn = killsShown();
     modal(ch.name, `
-      <div class="menu-list">
-        <button class="btn ghost" data-act="charPhoto">Character photo</button>
-        <button class="btn ghost" data-act="appearance">Appearance (theme)</button>
+      <div class="menu-group">
+        <h4 class="menu-h">Build</h4>
         <button class="btn ghost" data-act="levelUp">Level up</button>
         <button class="btn ghost" data-act="manageClasses">Classes &amp; levels</button>
-        <button class="btn ghost" data-act="linkOpen">${ch.link ? "Linked — manage sharing" : "Link with another player"}</button>
-        <button class="btn ghost" data-act="partyOpen">Party — transfer items${ch.party ? " (joined)" : ""}</button>
-        <button class="btn ghost" data-act="exportChar">Export character (backup / share)</button>
         <button class="btn ghost" data-act="renameChar">Rename</button>
+      </div>
+      <div class="menu-group">
+        <h4 class="menu-h">Look</h4>
+        <button class="btn ghost" data-act="charPhoto">Character photo</button>
+        <button class="btn ghost" data-act="appearance">Appearance &amp; world</button>
+      </div>
+      <div class="menu-group">
+        <h4 class="menu-h">At the table</h4>
+        <button class="btn ${killsOn ? "primary" : "ghost"}" data-act="toggleKills">Kill count: ${killsOn ? "shown" : "hidden"}</button>
+        <button class="btn ghost" data-act="partyOpen">Party — transfer items${ch.party ? " (joined)" : ""}</button>
+        <button class="btn ghost" data-act="linkOpen">${ch.link ? "Linked — manage sharing" : "Link with another player"}</button>
+      </div>
+      <div class="menu-group">
+        <h4 class="menu-h">Backup</h4>
+        <button class="btn ghost" data-act="exportChar">Export character (backup / share)</button>
         <button class="btn danger" data-act="deleteChar">Delete character</button>
       </div>`);
   },
+  toggleKills() { localStorage.setItem("grimoire.killcount", killsShown() ? "off" : "on"); render(); actions.charMenu(); },
   async exportChar() {
     const ch = Store.active();
     const out = JSON.parse(JSON.stringify(ch));

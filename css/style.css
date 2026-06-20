@@ -425,6 +425,9 @@ input[type=checkbox] { width: auto; }
 .modal-btns .btn { flex: 1; }
 .menu-list { display: flex; flex-direction: column; gap: 8px; }
 .menu-list .btn { text-align: left; }
+.menu-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.menu-group .btn { text-align: left; }
+.menu-h { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 0 0 1px; font-weight: 700; }
 
 /* spell detail */
 .sp-line { color: var(--accent-2); margin: 0; }

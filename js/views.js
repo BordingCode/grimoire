@@ -542,8 +542,10 @@ function tabNotes(ch) {
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
     : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
   return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests…">${esc(ch.notes)}</textarea>${tabSessions(ch)}
-    <h3 class="sec">Kill count</h3>${killCountSection()}`;
+    ${killsShown() ? `<h3 class="sec">Kill count</h3>${killCountSection()}` : ""}`;
 }
+// kill-count display is an opt-out global preference (shown by default), toggled in the char menu
+function killsShown() { return localStorage.getItem("grimoire.killcount") !== "off"; }
 
 /* ---- Session book (per-character journal: text + photos + drawings) ---- */
 function sessionDateLabel(d) {
