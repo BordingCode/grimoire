@@ -1372,7 +1372,9 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js?v=47");
+      // No ?v= here: the browser re-checks sw.js on every load and the SW's own
+      // CACHE constant drives updates, so there's no version to keep in sync.
+      const reg = await navigator.serviceWorker.register("sw.js");
       _swReg = reg;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
       reg.addEventListener("updatefound", () => {
