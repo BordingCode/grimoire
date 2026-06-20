@@ -49,9 +49,8 @@ function applyTheme(ch) {
   const root = document.documentElement;
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   root.dataset.theme = mode;
-  // a character wears its class theme by default, but can pick any class's look (ch.theme)
-  const themeCls = (ch && ch.theme) || (ch && ch.cls);
-  const t = ch && Grimoire.themes && Grimoire.themes[themeCls] && Grimoire.themes[themeCls][mode];
+  applyScene(ch, mode); // also turns the scene OFF on home/light (ch null or light mode)
+  const t = ch && Grimoire.themes && Grimoire.themes[ch.cls] && Grimoire.themes[ch.cls][mode];
   if (!t) { THEME_VARS.forEach((v) => root.style.removeProperty(v)); return; }
   const p = { ...t };
   // the Appearance accent picker (ch.accent) still overrides just the accent pair
@@ -64,7 +63,6 @@ function applyTheme(ch) {
   const c = p.accent.replace("#", "");
   const lum = (0.299 * parseInt(c.slice(0, 2), 16) + 0.587 * parseInt(c.slice(2, 4), 16) + 0.114 * parseInt(c.slice(4, 6), 16)) / 255;
   set("--on-accent", lum > 0.6 ? "#1c1430" : "#ffffff");
-  applyScene(ch, mode);
 }
 /* the illustrated class "world" behind the sheet — on for a character in dark mode
    (unless they switched it off); cleared on home/light so those stay clean & readable */
@@ -72,7 +70,7 @@ function applyScene(ch, mode) {
   if (!window.Scene) return;
   const on = !!ch && mode === "dark" && ch.scene !== false;
   document.body.classList.toggle("has-scene", on);
-  if (on) Scene.set(ch.theme || ch.cls, mode); else Scene.stop();
+  if (on) Scene.set(ch.cls, mode); else Scene.stop();
 }
 // shrink a chosen image to a small JPEG data-URL so it doesn't bloat storage
 function downscaleImage(img, max = 320) {
@@ -1188,41 +1186,18 @@ actions.appearance = () => {
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
   const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
-  // full-palette theme picker: every class's look is choosable, not just your own
-  const curTheme = ch.theme || ch.cls;
-  const themes = Grimoire.themes || {};
-  const themeCards = Object.keys(themes).map((cls) => {
-    const t = themes[cls][mode] || themes[cls].dark;
-    const on = curTheme === cls ? "on" : "";
-    const note = cls === ch.cls ? " (class)" : "";
-    return `<button class="theme-card ${on}" data-act="setTheme" data-theme="${esc(cls)}" title="${esc(themes[cls].concept || cls)}"
-      style="--tc-bg:${t.bg};--tc-panel:${t.panel};--tc-accent:${t.accent};--tc-ink:${t.ink}">
-      <span class="theme-swatch"><i></i></span><span class="theme-name">${esc(cls)}${note}</span></button>`;
-  }).join("");
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
       <button class="btn ${mode === "dark" ? "primary" : "ghost"}" data-act="setMode" data-mode="dark">Dark</button>
       <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">Light</button>
     </div>
-    <h3 class="sec">Theme <small>${ch.theme && ch.theme !== ch.cls ? esc(ch.theme) : "class default"}</small></h3>
-    <p class="muted small">Each class has its own colour world. Pick any look you like.</p>
-    <div class="theme-grid">${themeCards}</div>
-    ${ch.theme && ch.theme !== ch.cls ? `<button class="btn ghost" data-act="resetTheme">Use ${esc(ch.cls)} theme</button>` : ""}
-    <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "theme default"}</small></h3>
+    <p class="muted small">Dark mode paints your class's illustrated world behind the sheet. Light mode is a clean, plain sheet.</p>
+    <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
     <div class="swatches">${swatches}</div>
-    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use theme default</button>` : ""}
-    <h3 class="sec">Decorative frame <small>optional</small></h3>
-    <p class="muted small">Turn on a class-crest frame in any of these spots. Its style follows the character's alignment.</p>
-    <div class="frame-toggles">${FRAME_PLACES.map((p) => `<button class="btn ${frameOn(ch, p.key) ? "primary" : "ghost"} small-b" data-act="toggleFrame" data-place="${p.key}">${frameOn(ch, p.key) ? "✓ " : ""}${esc(p.label)}</button>`).join("")}</div>
-    <h4 class="sub-h">Alignment <small>shapes the frame</small></h4>
-    <div class="align-row">${ALIGNMENTS.map((a) => `<button class="btn ${((ch.alignment || "neutral") === a.key) ? "primary" : "ghost"} small-b" data-act="setAlignment" data-key="${a.key}">${esc(a.label)}<span class="align-note">${esc(a.note)}</span></button>`).join("")}</div>`);
+    ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use class default</button>` : ""}`);
 };
 actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mode); render(); actions.appearance(); };
-actions.setTheme = (el) => { const ch = Store.active(); ch.theme = el.dataset.theme; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
-actions.resetTheme = () => { const ch = Store.active(); ch.theme = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
-actions.toggleFrame = (el) => { const ch = Store.active(); if (!ch.frames) ch.frames = {}; const k = el.dataset.place; ch.frames[k] = !ch.frames[k]; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
-actions.setAlignment = (el) => { const ch = Store.active(); ch.alignment = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 
