@@ -168,32 +168,59 @@ actions.linkPushNow = function () { LINK.push(Store.active()).then(() => toast("
 actions.linkCopy = function (el) { const c = el.dataset.code; if (navigator.clipboard) navigator.clipboard.writeText(c).then(() => toast("Code copied.")); else toast(c); };
 actions.linkUnlink = function () { const ch = Store.active(); if (confirm("Unlink this device? Your character stays; it just stops syncing.")) { delete ch.link; Store.save(); closeModal(); render(); toast("Unlinked."); } };
 
-/* ============================ Party — instant item transfer ============================ */
-const PARTY = {
-  async req(code, body) {
-    try {
-      const r = await fetch(`${LINK.WORKER}/party/${code}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      return await r.json();
-    } catch (e) { console.warn("party req failed", e); return null; }
+/* ===================== Campaign party (live, auto-merging) =====================
+   Everyone "connects" to ONE teammate (or the DM). Connected players are merged into a
+   single group server-side (union-find), so the whole table ends up in one party — connect
+   to anyone already in it and you're pulled in too. A member's personal code IS their link
+   code, so the live-HP panel reads each member's link snapshot and DM gifts/HP-pull keep
+   working. ch.party = { in:true, roster:[{code,name,role}] }. */
+const _partyLive = {}; // code -> {hpCur,hpMax,hpTemp,conditions,ac}
+const GROUP = {
+  async req(body) {
+    try { const r = await fetch(`${LINK.WORKER}/group`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return await r.json(); }
+    catch (e) { console.warn("group req failed", e); return null; }
   },
-  async pull(ch) {
-    if (!ch || !ch.party) return;
-    const res = await PARTY.req(ch.party.code, { op: "pull", memberId: ch.party.memberId });
-    if (!res) return;
-    if (res.members) ch.party.roster = res.members;
-    if (res.items && res.items.length) {
-      res.items.forEach((rec) => { const o = rec.item || {}; ch.inventory.push({ id: Gx.uid(), name: o.name || "Item", qty: +o.qty || 1, equipped: false, acBonus: +o.acBonus || 0, notes: o.notes || "", bonuses: o.bonuses || [], adv: o.adv || [] }); });
-      Store.save();
-      if (Store.activeId === ch.id) render();
-      toast(`Received ${res.items.length} item(s): ${res.items.map((r) => esc((r.item || {}).name || "item")).join(", ")}.`);
-    } else { Store.save(); }
+  // a party member needs a personal publish channel — reuse the link code (created if absent, sharing physical so teammates see HP)
+  ensureLink(ch) {
+    if (!ch.link) { ch.link = { code: genCode(), role: "owner", groups: { ...LINK.PRESETS.shared }, lastPulledVersion: 0, lastPushedAt: null }; Store.save(); }
+    return ch.link.code;
   },
+  async sync(ch) {
+    if (!ch || !ch.party) return null;
+    const code = GROUP.ensureLink(ch);
+    LINK.push(ch); // publish a fresh snapshot so teammates see current HP
+    const r = await GROUP.req({ op: "sync", code, name: ch.name, role: "player" });
+    if (r && r.members) { ch.party.roster = r.members; Store.save(); }
+    if (Store.activeId === ch.id && document.querySelector("#modal .party-list")) { await partyRefreshLive(ch); renderParty(); }
+    return r;
+  },
+  async connect(ch, otherCode) {
+    const code = GROUP.ensureLink(ch);
+    if (!ch.party) ch.party = { in: true, roster: [] };
+    const r = await GROUP.req({ op: "connect", code, name: ch.name, role: "player", withCode: otherCode });
+    if (r && r.members) { ch.party.roster = r.members; Store.save(); }
+    return r;
+  },
+  async leave(ch) { if (ch.link) await GROUP.req({ op: "leave", code: ch.link.code }); delete ch.party; Store.save(); },
   afterBoot() {
-    const ch = Store.active && Store.active(); if (ch && ch.party) PARTY.pull(ch);
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.party) PARTY.pull(c); } });
-    setInterval(() => { const c = Store.active(); if (c && c.party && document.visibilityState === "visible") PARTY.pull(c); }, 25000);
+    const ch = Store.active && Store.active(); if (ch && ch.party) GROUP.sync(ch);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.party) GROUP.sync(c); } });
+    setInterval(() => { const c = Store.active(); if (c && c.party && document.visibilityState === "visible") GROUP.sync(c); }, 25000);
   },
 };
+window.GROUP = GROUP;
+// fetch each teammate's live snapshot (HP / conditions / AC) for the party panel
+async function partyRefreshLive(ch) {
+  const roster = (ch.party && ch.party.roster) || [];
+  const me = ch.link && ch.link.code;
+  await Promise.all(roster.map(async (mem) => {
+    if (mem.role === "dm" || mem.code === me) return;
+    try {
+      const snap = await LINK.fetchSnapshot(mem.code);
+      if (snap) { const c = snap.combat || {}; _partyLive[mem.code] = { name: snap.name, hpCur: c.hpCur, hpMax: c.hpMax, hpTemp: c.hpTemp, conditions: snap.conditions || [], ac: (typeof dmComputeAC === "function" ? dmComputeAC(snap) : null) }; }
+    } catch (e) {}
+  }));
+}
 
 /* DM gifts — the DM (who has a player's link code) drops items/images into a queue
    keyed by that code; the player's app polls its own link code and receives them. */
@@ -228,45 +255,60 @@ window.GIFT = GIFT;
 
 function renderParty() {
   const ch = Store.active();
+  const myCode = GROUP.ensureLink(ch);
   if (!ch.party) {
-    modal("Party — item transfer", `
-      <p class="muted small">Join a party with your group to hand items to each other instantly. (Separate from character linking.)</p>
-      <button class="btn primary" data-act="partyCreate">Create a party &amp; get a code</button>
-      <div class="or">or join one</div>
-      <div class="join-row"><input id="party-join" placeholder="CODE e.g. ABCD-2345" maxlength="9"><button class="btn" data-act="partyJoinGo">Join</button></div>`);
+    modal("Campaign party", `
+      <p class="muted small">Connect with your group so everyone sees each other's <b>live HP</b> — and your DM can reach the whole party. Connect to <b>any one</b> teammate (or your DM); you'll all be merged into one party automatically.</p>
+      <div class="link-code">Your code: <b>${esc(myCode)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(myCode)}">copy</button></div>
+      <p class="muted small">Share your code, or enter a teammate's / your DM's:</p>
+      <div class="join-row"><input id="party-join" placeholder="CODE e.g. ABCD-2345" maxlength="9"><button class="btn primary" data-act="partyConnectGo">Connect</button></div>`);
     return;
   }
-  const roster = ch.party.roster || {};
-  const others = Object.entries(roster).filter(([id]) => id !== ch.party.memberId);
-  modal("Party — item transfer", `
-    <div class="link-code">Party: <b>${esc(ch.party.code)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(ch.party.code)}">copy</button></div>
-    <p class="muted small">Members: ${others.length ? others.map(([, n]) => esc(n)).join(", ") : "just you so far — share the code"}</p>
-    <div class="modal-btns">
-      <button class="btn primary" data-act="partySendOpen" ${others.length ? "" : "disabled"}>Send an item…</button>
-      <button class="btn" data-act="partyRefresh">Refresh</button>
-    </div>
+  const roster = ch.party.roster || [];
+  const others = roster.filter((mem) => mem.code !== myCode);
+  const players = others.filter((m) => m.role !== "dm");
+  const dm = others.find((m) => m.role === "dm");
+  const rows = others.length ? others.map((mem) => {
+    if (mem.role === "dm") return `<div class="party-row"><span class="party-name">${esc(mem.name || "DM")}</span><span class="party-hp muted">DM</span></div>`;
+    const L = _partyLive[mem.code];
+    const hp = L && L.hpMax != null ? `${L.hpCur != null ? L.hpCur : "?"}/${L.hpMax}${L.hpTemp ? " +" + L.hpTemp : ""} HP${L.ac ? " · AC " + L.ac : ""}` : "—";
+    const conds = L && L.conditions && L.conditions.length ? `<div class="party-cond muted small">${L.conditions.map((c) => esc(c.name || c)).join(", ")}</div>` : "";
+    return `<div class="party-row"><span class="party-name">${esc(mem.name || (L && L.name) || "Adventurer")}${conds}</span><span class="party-hp">${hp}</span></div>`;
+  }).join("") : `<p class="muted small">Just you so far — share your code or connect to a teammate.</p>`;
+  modal("Campaign party", `
+    <div class="link-code">Your code: <b>${esc(myCode)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(myCode)}">copy</button></div>
+    <div class="party-list">${rows}</div>
+    <div class="join-row"><input id="party-join" placeholder="connect another code" maxlength="9"><button class="btn" data-act="partyConnectGo">Connect</button></div>
+    <div class="modal-btns"><button class="btn primary" data-act="partySendOpen" ${players.length ? "" : "disabled"}>Send an item…</button><button class="btn" data-act="partyRefresh">Refresh</button></div>
     <button class="btn danger" data-act="partyLeave" style="width:100%;margin-top:10px">Leave party</button>`);
 }
-actions.partyOpen = () => { renderParty(); const ch = Store.active(); if (ch.party) PARTY.req(ch.party.code, { op: "join", memberId: ch.party.memberId, name: ch.name }).then((r) => { if (r && r.members) { ch.party.roster = r.members; Store.save(); renderParty(); } }); };
-actions.partyCreate = async () => { const ch = Store.active(); ch.party = { code: genCode(), memberId: "m" + Gx.uid() }; Store.save(); const r = await PARTY.req(ch.party.code, { op: "join", memberId: ch.party.memberId, name: ch.name }); if (r && r.members) ch.party.roster = r.members; Store.save(); renderParty(); toast("Party created — share the code with your group."); };
-actions.partyJoinGo = async () => {
+actions.partyOpen = async () => {
+  const ch = Store.active(); GROUP.ensureLink(ch); renderParty();
+  if (ch.party) { await GROUP.sync(ch); await partyRefreshLive(ch); renderParty(); }
+};
+actions.partyConnectGo = async () => {
   const ch = Store.active(); const raw = ($("#party-join").value || "").trim().toUpperCase();
   if (!/^[A-Z0-9]{4}-?[A-Z0-9]{4}$/.test(raw)) { toast("Enter a code like ABCD-2345."); return; }
-  ch.party = { code: raw.includes("-") ? raw : raw.slice(0, 4) + "-" + raw.slice(4), memberId: "m" + Gx.uid() };
-  Store.save(); const r = await PARTY.req(ch.party.code, { op: "join", memberId: ch.party.memberId, name: ch.name }); if (r && r.members) ch.party.roster = r.members; Store.save(); renderParty(); toast("Joined the party.");
+  const other = raw.includes("-") ? raw : raw.slice(0, 4) + "-" + raw.slice(4);
+  if (ch.link && other === ch.link.code) { toast("That's your own code."); return; }
+  toast("Connecting…");
+  const r = await GROUP.connect(ch, other);
+  if (!r) { toast("Couldn't reach the party server."); return; }
+  await partyRefreshLive(ch); renderParty(); toast("Connected to your party.");
 };
 actions.partyCopy = (el) => { const c = el.dataset.code; if (navigator.clipboard) navigator.clipboard.writeText(c).then(() => toast("Code copied.")); else toast(c); };
-actions.partyRefresh = async () => { const ch = Store.active(); const r = await PARTY.req(ch.party.code, { op: "join", memberId: ch.party.memberId, name: ch.name }); if (r && r.members) { ch.party.roster = r.members; Store.save(); } await PARTY.pull(ch); renderParty(); };
-actions.partyLeave = async () => { const ch = Store.active(); if (!confirm("Leave the party? You can rejoin with the code.")) return; await PARTY.req(ch.party.code, { op: "leave", memberId: ch.party.memberId }); delete ch.party; Store.save(); closeModal(); render(); toast("Left the party."); };
+actions.partyRefresh = async () => { const ch = Store.active(); await GROUP.sync(ch); await partyRefreshLive(ch); renderParty(); };
+actions.partyLeave = async () => { const ch = Store.active(); if (!confirm("Leave the party? You can reconnect any time with a code.")) return; await GROUP.leave(ch); closeModal(); render(); toast("Left the party."); };
 actions.partySendOpen = () => {
-  const ch = Store.active(); const roster = ch.party.roster || {};
-  const others = Object.entries(roster).filter(([id]) => id !== ch.party.memberId);
+  const ch = Store.active(); const myCode = ch.link && ch.link.code;
+  const others = ((ch.party && ch.party.roster) || []).filter((mem) => mem.code !== myCode && mem.role !== "dm");
   const items = [...(ch.inventory || []).map((i) => ({ ...i, _list: "inventory" })), ...(ch.bag || []).map((i) => ({ ...i, _list: "bag" }))];
+  if (!others.length) { toast("No teammates to send to yet."); return; }
   if (!items.length) { toast("You have no items to send."); return; }
   modal("Send an item", `
     <label class="fld"><span>Item</span><select id="send-item">${items.map((i, idx) => `<option value="${idx}">${esc(i.name)}${i.qty > 1 ? " ×" + i.qty : ""}${i._list === "bag" ? " (bag)" : ""}</option>`).join("")}</select></label>
-    <label class="fld"><span>To</span><select id="send-to">${others.map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join("")}</select></label>
-    <p class="muted small">It's removed from your sheet and appears in theirs instantly.</p>
+    <label class="fld"><span>To</span><select id="send-to">${others.map((mem) => `<option value="${esc(mem.code)}">${esc(mem.name || "Adventurer")}</option>`).join("")}</select></label>
+    <p class="muted small">It's removed from your sheet and appears in theirs.</p>
     <div class="modal-btns"><button class="btn primary" data-act="partySendGo">Send</button></div>`);
   actions._sendItems = items;
 };
@@ -274,8 +316,8 @@ actions.partySendGo = async () => {
   const ch = Store.active(); const items = actions._sendItems || []; const it = items[+$("#send-item").value]; const to = $("#send-to").value;
   if (!it || !to) return;
   const payload = { name: it.name, qty: it.qty, notes: it.notes || "", acBonus: it.acBonus || 0, bonuses: it.bonuses || [], adv: it.adv || [] };
-  const r = await PARTY.req(ch.party.code, { op: "send", to, from: ch.name, item: payload });
-  if (!r || !r.ok) { toast("Couldn't reach the party server."); return; }
+  const r = await GIFT.send(to, ch.name, { kind: "item", item: payload });
+  if (!r || !r.ok) { toast("Couldn't reach the server."); return; }
   ch[it._list] = ch[it._list].filter((x) => x.id !== it.id); actions._sendItems = null;
-  Store.save(); closeModal(); render(); toast(`Sent ${it.name}.`);
+  Store.save(); renderParty(); render(); toast(`Sent ${it.name}.`);
 };

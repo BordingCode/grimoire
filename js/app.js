@@ -458,7 +458,7 @@ const actions = {
       <div class="menu-group">
         <h4 class="menu-h">At the table</h4>
         <button class="btn ${killsOn ? "primary" : "ghost"}" data-act="toggleKills">Kill count: ${killsOn ? "shown" : "hidden"}</button>
-        <button class="btn ghost" data-act="partyOpen">Party — transfer items${ch.party ? " (joined)" : ""}</button>
+        <button class="btn ghost" data-act="partyOpen">Campaign party — live HP &amp; items${ch.party ? " (joined)" : ""}</button>
         <button class="btn ghost" data-act="linkOpen">${ch.link ? "Linked — manage sharing" : "Link with another player"}</button>
       </div>
       <div class="menu-group">
@@ -1619,12 +1619,12 @@ function dmFindCb(id) { return DM.active && DM.active.combatants.find((c) => c.i
 function dmPushUndo(cb) { DM.active._undo = { id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp, label: cb.name }; }
 
 /* --- navigation --- */
-actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); };
+actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); if (DM.cur()) dmPartyAutoSync(); };
 actions.dmHome = () => { ui.screen = "dm"; render(); };
 actions.dmBackHome = () => { ui.screen = "home"; render(); };
 /* ---- Campaigns: one DM can run several games, each with its own players/encounters/combat ---- */
 actions.dmCampaigns = () => { ui.screen = "dmCampaigns"; render(); };
-actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.screen = "dm"; render(); };
+actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.screen = "dm"; render(); dmPartyAutoSync(); };
 actions.dmNewCampaign = () => {
   modal("New campaign", `
     <label class="fld"><span>Campaign name</span><input id="dmc-cname" placeholder="e.g. Curse of Strahd" autocomplete="off"></label>
@@ -1735,6 +1735,7 @@ actions.dmAddSavedPlayer = async (el) => {
     const snap = await LINK.fetchSnapshot(p.code);
     if (!snap) { toast("Nothing shared on that code yet — the player must link & sync once."); return; }
     DM.active.combatants.push(dmLinkCombatant(snap, p.code)); DM.save(); closeModal(); render();
+    dmConnectToPlayer(p.code);
     toast(`Added ${snap.name || p.name} — live.`);
   } catch (e) { toast("Couldn't reach the link server (offline?)."); }
 };
@@ -1769,6 +1770,7 @@ actions.dmAddLinkGo = async () => {
     DM.active.combatants.push(dmLinkCombatant(p, code));
     if (!DM.players.some((x) => x.code.toUpperCase() === code.toUpperCase())) DM.players.push({ id: "pl" + Gx.uid(), name: p.name || "Player", code });
     DM.save(); closeModal(); render();
+    dmConnectToPlayer(code); // also link them into the campaign party
     toast(`Added ${p.name || "the player"} — live.`);
   } catch (e) { toast("Couldn't reach the link server (offline?)."); }
 };
@@ -1831,8 +1833,41 @@ actions.dmAddPlayerGo = async () => {
   let name = "Player";
   try { const p = await LINK.fetchSnapshot(code); if (p && p.name) name = p.name; else if (p === null) { /* code exists but no name */ } } catch (e) {}
   DM.players.push({ id: "pl" + Gx.uid(), name, code }); DM.save(); closeModal(); render();
+  dmConnectToPlayer(code); // pull them into the campaign party so they (and other players) all link up
   toast(`${name} added to your roster.`);
 };
+/* ---- Campaign party (DM side): the DM is a member of the same auto-merging group as the players.
+   The campaign's dmCode is the DM's personal code; connecting it to any player merges the whole
+   table into one party, and the roster auto-fills from the group's player members. ---- */
+function dmGroupCode(camp) { camp = camp || DM.cur(); if (!camp) return null; if (!camp.dmCode) { camp.dmCode = genCode(); DM.save(); } return camp.dmCode; }
+function dmMergePartyMembers(camp, members) {
+  if (!camp || !members) return false; let changed = false;
+  members.forEach((mem) => {
+    if (mem.role === "dm" || !mem.code) return;
+    const ex = camp.players.find((p) => p.code && p.code.toUpperCase() === mem.code.toUpperCase());
+    if (ex) { if (mem.name && ex.name !== mem.name) { ex.name = mem.name; changed = true; } }
+    else { camp.players.push({ id: "pl" + Gx.uid(), name: mem.name || "Player", code: mem.code, fromParty: true }); changed = true; }
+  });
+  if (changed) DM.save();
+  return changed;
+}
+async function dmConnectToPlayer(code) {
+  const camp = DM.cur(); if (!camp || !code || !window.GROUP) return;
+  const r = await GROUP.req({ op: "connect", code: dmGroupCode(camp), name: "DM · " + camp.name, role: "dm", withCode: code });
+  if (r && r.members && dmMergePartyMembers(camp, r.members)) render();
+}
+actions.dmPartySync = async () => {
+  const camp = DM.cur(); if (!camp || !window.GROUP) return;
+  toast("Syncing the party…");
+  const r = await GROUP.req({ op: "sync", code: dmGroupCode(camp), name: "DM · " + camp.name, role: "dm" });
+  if (r && r.members) { const ch = dmMergePartyMembers(camp, r.members); render(); toast(ch ? "Party synced — new players added." : "Party up to date."); }
+  else toast("Couldn't reach the party server.");
+};
+// quietly pull party members when the DM opens a campaign (no toast)
+async function dmPartyAutoSync() {
+  const camp = DM.cur(); if (!camp || !window.GROUP) return;
+  try { const r = await GROUP.req({ op: "sync", code: dmGroupCode(camp), name: "DM · " + camp.name, role: "dm" }); if (r && r.members && dmMergePartyMembers(camp, r.members)) render(); } catch (e) {}
+}
 actions.dmPlayerMenu = (el) => {
   const p = DM.players.find((x) => x.id === el.dataset.id); if (!p) return;
   modal(esc(p.name), `<div class="menu-list">
@@ -2088,6 +2123,6 @@ if ("serviceWorker" in navigator) {
   }
   render();
   if (window.LINK) LINK.afterBoot();
-  if (window.PARTY) PARTY.afterBoot();
+  if (window.GROUP) GROUP.afterBoot();
   if (window.GIFT) GIFT.afterBoot();
 })();

@@ -805,6 +805,7 @@ function viewDM() {
     </header>
     <div class="screen">
       <button class="btn ghost" data-act="dmCampaigns">⇄ Switch campaign${DM.campaigns.length > 1 ? ` <span class="muted small">(${DM.campaigns.length})</span>` : ""}</button>
+      <div class="dm-party-code">Party code <b>${esc(dmGroupCode(camp))}</b> <button class="mini" data-act="partyCopy" data-code="${esc(dmGroupCode(camp))}">copy</button> <button class="mini" data-act="dmPartySync">sync</button><div class="muted small">Players enter this on their <b>Party</b> screen to join — then they auto-appear below.</div></div>
       ${a ? `<button class="dm-resume" data-act="dmResume"><b>Resume combat</b><span class="muted small">${esc(a.name)} · round ${a.round || 1} · ${a.combatants.length} in play</span></button>` : ""}
       <div class="summon-actions">
         <button class="btn primary" data-act="dmNewEncounter">+ New encounter</button>
