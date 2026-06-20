@@ -195,7 +195,8 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - **Appearance** is now just **Mode** (Dark/Light) + **Accent colour**, with a note that dark = your class's world, light = plain sheet.
 - **Kept:** per-class colour palettes (`data/themes.json`) as the base tint under the scene (`applyTheme` reads `themes[ch.cls][mode]`). The `concept` field in themes.json is now unused (harmless). Old characters may still carry dead `theme/alignment/frames` fields — harmless, no migration.
 - **Bug fixed (latent since v50):** `applyTheme` early-returned for a null character (home), so it never reached `applyScene` → the scene stayed on over the home list. Moved `applyScene(ch, mode)` ABOVE the early return; home + light mode now correctly clear `body.has-scene`.
-- **Still open:** scene is always-on for a character in dark mode (no explicit per-character on/off toggle — `ch.scene !== false` is checked but nothing sets it); no light-mode scene variant (light = plain by design).
+- **v53:** added the **per-character "Illustrated world" On/Off toggle** in Appearance (sets `ch.scene`; `applyScene` already honoured `ch.scene !== false`). Off = plain dark sheet keeping the class base tint. Synced via identity link group. Browser-verified.
+- **Still open:** no light-mode scene variant (light = plain by design).
 
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: printable sheet (leveling helper DONE).
