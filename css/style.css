@@ -423,6 +423,7 @@ input[type=checkbox] { width: auto; }
 .modal-head h2 { font-size: 1.1rem; margin: 0; }
 .modal-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+.sp-edit-row { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
 .modal-btns .btn { flex: 1; }
 .menu-list { display: flex; flex-direction: column; gap: 8px; }
 .menu-list .btn { text-align: left; }

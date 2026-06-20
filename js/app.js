@@ -246,39 +246,52 @@ const actions = {
 
   spellDetail(el) { const id = el.dataset.id; if (id.startsWith("idx-")) return openStub(id); openSpell(Store.active(), id); },
 
-  addCustom() {
-    modal("Hand-add a spell", `
-      <label class="fld"><span>Name *</span><input id="cs-name"></label>
-      <div class="grid2">
-        <label class="fld"><span>Level</span><select id="cs-level">${Array.from({length:10},(_,i)=>`<option value="${i}">${i===0?"Cantrip":i}</option>`).join("")}</select></label>
-        <label class="fld"><span>School</span><input id="cs-school" placeholder="Evocation"></label>
-      </div>
-      <div class="grid2">
-        <label class="fld"><span>Casting time</span><input id="cs-ct" placeholder="action"></label>
-        <label class="fld"><span>Range</span><input id="cs-range" placeholder="60 feet"></label>
-      </div>
-      <div class="grid2">
-        <label class="fld"><span>Duration</span><input id="cs-dur" placeholder="Instantaneous"></label>
-        <label class="fld"><span>Components</span><input id="cs-comp" placeholder="V, S, M"></label>
-      </div>
-      <label class="chk"><input type="checkbox" id="cs-conc"> Concentration</label>
-      <label class="fld"><span>Description</span><textarea id="cs-desc" rows="4"></textarea></label>
-      <label class="fld"><span>Source (where it's from)</span><input id="cs-source" placeholder="e.g. Xanathar's, or homebrew doc"></label>
-      <p class="muted small">Got the full text? <a href="#" data-act="pasteSpells">Paste it instead ↧</a> and it’ll be parsed for you.</p>
-      <div class="modal-btns"><button class="btn primary" data-act="customSave">Add spell</button></div>`, () => $("#cs-name").focus());
+  addCustom() { customForm(null); },
+  customEdit(el) { const s = findSpell(Store.active(), el.dataset.id); if (s && s.custom) customForm(s); },
+  customDelete(el) {
+    const id = el.dataset.id, ch = Store.active(), s = findSpell(ch, id);
+    confirmDelete(`Delete “${s ? s.name : "this spell"}”? It’s removed from your spellbook.`, () => {
+      ch.customSpells = (ch.customSpells || []).filter((x) => x.id !== id);
+      ["known", "prepared", "favorites"].forEach((k) => { ch.spells[k] = (ch.spells[k] || []).filter((x) => x !== id); });
+      closeModal(); commit(); toast("Spell deleted.");
+    });
+  },
+  pasteSpellFill() {
+    const cur = csCapture();
+    openSpellPaste((parsed) => {
+      if (!parsed) { toast("Couldn’t read a spell — include the level/school line, e.g. “3rd-level Evocation”."); csRender(cur); return; }
+      const desc = (parsed.desc || "") + (parsed.higher_level ? `\n\nAt higher levels. ${parsed.higher_level}` : "");
+      csRender({
+        name: parsed.name || cur.name, level: parsed.level, school: parsed.school,
+        casting_time: parsed.casting_time, range: parsed.range, duration: parsed.duration,
+        comp: compStr(parsed.components), concentration: parsed.concentration,
+        desc: desc.trim(), sourceNote: cur.sourceNote || "Pasted",
+      });
+    });
+  },
+  spellPasteDo() {
+    const t = $("#sp-paste") ? $("#sp-paste").value : "", ch = Store.active();
+    const parsed = parseSpellsText(t, ch.edition, ch.cls)[0] || null;
+    const cb = actions._spellPasteCb; actions._spellPasteCb = null;
+    if (cb) cb(parsed);
   },
   customSave() {
-    const ch = Store.active(); const name = $("#cs-name").value.trim(); if (!name) { toast("Name required."); return; }
-    const comp = $("#cs-comp").value.toUpperCase();
-    const sp = {
-      id: "hb-" + Gx.uid(), name, level: +$("#cs-level").value, school: $("#cs-school").value.trim(),
-      casting_time: $("#cs-ct").value.trim(), range: $("#cs-range").value.trim(), duration: $("#cs-dur").value.trim(),
-      components: { v: comp.includes("V"), s: comp.includes("S"), m: comp.includes("M") }, material: "",
-      classes: [ch.cls], concentration: $("#cs-conc").checked, ritual: false, save: null, attack: false,
-      desc: $("#cs-desc").value.trim(), higher_level: "", edition: ch.edition,
-      custom: true, sourceNote: $("#cs-source").value.trim(), source: "Homebrew",
+    const ch = Store.active(); const v = csCapture(); const name = (v.name || "").trim(); if (!name) { toast("Name required."); return; }
+    const comp = (v.comp || "").toUpperCase();
+    const data = {
+      name, level: +v.level || 0, school: (v.school || "").trim(),
+      casting_time: (v.casting_time || "").trim(), range: (v.range || "").trim(), duration: (v.duration || "").trim(),
+      components: { v: comp.includes("V"), s: comp.includes("S"), m: comp.includes("M") },
+      concentration: !!v.concentration, desc: (v.desc || "").trim(), sourceNote: (v.sourceNote || "").trim(),
     };
-    ch.customSpells.push(sp); ch.spells.known.push(sp.id); closeModal(); commit(); toast("Spell added & marked known.");
+    if (actions._csEditId) {
+      const sp = (ch.customSpells || []).find((x) => x.id === actions._csEditId);
+      if (sp) Object.assign(sp, data);  // keep id/known/prepared + fields the form doesn't touch
+      actions._csEditId = null; closeModal(); commit(); toast("Spell updated.");
+    } else {
+      const sp = { id: "hb-" + Gx.uid(), ...data, material: "", classes: [ch.cls], ritual: false, save: null, attack: false, higher_level: "", edition: ch.edition, custom: true, source: "Homebrew" };
+      ch.customSpells.push(sp); ch.spells.known.push(sp.id); closeModal(); commit(); toast("Spell added & marked known.");
+    }
   },
 
   /* Paste-and-parse: YOU copy spell text from a source you own (book/PDF/your D&D
@@ -616,6 +629,49 @@ function parseEntryText(text) {
   return { name, body: rest.join("\n").replace(/^\n+|\n+$/g, "").trim() };
 }
 function joinDesc(existing, body) { return (body && body.trim()) ? body.trim() : (existing || ""); }
+
+/* hand-add / edit a custom spell (s=null to add). The form doubles as the edit form,
+   and 'Paste text to fill this in' re-parses pasted text into the fields — so a botched
+   paste can be fixed by re-pasting, not just deleted. */
+function compStr(c) { return [c && c.v && "V", c && c.s && "S", c && c.m && "M"].filter(Boolean).join(", "); }
+function customForm(s) { actions._csEditId = s ? s.id : null; csRender(s ? { ...s, comp: compStr(s.components) } : {}); }
+function csCapture() {
+  const g = (id) => { const e = $(id); return e ? e.value : ""; };
+  return {
+    name: g("#cs-name"), level: $("#cs-level") ? +$("#cs-level").value : 0, school: g("#cs-school"),
+    casting_time: g("#cs-ct"), range: g("#cs-range"), duration: g("#cs-dur"), comp: g("#cs-comp"),
+    concentration: $("#cs-conc") ? $("#cs-conc").checked : false, desc: g("#cs-desc"), sourceNote: g("#cs-source"),
+  };
+}
+function csRender(v) {
+  const editing = !!actions._csEditId;
+  modal(editing ? "Edit spell" : "Hand-add a spell", `
+    <label class="fld"><span>Name *</span><input id="cs-name" value="${esc(v.name || "")}"></label>
+    <p class="muted small">Got the full text${editing ? " — or pasted the wrong one" : ""}? <a href="#" data-act="pasteSpellFill">Paste ${editing ? "new text" : "it"} to fill these in ↧</a></p>
+    <div class="grid2">
+      <label class="fld"><span>Level</span><select id="cs-level">${Array.from({ length: 10 }, (_, i) => `<option value="${i}" ${String(v.level) === String(i) ? "selected" : ""}>${i === 0 ? "Cantrip" : i}</option>`).join("")}</select></label>
+      <label class="fld"><span>School</span><input id="cs-school" value="${esc(v.school || "")}" placeholder="Evocation"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Casting time</span><input id="cs-ct" value="${esc(v.casting_time || "")}" placeholder="action"></label>
+      <label class="fld"><span>Range</span><input id="cs-range" value="${esc(v.range || "")}" placeholder="60 feet"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>Duration</span><input id="cs-dur" value="${esc(v.duration || "")}" placeholder="Instantaneous"></label>
+      <label class="fld"><span>Components</span><input id="cs-comp" value="${esc(v.comp != null ? v.comp : compStr(v.components))}" placeholder="V, S, M"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="cs-conc" ${v.concentration ? "checked" : ""}> Concentration</label>
+    <label class="fld"><span>Description</span><textarea id="cs-desc" rows="4">${esc(v.desc || "")}</textarea></label>
+    <label class="fld"><span>Source (where it's from)</span><input id="cs-source" value="${esc(v.sourceNote || "")}" placeholder="e.g. Xanathar's, or homebrew doc"></label>
+    <div class="modal-btns"><button class="btn primary" data-act="customSave">${editing ? "Save" : "Add spell"}</button></div>`, () => $("#cs-name").focus());
+}
+function openSpellPaste(cb) {
+  actions._spellPasteCb = cb;
+  modal("Paste spell text", `
+    <p class="muted small">Copy one spell's text from a source you own — e.g. its page on the D&amp;D 5e Wikidot — and paste it. Include the “3rd-level Evocation” / “Evocation cantrip” line so it's recognised. Saved only on this phone.</p>
+    <label class="fld"><span>Pasted text</span><textarea id="sp-paste" rows="9" placeholder="Fireball\n3rd-level evocation\nCasting Time: 1 action\nRange: 150 feet\nComponents: V, S, M\nDuration: Instantaneous\nA bright streak flashes…"></textarea></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="spellPasteDo">Fill in</button></div>`, () => { const t = $("#sp-paste"); if (t) t.focus(); });
+}
 function openPasteEntry(kind, cb) {
   actions._pasteEntryCb = cb;
   modal(`Paste ${kind} text`, `
@@ -830,6 +886,7 @@ function openSpell(ch, id) {
         ${s.level > 0 && Calc.isCaster(ch) ? `<button class="btn primary" data-act="castSpell" data-id="${esc(id)}" data-lvl="${s.level}">Cast (spend a slot)</button>` : ""}
         ${s.concentration ? `<button class="btn ghost" data-act="startConc" data-id="${esc(id)}">Concentrate</button>` : ""}
       </div>
+      ${s.custom ? `<div class="modal-btns sp-edit-row"><button class="btn ghost" data-act="customEdit" data-id="${esc(id)}">Edit / re-paste</button><button class="btn danger" data-act="customDelete" data-id="${esc(id)}">Delete</button></div>` : ""}
     </div>`);
 }
 /* HP take-damage / heal with an amount prompt (temp HP absorbs damage; heal caps at max) */
@@ -1448,6 +1505,11 @@ document.addEventListener("input", (e) => {
   setPath(ch, t.dataset.bind, v); Store.touch(); if (window.LINK) LINK.schedulePush(ch);
   // live-update small computed readouts without rebuilding inputs
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
+});
+// the native clear (✕) on a type="search" input fires a "search" event, not always "input"
+document.addEventListener("search", (e) => {
+  const a = e.target.closest("[data-act]");
+  if (a && actions[a.dataset.act]) actions[a.dataset.act](a);
 });
 document.addEventListener("change", (e) => {
   // data-act selects (e.g. spell level filter) — fire on change
