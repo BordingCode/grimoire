@@ -812,11 +812,16 @@ function profForm(field) {
     <label class="fld"><span>${esc(topic.label)}</span>
       <input id="prof-in" list="prof-dl" placeholder="${esc(topic.placeholder)}" autocomplete="off" enterkeyhint="done"></label>
     <datalist id="prof-dl">${options}</datalist>
-    <p class="muted small">Pick a suggestion or type your own, then Add. Keep adding, then Done.</p>
-    <div class="modal-btns"><button class="btn primary" data-act="profAdd" data-field="${field}">Add</button><button class="btn" data-act="closeModal">Done</button></div>`,
+    <p class="muted small">Pick a suggestion or type your own. Add keeps the box open for more; Done also saves what's typed.</p>
+    <div class="modal-btns"><button class="btn primary" data-act="profAdd" data-field="${field}">Add</button><button class="btn" data-act="profDone" data-field="${field}">Done</button></div>`,
     () => { const inp = $("#prof-in"); if (!inp) return; inp.focus(); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); actions.profAdd({ dataset: { field } }); } }); });
 }
 actions.profAddOpen = (el) => profForm(el.dataset.field);
+actions.profDone = (el) => {
+  const field = el.dataset.field, inp = $("#prof-in"), val = inp ? (inp.value || "").trim() : "";
+  if (val) { const arr = profArray(Store.active(), field); if (!arr.some((x) => x.toLowerCase() === val.toLowerCase())) arr.push(val); if (window.LINK) LINK.schedulePush(Store.active()); }
+  closeModal(); commit(); // commit saves + re-renders the chips on the sheet
+};
 actions.profAdd = (el) => {
   const field = el.dataset.field, inp = $("#prof-in"); if (!inp) return;
   const val = (inp.value || "").trim(); if (!val) { inp.focus(); return; }
