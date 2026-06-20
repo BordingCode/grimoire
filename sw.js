@@ -1,6 +1,6 @@
 /* Grimoire service worker — offline-first cache.
    Bump CACHE when any cached file changes, or phones serve stale copies. */
-const CACHE = "grimoire-v49";
+const CACHE = "grimoire-v50";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./js/rules.js",
   "./js/util.js",
   "./js/media.js",
+  "./js/scene.js",
   "./js/views.js",
   "./js/state.js",
   "./js/calc.js",

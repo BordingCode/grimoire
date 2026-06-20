@@ -64,6 +64,15 @@ function applyTheme(ch) {
   const c = p.accent.replace("#", "");
   const lum = (0.299 * parseInt(c.slice(0, 2), 16) + 0.587 * parseInt(c.slice(2, 4), 16) + 0.114 * parseInt(c.slice(4, 6), 16)) / 255;
   set("--on-accent", lum > 0.6 ? "#1c1430" : "#ffffff");
+  applyScene(ch, mode);
+}
+/* the illustrated class "world" behind the sheet — on for a character in dark mode
+   (unless they switched it off); cleared on home/light so those stay clean & readable */
+function applyScene(ch, mode) {
+  if (!window.Scene) return;
+  const on = !!ch && mode === "dark" && ch.scene !== false;
+  document.body.classList.toggle("has-scene", on);
+  if (on) Scene.set(ch.theme || ch.cls, mode); else Scene.stop();
 }
 // shrink a chosen image to a small JPEG data-URL so it doesn't bloat storage
 function downscaleImage(img, max = 320) {

@@ -13,9 +13,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Grimoire" />
-  <link rel="stylesheet" href="css/style.css?v=49" />
+  <link rel="stylesheet" href="css/style.css?v=50" />
 </head>
 <body>
+  <div id="scene" aria-hidden="true">
+    <div id="scene-sky"></div>
+    <canvas id="scene-fx"></canvas>
+    <div id="scene-silhouette"></div>
+    <div id="scene-veil"></div>
+  </div>
   <main id="app">
     <div class="splash">
       <img src="icons/icon-512.png" alt="" class="splash-icon" width="96" height="96" />
@@ -23,13 +29,14 @@
       <p class="tagline">D&D character sheet &amp; spellbook — works offline.</p>
     </div>
   </main>
-  <script src="js/rules.js?v=49"></script>
-  <script src="js/state.js?v=49"></script>
-  <script src="js/calc.js?v=49"></script>
-  <script src="js/util.js?v=49"></script>
-  <script src="js/media.js?v=49"></script>
-  <script src="js/views.js?v=49"></script>
-  <script src="js/app.js?v=49"></script>
-  <script src="js/link.js?v=49"></script>
+  <script src="js/rules.js?v=50"></script>
+  <script src="js/state.js?v=50"></script>
+  <script src="js/calc.js?v=50"></script>
+  <script src="js/util.js?v=50"></script>
+  <script src="js/media.js?v=50"></script>
+  <script src="js/scene.js?v=50"></script>
+  <script src="js/views.js?v=50"></script>
+  <script src="js/app.js?v=50"></script>
+  <script src="js/link.js?v=50"></script>
 </body>
 </html>

@@ -35,7 +35,16 @@ html, body {
 }
 input, select, textarea, button { font: inherit; color: inherit; }
 
-#app { min-height: 100svh; display: flex; flex-direction: column; }
+#app { min-height: 100svh; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+/* ---- illustrated class "world" scene (painted behind the sheet) ---- */
+#scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+body:not(.has-scene) #scene { display: none; }
+#scene-sky, #scene-fx, #scene-silhouette, #scene-veil { position: absolute; inset: 0; width: 100%; height: 100%; }
+#scene-sky { transition: background .6s ease; }
+#scene-fx { display: block; }
+#scene-veil { background: linear-gradient(180deg, rgba(4,3,14,.04) 0%, rgba(4,3,14,.16) 38%, rgba(4,3,14,.40) 100%); }
+body.has-scene { background: #07061a; }
 
 .splash { margin: auto; text-align: center; padding: 24px; }
 .splash-icon { border-radius: 22px; box-shadow: 0 12px 40px rgba(109,74,255,.45); }
@@ -549,3 +558,24 @@ input[type=checkbox] { width: auto; }
 #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--accent); color: var(--ink); padding: 12px 18px; border-radius: 12px; max-width: 90%; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; font-size: .9rem; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast-btn { background: var(--accent); color: var(--on-accent); border: none; border-radius: 8px; padding: 5px 14px; margin-left: 10px; font-weight: 700; cursor: pointer; }
+
+/* ---- "content floats over art": frost the panels when a scene is active ---- */
+body.has-scene .topbar { background: color-mix(in srgb, var(--bg) 48%, transparent); -webkit-backdrop-filter: blur(11px); backdrop-filter: blur(11px); border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+body.has-scene .topbar.sheet { background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 55%, transparent), color-mix(in srgb, var(--bg) 30%, transparent) 92%); }
+body.has-scene .tabbar { background: color-mix(in srgb, var(--bg-2) 52%, transparent); }
+body.has-scene .chip, body.has-scene .ab-card, body.has-scene .big-stat, body.has-scene .hp-block,
+body.has-scene .death, body.has-scene .hitdice, body.has-scene .res, body.has-scene .caster-none,
+body.has-scene .feat, body.has-scene .weapon, body.has-scene .cast-cls, body.has-scene .session-card,
+body.has-scene .summon-card, body.has-scene .kill-row, body.has-scene .link-code, body.has-scene .grp,
+body.has-scene .sp-higher {
+  background: color-mix(in srgb, var(--panel) 58%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+body.has-scene .sm-detail-toggle, body.has-scene .sm-inst, body.has-scene .sum-pick, body.has-scene .cond { background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
+body.has-scene .lines .line:nth-of-type(even) { background: color-mix(in srgb, var(--accent-faint) 60%, transparent); }
+body.has-scene .spell-lvl-head { background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+/* lift bare text sitting directly on the art */
+body.has-scene .screen h2, body.has-scene .sec, body.has-scene .s-name, body.has-scene .s-sub,
+body.has-scene .cc-name, body.has-scene .cc-sub, body.has-scene .empty, body.has-scene .lbl,
+body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,0,0,.6); }
