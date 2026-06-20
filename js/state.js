@@ -83,6 +83,7 @@ function newCharacter({ name, edition, cls, level }) {
     summons: [],                   // active summons: {id,name,count,ac,speed,attacks,hpMax,hps:[],notes,photo,conc} — device-only photos in IndexedDB
     summonKnown: [],               // creature names you've marked as available to you (auto-filled when you add one)
     summonFav: [],                 // starred creature names for quick access in the picker
+    shape: { active: null, fav: [], known: [] },  // transformation (Wild Shape / Polymorph): active beast form + HP pool, favorites, known
     notes: "",
     createdAt: nowStamp(),
     updatedAt: nowStamp(),

@@ -142,8 +142,9 @@ function render() {
   else if (ui.screen === "party") app.innerHTML = viewParty();
   else if (ui.screen === "session") app.innerHTML = viewSession(Store.active());
   else if (ui.screen === "summons") app.innerHTML = viewSummons(Store.active());
+  else if (ui.screen === "shape") app.innerHTML = viewShape(Store.active());
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
-  if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons"].includes(ui.screen) ? Store.active() : null);
+  if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons", "shape"].includes(ui.screen) ? Store.active() : null);
   if (["session", "summons"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
   if (typeof initSortables === "function") initSortables();
   // remember where the user is so an app refresh resumes here instead of resetting to Stats
@@ -333,6 +334,7 @@ function tabCombat(ch) {
   }).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
   const conc = ch.spells.concentratingOn ? (findSpell(ch, ch.spells.concentratingOn)?.name || "a spell") : null;
   return `
+    ${shapeBanner(ch)}
     <div class="combat-top">
       <div class="big-stat" data-act="override" data-key="ac" data-label="Armor Class" data-auto="${Calc.armorClass(ch)}"><b>${Calc.armorClass(ch)}</b><span>AC</span></div>
       <div class="big-stat"><b>${sign(Calc.initiative(ch))}</b><span>Init</span></div>
@@ -683,4 +685,63 @@ function viewSummons(ch) {
       </div>
       <div class="summon-list">${cards}</div>
     </div>`;
+}
+
+/* ---- transformation (Wild Shape / Polymorph) ---- */
+// slim banner / entry button at the top of the Combat tab
+function shapeBanner(ch) {
+  ensureWildShape(ch);
+  const f = ch.shape && ch.shape.active;
+  if (f) {
+    const S = SHAPE_SOURCES[f.source] || {};
+    return `<div class="shape-banner">
+      <button class="shape-banner-main" data-act="openShapeActive"><span class="sb-ic">${creatureIcon(f.icon)}</span><span class="shape-b-txt">${esc(S.banner || "Transformed")}: <b>${esc(f.name)}</b> · ${f.hps[0]}/${f.hpMax} HP</span><span class="shape-b-go">›</span></button>
+      <button class="shape-revert" data-act="shapeRevert">Revert</button>
+    </div>`;
+  }
+  if (druidLevel(ch) >= 2) return `<button class="shape-enter" data-act="openWildShape"><span class="sb-ic">${creatureIcon("beast")}</span> Wild Shape</button>`;
+  return "";
+}
+function viewShape(ch) {
+  if (!ch) { ui.screen = "home"; return viewHome(); }
+  const f = ch.shape && ch.shape.active;
+  const src = f ? f.source : ui.shapePick.src;
+  const S = SHAPE_SOURCES[src] || {};
+  const res = wildShapeRes(ch);
+  return `
+    <header class="topbar">
+      <button class="back" data-act="shapeBack">‹</button>
+      <div class="sheet-id"><span class="s-name">${esc(S.label || "Transform")}</span><span class="s-sub">${esc(ch.name)}</span></div>
+    </header>
+    <div class="screen">
+      <div class="summon-actions">
+        ${f ? `<button class="btn ghost" data-act="shapePicker">Change form</button><button class="btn primary" data-act="shapeRevert">Revert to normal</button>`
+            : `<button class="btn primary" data-act="shapePicker">Transform — pick a form</button>`}
+        <button class="big-stat summon-btn" data-act="shapeBack" title="Back to character" aria-label="Back to character"><span class="sb-ic">${creatureIcon("humanoid")}</span></button>
+      </div>
+      ${src === "wildshape" && res ? `<p class="muted small">Wild Shape uses left: <b>${res.max - res.used}/${res.max}</b> (tracked in Resources).</p>` : ""}
+      ${f ? shapeCard(ch, f) : `<p class="muted small">${esc(S.note ? S.note(ch) : "")}</p><p class="muted pad">Not transformed. Tap “Transform” to choose a form.</p>`}
+    </div>`;
+}
+function shapeCard(ch, f) {
+  const def = creatureDef(f);
+  const hp = f.hps[0];
+  const atks = (f.attacks || []).map((a) => `<div class="sm-atk"><b>${esc(a.name)}</b> ${a.atk >= 0 ? "+" : ""}${a.atk} · ${esc(a.damage)} ${esc(a.type || "")}${a.notes ? ` <span class="muted">— ${esc(a.notes)}</span>` : ""}</div>`).join("");
+  const moonHeal = f.source === "wildshape" && isMoonDruid(ch);
+  return `<div class="summon-card">
+    <div class="sm-head">
+      <span class="sm-photo sm-photo-add">${creatureIcon(f.icon)}</span>
+      <div class="sm-title"><span class="sm-name">${esc(f.name)}</span><span class="sm-meta">AC ${f.ac} · ${esc(f.speed || "")}${f.conc ? " · concentration" : ""}</span></div>
+    </div>
+    <div class="shape-hp">
+      <span class="shape-hp-v ${hp <= 0 ? "down" : ""}" data-act="shapeDmg" title="tap to take damage">${hp}<small>/${f.hpMax}</small></span>
+      <button data-act="shapeStep" data-d="-1" title="-1">−</button>
+      <button data-act="shapeStep" data-d="1" title="+1">+</button>
+      <button class="btn small-b" data-act="shapeSetHp">Set</button>
+      ${moonHeal ? `<button class="btn small-b" data-act="shapeHeal">Heal (slot)</button>` : ""}
+    </div>
+    ${atks ? `<div class="sm-atks">${atks}</div>` : ""}
+    ${f.notes ? `<div class="sm-notes muted">${esc(f.notes)}</div>` : ""}
+    ${creatureHasDetail(def) ? `<div class="sm-detail">${statBlockBody(def, f)}</div>` : ""}
+  </div>`;
 }

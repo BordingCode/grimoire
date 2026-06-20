@@ -4,7 +4,7 @@
 "use strict";
 
 const Grimoire = { spells: { "2014": [], "2024": [] } };
-const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" }, sumCollapsed: new Set(), sumPick: { q: "", type: "all", sort: "crAsc", tab: "all" } };
+const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" }, sumCollapsed: new Set(), sumPick: { q: "", type: "all", sort: "crAsc", tab: "all" }, shapePick: { q: "", type: "all", sort: "crAsc", tab: "eligible", src: "wildshape" } };
 
 /* team kill-count tracker (local to this device, separate from characters) */
 const Party = {
@@ -885,6 +885,7 @@ function openSpell(ch, id) {
         </div>
         ${s.level > 0 && Calc.isCaster(ch) ? `<button class="btn primary" data-act="castSpell" data-id="${esc(id)}" data-lvl="${s.level}">Cast (spend a slot)</button>` : ""}
         ${s.concentration ? `<button class="btn ghost" data-act="startConc" data-id="${esc(id)}">Concentrate</button>` : ""}
+        ${/^(?:true )?polymorph$/i.test(s.name) ? `<button class="btn ghost" data-act="polymorphStart">Transform into a beast ↗</button>` : ""}
       </div>
       ${s.custom ? `<div class="modal-btns sp-edit-row"><button class="btn ghost" data-act="customEdit" data-id="${esc(id)}">Edit / re-paste</button><button class="btn danger" data-act="customDelete" data-id="${esc(id)}">Delete</button></div>` : ""}
     </div>`);
@@ -1399,6 +1400,145 @@ actions.summonPhoto = (el) => {
 };
 actions.summonPhotoRemove = (el) => { const s = activeSummon(el.dataset.id); if (!s || !s.photo) return; const mid = s.photo; s.photo = null; closeModal(); commit(); Media.del(mid).catch(() => {}); };
 
+/* ===================================================================== */
+/*  TRANSFORMATION ENGINE — Wild Shape & Polymorph (shared)              */
+/*  You become a beast from the library: separate HP pool, its stat block,*/
+/*  revert at 0 (leftover damage carries over). Only the eligible-form    */
+/*  filter + cost differ by "source".                                     */
+/* ===================================================================== */
+function druidLevel(ch) { const c = Calc.classList(ch).find((x) => x.cls === "Druid"); return c ? c.level : 0; }
+function isMoonDruid(ch) { return druidLevel(ch) >= 2 && /moon/i.test(ch.subclass || ""); }
+function wildShapeMaxCR(ch) { const L = druidLevel(ch); if (L < 2) return 0; return isMoonDruid(ch) ? Math.max(1, Math.floor(L / 3)) : (L >= 8 ? 1 : L >= 4 ? 0.5 : 0.25); }
+function canElemental(ch) { return isMoonDruid(ch) && druidLevel(ch) >= 10; }
+function fmtCR(n) { return n === 0.125 ? "1/8" : n === 0.25 ? "1/4" : n === 0.5 ? "1/2" : String(n); }
+const SHAPE_SOURCES = {
+  wildshape: {
+    label: "Wild Shape", banner: "Wild-shaped", conc: false,
+    eligible(ch, d) {
+      const t = (d.type || "").toLowerCase(), cr = crToNum(d.cr);
+      if (t === "beast") return cr <= wildShapeMaxCR(ch) + 1e-9;
+      if (t === "elemental" && canElemental(ch)) return /(air|earth|fire|water) elemental/i.test(d.name);
+      return false;
+    },
+    note(ch) {
+      const L = druidLevel(ch);
+      if (isMoonDruid(ch)) return `Circle of the Moon: beasts up to CR ${fmtCR(wildShapeMaxCR(ch))}${canElemental(ch) ? ", or an elemental (2 uses)" : ""}.`;
+      return `Beasts up to CR ${fmtCR(wildShapeMaxCR(ch))}${L < 4 ? " · no flying or swimming speed" : L < 8 ? " · no flying speed" : ""}.`;
+    },
+    cost(ch, def) { return ((def.type || "").toLowerCase() === "elemental") ? 2 : 1; },
+  },
+  polymorph: {
+    label: "Polymorph", banner: "Polymorphed", conc: true,
+    eligible(ch, d) { return (d.type || "").toLowerCase() === "beast" && crToNum(d.cr) <= Calc.totalLevel(ch) + 1e-9; },
+    note(ch) { return `Any beast up to CR ${fmtCR(Calc.totalLevel(ch))} (your level). You gain the beast's HP; at 0 you revert and leftover damage carries over.`; },
+    cost() { return 0; },
+  },
+};
+function shapeEligible(ch, d, src) { const S = SHAPE_SOURCES[src]; return !!(S && S.eligible(ch, d)); }
+// ensure Druids L2+ have the Wild Shape uses tracker in Resources (idempotent)
+function ensureWildShape(ch) {
+  if (!ch || druidLevel(ch) < 2) return;
+  if (!ch.resources) ch.resources = [];
+  if (!ch.resources.some((r) => r.wildshape)) ch.resources.push({ id: Gx.uid(), name: "Wild Shape", max: 2, used: 0, resetOn: "short", note: "Regain on a short or long rest", wildshape: true });
+}
+function wildShapeRes(ch) { return (ch.resources || []).find((r) => r.wildshape); }
+function shapeActive(ch) { return ch.shape && ch.shape.active; }
+function shapeMarkKnown(ch, name) { ch.shape.known = ch.shape.known || []; if (!ch.shape.known.some((x) => x.toLowerCase() === name.toLowerCase())) ch.shape.known.push(name); }
+
+actions.openWildShape = () => { const ch = Store.active(); ensureWildShape(ch); if (!shapeActive(ch)) ui.shapePick.src = "wildshape"; ui.screen = "shape"; commit(); };
+actions.openShapeActive = () => { const ch = Store.active(); ui.shapePick.src = (shapeActive(ch) || {}).source || "wildshape"; ui.screen = "shape"; render(); };
+actions.polymorphStart = () => { ui.shapePick = { q: "", type: "all", sort: "crAsc", tab: "eligible", src: "polymorph" }; closeModal(); ui.screen = "shape"; render(); actions.shapePicker(); };
+actions.shapeBack = () => { ui.screen = "sheet"; ui.tab = "combat"; render(); };
+
+/* ---- the form picker (beasts within your limit, with Eligible/Fav/Known/All tabs) ---- */
+function shapePickRows(ch) {
+  const p = ui.shapePick;
+  const fav = new Set((ch.shape.fav || []).map((s) => s.toLowerCase()));
+  const known = new Set((ch.shape.known || []).map((s) => s.toLowerCase()));
+  let items = (Grimoire.summonLib || []).map((d) => ({ d })); // bundled creatures only (need full stats to track HP)
+  if (p.tab === "fav") items = items.filter(({ d }) => fav.has(d.name.toLowerCase()));
+  else if (p.tab === "known") items = items.filter(({ d }) => known.has(d.name.toLowerCase()));
+  else if (p.tab === "eligible") items = items.filter(({ d }) => shapeEligible(ch, d, p.src));
+  if (p.type !== "all") items = items.filter(({ d }) => (d.type || "").toLowerCase() === p.type);
+  if (p.q) { const ql = p.q.toLowerCase(); items = items.filter(({ d }) => d.name.toLowerCase().includes(ql)); }
+  const byName = (a, b) => a.d.name.localeCompare(b.d.name);
+  items.sort((a, b) => p.sort === "az" ? byName(a, b) : p.sort === "crDesc" ? (crToNum(b.d.cr) - crToNum(a.d.cr) || byName(a, b)) : (crToNum(a.d.cr) - crToNum(b.d.cr) || byName(a, b)));
+  if (!items.length) return `<p class="muted small pad">No creatures here${p.tab === "eligible" ? " within your limit — check “Allow any” if your DM permits." : "."}</p>`;
+  return items.map(({ d }) => {
+    const isFav = fav.has(d.name.toLowerCase()), isKnown = known.has(d.name.toLowerCase()), elig = shapeEligible(ch, d, p.src);
+    return `<div class="sum-row">
+      <button class="sum-pick ${elig ? "" : "stub"}" data-act="shapePreview" data-name="${esc(d.name)}">
+        <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
+        <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP${elig ? "" : " · beyond limit"}</span></span></button>
+      <button class="sum-mark ${isKnown ? "on" : ""}" data-act="shapeKnownToggle" data-name="${esc(d.name)}" title="Known">✓</button>
+      <button class="sum-mark star ${isFav ? "on" : ""}" data-act="shapeFavToggle" data-name="${esc(d.name)}" title="Favorite">★</button>
+    </div>`;
+  }).join("");
+}
+function shapeListRefresh() { const box = $("#shape-lib"); if (box) box.innerHTML = shapePickRows(Store.active()); }
+function shapeMarkRefresh() { if ($("#shape-lib")) shapeListRefresh(); else if (actions._shapePrev) actions.shapePreview({ dataset: { name: actions._shapePrev } }); }
+actions.shapePicker = () => {
+  const ch = Store.active(); const p = ui.shapePick; actions._shapePrev = null;
+  const present = new Set((Grimoire.summonLib || []).map((d) => (d.type || "").toLowerCase()));
+  const types = SUMMON_TYPES.filter((t) => present.has(t));
+  const tab = (k, l) => `<button class="${p.tab === k ? "on" : ""}" data-act="shapeTab" data-tab="${k}">${l}</button>`;
+  const sort = (k, l) => `<button class="${p.sort === k ? "on" : ""}" data-act="shapeSort" data-sort="${k}">${l}</button>`;
+  const typeOpts = `<option value="all">All types</option>` + types.map((t) => `<option value="${t}" ${p.type === t ? "selected" : ""}>${t[0].toUpperCase() + t.slice(1)}</option>`).join("");
+  modal((SHAPE_SOURCES[p.src] || {}).label || "Transform", `
+    <p class="muted small">${esc((SHAPE_SOURCES[p.src] || {}).note ? SHAPE_SOURCES[p.src].note(ch) : "")}</p>
+    <div class="seg">${tab("eligible", "Eligible")}${tab("known", "Known")}${tab("fav", "Favorites")}${tab("all", "Allow any")}</div>
+    <input class="search" id="shape-search" data-act="shapeSearch" placeholder="Search creatures…" value="${esc(p.q)}">
+    <div class="sum-controls"><select id="shape-type" data-act="shapeType" aria-label="Filter by type">${typeOpts}</select>
+      <div class="seg sm">${sort("crAsc", "CR ↑")}${sort("crDesc", "CR ↓")}${sort("az", "A–Z")}</div></div>
+    <div class="sum-lib" id="shape-lib">${shapePickRows(ch)}</div>`);
+};
+actions.shapeSearch = (el) => { ui.shapePick.q = el.value; shapeListRefresh(); };
+actions.shapeType = (el) => { ui.shapePick.type = el.value; shapeListRefresh(); };
+actions.shapeTab = (el) => { ui.shapePick.tab = el.dataset.tab; actions.shapePicker(); };
+actions.shapeSort = (el) => { ui.shapePick.sort = el.dataset.sort; actions.shapePicker(); };
+actions.shapeFavToggle = (el) => { const ch = Store.active(); const n = el.dataset.name; ch.shape.fav = ch.shape.fav || []; const i = ch.shape.fav.findIndex((x) => x.toLowerCase() === n.toLowerCase()); if (i >= 0) ch.shape.fav.splice(i, 1); else ch.shape.fav.push(n); Store.touch(); shapeMarkRefresh(); };
+actions.shapeKnownToggle = (el) => { const ch = Store.active(); const n = el.dataset.name; ch.shape.known = ch.shape.known || []; const i = ch.shape.known.findIndex((x) => x.toLowerCase() === n.toLowerCase()); if (i >= 0) ch.shape.known.splice(i, 1); else ch.shape.known.push(n); Store.touch(); shapeMarkRefresh(); };
+actions.shapePreview = (el) => {
+  const name = el.dataset.name, def = creatureFind(name); if (!def) return;
+  actions._shapePrev = name;
+  const ch = Store.active(), p = ui.shapePick, S = SHAPE_SOURCES[p.src] || {};
+  const isFav = (ch.shape.fav || []).some((x) => x.toLowerCase() === name.toLowerCase());
+  const isKnown = (ch.shape.known || []).some((x) => x.toLowerCase() === name.toLowerCase());
+  const elig = shapeEligible(ch, def, p.src);
+  const head = `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p>
+    <div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp ?? "?"}</b>${def.hd ? ` (${def.hd} HD)` : ""}</span><span>${esc(def.speed || "")}</span></div>`;
+  const marks = `<div class="seg"><button class="${isKnown ? "on" : ""}" data-act="shapeKnownToggle" data-name="${esc(name)}">✓ Known</button><button class="${isFav ? "on" : ""}" data-act="shapeFavToggle" data-name="${esc(name)}">★ Favorite</button></div>`;
+  modal(def.name, `${head}${marks}${!elig ? `<p class="muted small">Beyond your normal ${esc(S.label || "")} limit — only with your DM's say-so.</p>` : ""}${statBlockBody(def, null)}
+    <div class="modal-btns"><button class="btn" data-act="shapePicker">‹ Back</button><button class="btn primary" data-act="shapeInto" data-name="${esc(name)}">${esc(S.label || "Transform")} into this</button></div>`);
+};
+actions.shapeInto = (el) => {
+  const ch = Store.active(), def = (Grimoire.summonLib || []).find((d) => d.name === el.dataset.name); if (!def) return;
+  const src = ui.shapePick.src, S = SHAPE_SOURCES[src] || {};
+  const form = makeSummon(def, 1);
+  form.source = src; form.conc = !!S.conc; form.icon = def.type || def.icon || "";
+  ch.shape.active = form; shapeMarkKnown(ch, def.name);
+  if (src === "wildshape") { const r = wildShapeRes(ch); if (r) r.used = Math.min(r.max, r.used + (S.cost ? S.cost(ch, def) : 1)); }
+  ui.screen = "shape"; closeModal(); commit();
+  toast(`${S.banner || "Transformed"} into ${def.name}.`);
+};
+actions.shapeStep = (el) => { const f = shapeActive(Store.active()); if (!f) return; f.hps[0] = Math.max(0, Math.min(f.hpMax, f.hps[0] + (+el.dataset.d || 0))); commit(); };
+actions.shapeSetHp = () => { const f = shapeActive(Store.active()); if (!f) return; amountPrompt("Set form HP", "Current HP", (n) => { f.hps[0] = Math.max(0, Math.min(f.hpMax, n | 0)); commit(); }); };
+actions.shapeHeal = () => { const f = shapeActive(Store.active()); if (!f) return; amountPrompt("Heal (spell slot)", "HP regained (1d8 per slot level)", (n) => { f.hps[0] = Math.max(0, Math.min(f.hpMax, f.hps[0] + (n | 0))); commit(); }); };
+actions.shapeDmg = () => {
+  const ch = Store.active(), f = shapeActive(ch); if (!f) return;
+  amountPrompt("Damage to your form", "How much damage?", (n) => {
+    n = Math.max(0, n | 0); const after = f.hps[0] - n; f.hps[0] = Math.max(0, after);
+    if (after <= 0) revertShape(ch, -after); else commit();
+  });
+};
+actions.shapeRevert = () => { revertShape(Store.active(), 0); };
+function revertShape(ch, carry) {
+  ch.shape.active = null;
+  if (carry > 0) { const c = ch.combat; const fromTemp = Math.min(c.hpTemp, carry); c.hpTemp -= fromTemp; c.hpCur = Math.max(0, c.hpCur - (carry - fromTemp)); }
+  ui.screen = "sheet"; ui.tab = "combat"; commit();
+  toast(carry > 0 ? `Reverted — ${carry} leftover damage carried to you.` : "Reverted to your normal form.");
+}
+
 /* ---------- appearance (dark/light + accent) ---------- */
 actions.appearance = () => {
   const ch = Store.active();
@@ -1530,24 +1670,16 @@ document.addEventListener("change", (e) => {
 
 /* service worker + "new version available" prompt */
 let _swReg = null, _doReload = false;
-function showUpdatePrompt() {
-  toast(`New version available. <button class="toast-btn" data-act="doUpdate">Reload</button>`, 999999);
-}
-actions.doUpdate = async () => {
+// Auto-update: when a new version has installed, activate it and reload — no prompt.
+// Safe because nav state is persisted (v60), so the reload resumes where you were.
+function autoUpdate(reg) {
+  const w = reg.waiting || reg.installing; if (!w) return;
   _doReload = true;
-  let reg = _swReg;
-  try { reg = (await navigator.serviceWorker.getRegistration()) || _swReg; } catch (e) {}
-  const w = reg && (reg.waiting || reg.installing);
-  if (w) {
-    w.postMessage("skipWaiting");
-    // fallback: if the new worker doesn't take control quickly, reload anyway so the button never feels dead
-    setTimeout(() => { if (_doReload) location.reload(); }, 1500);
-  } else {
-    location.reload(); // no pending worker — just reload
-  }
-};
+  w.postMessage("skipWaiting");
+  setTimeout(() => { if (_doReload) location.reload(); }, 2000); // fallback if controllerchange doesn't fire
+}
 if ("serviceWorker" in navigator) {
-  // when the new SW takes control (after the user taps Reload), refresh once
+  // when the new SW takes control, refresh once (guarded so first-ever install doesn't loop)
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (_doReload) location.reload(); });
   window.addEventListener("load", async () => {
     try {
@@ -1555,14 +1687,15 @@ if ("serviceWorker" in navigator) {
       // CACHE constant drives updates, so there's no version to keep in sync.
       const reg = await navigator.serviceWorker.register("sw.js");
       _swReg = reg;
-      if (reg.waiting && navigator.serviceWorker.controller) showUpdatePrompt(); // update already pending
+      if (reg.waiting && navigator.serviceWorker.controller) autoUpdate(reg); // update already pending → apply now
       reg.addEventListener("updatefound", () => {
         const nw = reg.installing; if (!nw) return;
         nw.addEventListener("statechange", () => {
-          if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdatePrompt();
+          // only when there's already a controller (an UPDATE, not the first install)
+          if (nw.state === "installed" && navigator.serviceWorker.controller) autoUpdate(reg);
         });
       });
-      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000); // hourly update check
+      setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000); // check for updates every 30 min
     } catch {}
   });
 }

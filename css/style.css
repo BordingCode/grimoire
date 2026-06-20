@@ -368,6 +368,20 @@ input[type=checkbox] { width: auto; }
 .sm-boost { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .sm-boost p { margin: 0; font-size: .82rem; line-height: 1.4; }
 .sm-boost b { color: var(--gold); }
+/* transformation (Wild Shape / Polymorph) */
+.shape-enter { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); border: 1px solid var(--accent); color: var(--ink); border-radius: 12px; padding: 11px; font-weight: 600; cursor: pointer; margin-bottom: 14px; }
+.shape-enter .sb-ic { width: 22px; height: 22px; color: var(--accent-2); }
+.shape-banner { display: flex; gap: 8px; margin-bottom: 14px; }
+.shape-banner-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 12px; cursor: pointer; text-align: left; color: var(--ink); }
+.shape-banner-main .sb-ic { width: 24px; height: 24px; flex: none; color: var(--accent-2); }
+.shape-b-txt { flex: 1; min-width: 0; font-size: .9rem; }
+.shape-b-go { color: var(--muted); font-size: 1.3rem; }
+.shape-revert { flex: none; background: var(--panel-2); border: 1px solid var(--line); color: var(--bad); border-radius: 12px; padding: 0 14px; font-weight: 600; cursor: pointer; }
+.shape-hp { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; flex-wrap: wrap; }
+.shape-hp-v { font-size: 1.6rem; font-weight: 700; color: var(--good); cursor: pointer; }
+.shape-hp-v.down { color: var(--bad); }
+.shape-hp-v small { font-size: .8rem; color: var(--muted); font-weight: 400; }
+.shape-hp > button[data-act="shapeStep"] { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; }
 .type-ic { width: 100%; height: 100%; display: block; }
 .sm-photo-add { display: flex; align-items: center; justify-content: center; color: var(--accent-2); padding: 7px; }
 .sc-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
