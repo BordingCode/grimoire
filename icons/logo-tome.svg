@@ -1,32 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" aria-label="Grimoire">
   <defs>
     <radialGradient id="tglow" cx="50%" cy="34%" r="40%">
-      <stop offset="0%" stop-color="#9A6BFF" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#9A6BFF" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="tgold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#F0D58A"/>
-      <stop offset="100%" stop-color="#C99B3F"/>
+    <linearGradient id="tteal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
     </linearGradient>
   </defs>
   <circle cx="50" cy="34" r="26" fill="url(#tglow)"/>
   <!-- open book: two pages -->
   <path d="M50 70 C40 60 26 60 16 63 L16 38 C26 35 40 35 50 45 Z"
-        fill="#241B3A" stroke="url(#tgold)" stroke-width="2.4" stroke-linejoin="round"/>
+        fill="#13212A" stroke="url(#tteal)" stroke-width="2.4" stroke-linejoin="round"/>
   <path d="M50 70 C60 60 74 60 84 63 L84 38 C74 35 60 35 50 45 Z"
-        fill="#1E1830" stroke="url(#tgold)" stroke-width="2.4" stroke-linejoin="round"/>
+        fill="#0E1A20" stroke="url(#tteal)" stroke-width="2.4" stroke-linejoin="round"/>
   <!-- spine -->
-  <line x1="50" y1="45" x2="50" y2="70" stroke="url(#tgold)" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="50" y1="45" x2="50" y2="70" stroke="url(#tteal)" stroke-width="2.4" stroke-linecap="round"/>
   <!-- page lines -->
-  <g stroke="url(#tgold)" stroke-width="1.1" opacity="0.45">
+  <g stroke="url(#tteal)" stroke-width="1.1" opacity="0.45">
     <path d="M24 44 C32 42 40 43 46 47"/>
     <path d="M54 47 C60 43 68 42 76 44"/>
     <path d="M24 53 C32 51 40 52 46 56"/>
     <path d="M54 56 C60 52 68 51 76 53"/>
   </g>
   <!-- rising rune -->
-  <path d="M50 34 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4 z" fill="#F0D58A"/>
-  <g stroke="#9A6BFF" stroke-width="1.4" stroke-linecap="round" opacity="0.85">
+  <path d="M50 34 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4 z" fill="#99F6E4"/>
+  <g stroke="#2DD4BF" stroke-width="1.4" stroke-linecap="round" opacity="0.9">
     <line x1="50" y1="14" x2="50" y2="20"/>
     <line x1="38" y1="20" x2="42" y2="24"/>
     <line x1="62" y1="20" x2="58" y2="24"/>
