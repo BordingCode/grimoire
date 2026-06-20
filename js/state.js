@@ -18,6 +18,7 @@ const Store = {
   save() {
     localStorage.setItem(STORE_KEY, JSON.stringify(this.characters));
     if (this.activeId) localStorage.setItem(ACTIVE_KEY, this.activeId);
+    if (window.BACKUP) BACKUP.schedule(); // debounced cloud auto-backup (no-op if disabled / no chars)
   },
   active() { return this.characters.find((c) => c.id === this.activeId) || null; },
   setActive(id) { this.activeId = id; this.save(); },

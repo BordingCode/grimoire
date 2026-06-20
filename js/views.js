@@ -167,7 +167,7 @@ function viewHome() {
       <span class="cc-go">›</span>
     </button>`).join("");
   return `
-    <header class="topbar home-head"><img src="icons/logo-tome.svg?v=76" class="logo logo-tome" alt=""><h1>Grimoire</h1></header>
+    <header class="topbar home-head"><img src="icons/logo-tome.svg?v=77" class="logo logo-tome" alt=""><h1>Grimoire</h1></header>
     <div class="screen">
       ${Store.characters.length ? `<div class="char-list">${list}</div>` : `<p class="empty">No characters yet. Create your first adventurer.</p>`}
       <div class="home-actions">

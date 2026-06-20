@@ -611,9 +611,29 @@ const BACKUP = {
     try {
       const r = await fetch(`${this.base()}/backup/${code}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload }) });
       const d = await r.json();
-      if (d && d.ok) { const m = this.load(); m.lastAt = d.updatedAt; m.lastCount = payload.chars.length; this.saveMeta(m); return { ok: true, count: payload.chars.length, mediaSkipped: payload.mediaSkipped }; }
+      if (d && d.ok) { const m = this.load(); m.lastAt = d.updatedAt; m.lastCount = payload.chars.length; m.lastSig = this._sig(); this.saveMeta(m); return { ok: true, count: payload.chars.length, mediaSkipped: payload.mediaSkipped }; }
       return { ok: false };
     } catch (e) { return { ok: false }; }
+  },
+  // cheap signature of the character sheets, to skip redundant auto-backups (navigation, switching active char)
+  _sig() { try { const s = JSON.stringify(Store.characters); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
+  enabled() { return this.load().auto !== false; }, // default ON
+  // debounced auto-backup, called whenever characters are saved
+  schedule() {
+    if (!this.enabled()) return;
+    if (!Store.characters.length) return; // never overwrite a good cloud backup with an empty one
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this._autoRun(), 8000);
+  },
+  async _autoRun() {
+    if (!this.enabled() || !Store.characters.length) return;
+    const sig = this._sig();
+    if (sig && sig === this.load().lastSig) return; // nothing actually changed
+    const r = await this.backup();
+    if (r.ok) {
+      const m = this.load();
+      if (!m.autoNudged) { m.autoNudged = true; this.saveMeta(m); toast(`Auto-backup on. Your backup code is ${m.code} (in ☁ Back up & restore) — save it to restore on a new phone.`); }
+    }
   },
   async restore(code) {
     let payload;
@@ -638,16 +658,24 @@ function renderBackup() {
   const code = BACKUP.ensureCode();
   const rel = (window.relTime ? relTime(m.lastAt) : m.lastAt);
   const last = m.lastAt ? `Last backup: ${esc(rel)} · ${m.lastCount || 0} character${m.lastCount === 1 ? "" : "s"}` : "Not backed up yet.";
+  const auto = m.auto !== false;
   modal("Cloud backup", `
     <p class="muted small">Saves <b>all</b> your characters to the cloud under your private code. Keep the code safe — anyone with it can restore your characters.</p>
     <div class="link-code">Your backup code: <b>${esc(code)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(code)}">copy</button></div>
     <p class="muted small">${last}</p>
-    <div class="modal-btns"><button class="btn primary" data-act="cloudBackupNow">Back up now</button></div>
+    <button class="btn ${auto ? "primary" : "ghost"}" data-act="cloudAutoToggle" style="width:100%">Auto-backup: ${auto ? "On" : "Off"}</button>
+    <p class="muted small">${auto ? "Backs up automatically a few seconds after you change a character." : "Turn on to back up automatically whenever you change a character."}</p>
+    <div class="modal-btns"><button class="btn" data-act="cloudBackupNow">Back up now</button></div>
     <h3 class="sec">Restore on another device</h3>
     <p class="muted small">On a new phone, enter your backup code to bring your characters back. Characters already here are kept — nothing is overwritten.</p>
     <div class="join-row"><input id="bk-code" placeholder="backup code" maxlength="9" autocapitalize="characters"><button class="btn" data-act="cloudRestore">Restore</button></div>`);
 }
 actions.cloudBackup = () => renderBackup();
+actions.cloudAutoToggle = () => {
+  const m = BACKUP.load(); m.auto = m.auto === false ? true : false; BACKUP.saveMeta(m);
+  renderBackup();
+  if (m.auto) { toast("Auto-backup on."); BACKUP.schedule(); } else toast("Auto-backup off.");
+};
 actions.cloudBackupNow = async () => {
   toast("Backing up…");
   const r = await BACKUP.backup();
