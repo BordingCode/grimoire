@@ -143,6 +143,7 @@ function render() {
   else if (ui.screen === "session") app.innerHTML = viewSession(Store.active());
   else if (ui.screen === "summons") app.innerHTML = viewSummons(Store.active());
   else if (ui.screen === "shape") app.innerHTML = viewShape(Store.active());
+  else if (ui.screen === "dmCampaigns") app.innerHTML = viewDMCampaigns();
   else if (ui.screen === "dm") app.innerHTML = viewDM();
   else if (ui.screen === "dmEdit") app.innerHTML = viewDMEdit();
   else if (ui.screen === "dmRun") app.innerHTML = viewDMRun();
@@ -757,8 +758,32 @@ function shapeCard(ch, f) {
   </div>`;
 }
 
-/* ---- DM mode: encounters + combat tracker ---- */
+/* ---- DM mode: pick / manage campaigns ---- */
+function viewDMCampaigns() {
+  const list = DM.campaigns.map((c) => {
+    const np = (c.players || []).length, ne = (c.encounters || []).length;
+    const live = c.active ? ` · combat in play` : "";
+    return `<div class="dm-enc">
+      <button class="dm-enc-main" data-act="dmOpenCampaign" data-id="${esc(c.id)}">
+        <span class="dm-enc-name">${esc(c.name)}${c.id === DM.currentId ? ' <span class="muted small">· current</span>' : ""}</span>
+        <span class="muted small">${np} player${np === 1 ? "" : "s"} · ${ne} encounter${ne === 1 ? "" : "s"}${live} · tap to open</span></button>
+      <button class="opt-btn" data-act="dmCampaignMenu" data-id="${esc(c.id)}">⋯</button>
+    </div>`;
+  }).join("") || `<p class="muted pad">No campaigns yet. Create one for each game you run — every campaign keeps its own players, encounters and combat.</p>`;
+  return `
+    <header class="topbar">
+      <button class="back" data-act="dmBackHome">‹</button>
+      <div class="sheet-id"><span class="s-name">Campaigns</span><span class="s-sub">DM mode</span></div>
+    </header>
+    <div class="screen">
+      <div class="summon-actions"><button class="btn primary" data-act="dmNewCampaign">+ New campaign</button></div>
+      <div class="dm-enc-list">${list}</div>
+    </div>`;
+}
+/* ---- DM mode: encounters + combat tracker (scoped to the open campaign) ---- */
 function viewDM() {
+  const camp = DM.cur();
+  if (!camp) { ui.screen = "dmCampaigns"; return viewDMCampaigns(); }
   const a = DM.active;
   const encs = DM.encounters.map((e) => `<div class="dm-enc">
     <button class="dm-enc-main" data-act="dmRunEncounter" data-id="${esc(e.id)}">
@@ -775,10 +800,11 @@ function viewDM() {
   return `
     <header class="topbar">
       <button class="back" data-act="dmBackHome">‹</button>
-      <div class="sheet-id"><span class="s-name">DM mode</span><span class="s-sub">encounters & combat tracker</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(camp.name)}</span><span class="s-sub">DM mode</span></div>
       <button class="kebab" data-act="dmSettings" title="Features">≡</button>
     </header>
     <div class="screen">
+      <button class="btn ghost" data-act="dmCampaigns">⇄ Switch campaign${DM.campaigns.length > 1 ? ` <span class="muted small">(${DM.campaigns.length})</span>` : ""}</button>
       ${a ? `<button class="dm-resume" data-act="dmResume"><b>Resume combat</b><span class="muted small">${esc(a.name)} · round ${a.round || 1} · ${a.combatants.length} in play</span></button>` : ""}
       <div class="summon-actions">
         <button class="btn primary" data-act="dmNewEncounter">+ New encounter</button>

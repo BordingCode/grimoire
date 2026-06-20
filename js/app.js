@@ -15,15 +15,37 @@ const Party = {
 };
 
 /* DM mode — saved encounters + a live initiative/combat tracker (device-local, any copy can use it) */
+/* DM mode is organised into CAMPAIGNS. One DM can run several games, each with its own
+   players, encounters, running combat and feature settings. The four working fields
+   (encounters/players/active/settings) are getters that proxy to the current campaign,
+   so every existing DM feature keeps working — it just operates on the chosen campaign. */
 const DM = {
   KEY: "grimoire.dm.v1",
-  encounters: [],   // [{id, name, monsters:[{name,count}]}]
-  active: null,     // running combat {name, round, turnId, combatants:[...]}
-  settings: {},     // per-feature toggles (default on) so each DM can keep it lean
-  players: [],      // saved party roster {id, name, code} — link codes kept between sessions so the DM can gift any time
-  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)) || {}; this.encounters = d.encounters || []; this.active = d.active || null; this.settings = d.settings || {}; this.players = d.players || []; } catch { this.encounters = []; this.active = null; this.settings = {}; this.players = []; } },
-  save() { localStorage.setItem(this.KEY, JSON.stringify({ encounters: this.encounters, active: this.active, settings: this.settings, players: this.players })); },
+  campaigns: [],     // [{id, name, encounters:[], players:[], active, settings}]
+  currentId: null,   // id of the campaign currently open
+  newCampaign(name) { return { id: "cmp" + Gx.uid(), name: name || "My campaign", encounters: [], players: [], active: null, settings: {} }; },
+  cur() { return this.campaigns.find((c) => c.id === this.currentId) || null; },
+  load() {
+    let d = {}; try { d = JSON.parse(localStorage.getItem(this.KEY)) || {}; } catch { d = {}; }
+    if (Array.isArray(d.campaigns)) {
+      this.campaigns = d.campaigns;
+      this.currentId = this.cur() ? d.currentId : (this.campaigns[0] && this.campaigns[0].id) || null;
+    } else if (d.encounters || d.players || d.active || (d.settings && Object.keys(d.settings).length)) {
+      // migrate the old single-campaign save into a first campaign
+      const c = this.newCampaign("My campaign");
+      c.encounters = d.encounters || []; c.players = d.players || []; c.active = d.active || null; c.settings = d.settings || {};
+      this.campaigns = [c]; this.currentId = c.id; this.save();
+    } else { this.campaigns = []; this.currentId = null; }
+  },
+  save() { localStorage.setItem(this.KEY, JSON.stringify({ campaigns: this.campaigns, currentId: this.currentId })); },
 };
+// proxy the working fields to the current campaign so all DM features stay campaign-scoped
+[["encounters", []], ["players", []], ["active", null], ["settings", {}]].forEach(([k, empty]) => {
+  Object.defineProperty(DM, k, {
+    get() { const c = this.cur(); return c ? c[k] : empty; },
+    set(v) { const c = this.cur(); if (c) c[k] = v; },
+  });
+});
 // feature toggles — default ON; the DM can switch any off for a clean setup
 const DM_FEATURES = [
   { key: "conditions", label: "Conditions", note: "tag combatants (poisoned, prone…)" },
@@ -1597,9 +1619,47 @@ function dmFindCb(id) { return DM.active && DM.active.combatants.find((c) => c.i
 function dmPushUndo(cb) { DM.active._undo = { id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp, label: cb.name }; }
 
 /* --- navigation --- */
-actions.openDM = () => { ui.screen = "dm"; render(); };
+actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); };
 actions.dmHome = () => { ui.screen = "dm"; render(); };
 actions.dmBackHome = () => { ui.screen = "home"; render(); };
+/* ---- Campaigns: one DM can run several games, each with its own players/encounters/combat ---- */
+actions.dmCampaigns = () => { ui.screen = "dmCampaigns"; render(); };
+actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.screen = "dm"; render(); };
+actions.dmNewCampaign = () => {
+  modal("New campaign", `
+    <label class="fld"><span>Campaign name</span><input id="dmc-cname" placeholder="e.g. Curse of Strahd" autocomplete="off"></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmNewCampaignGo">Create</button></div>`, () => { const i = $("#dmc-cname"); if (i) i.focus(); });
+};
+actions.dmNewCampaignGo = () => {
+  const name = ($("#dmc-cname") ? $("#dmc-cname").value : "").trim() || "My campaign";
+  const c = DM.newCampaign(name); DM.campaigns.push(c); DM.currentId = c.id; DM.save(); closeModal(); ui.screen = "dm"; render();
+};
+actions.dmCampaignMenu = (el) => {
+  const c = DM.campaigns.find((x) => x.id === el.dataset.id); if (!c) return;
+  modal(esc(c.name), `<div class="menu-list">
+    <button class="btn ghost" data-act="dmOpenCampaign" data-id="${esc(c.id)}">Open this campaign</button>
+    <button class="btn ghost" data-act="dmRenameCampaign" data-id="${esc(c.id)}">Rename</button>
+    <button class="btn danger" data-act="dmDeleteCampaign" data-id="${esc(c.id)}">Delete campaign</button>
+  </div>`);
+};
+actions.dmRenameCampaign = (el) => {
+  const c = DM.campaigns.find((x) => x.id === el.dataset.id); if (!c) return;
+  modal("Rename campaign", `
+    <label class="fld"><span>Campaign name</span><input id="dmc-rname" value="${esc(c.name)}" autocomplete="off"></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmRenameCampaignGo" data-id="${esc(c.id)}">Save</button></div>`, () => { const i = $("#dmc-rname"); if (i) { i.focus(); i.select(); } });
+};
+actions.dmRenameCampaignGo = (el) => {
+  const c = DM.campaigns.find((x) => x.id === el.dataset.id); if (!c) return;
+  const n = ($("#dmc-rname") ? $("#dmc-rname").value : "").trim(); if (n) c.name = n; DM.save(); closeModal(); render();
+};
+actions.dmDeleteCampaign = (el) => {
+  const c = DM.campaigns.find((x) => x.id === el.dataset.id); if (!c) return;
+  confirmDelete(`Delete “${c.name}”? Its players, encounters and combat are removed (saved characters and their sheets are not affected).`, () => {
+    DM.campaigns = DM.campaigns.filter((x) => x.id !== el.dataset.id);
+    if (DM.currentId === el.dataset.id) DM.currentId = (DM.campaigns[0] && DM.campaigns[0].id) || null;
+    DM.save(); closeModal(); ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render();
+  });
+};
 actions.dmSettings = () => {
   modal("DM features", `
     <p class="muted small">Switch features on or off — keep it lean or turn everything on.</p>
