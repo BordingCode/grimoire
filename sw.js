@@ -1,6 +1,6 @@
 /* Grimoire service worker — offline-first cache.
    Bump CACHE when any cached file changes, or phones serve stale copies. */
-const CACHE = "grimoire-v73";
+const CACHE = "grimoire-v74";
 const ASSETS = [
   "./",
   "./index.html",
@@ -36,7 +36,8 @@ const ASSETS = [
   "./icons/types/giant.svg",
   "./icons/types/humanoid.svg",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./icons/logo-tome.svg"
 ];
 
 self.addEventListener("install", (e) => {
