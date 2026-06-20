@@ -78,7 +78,7 @@ function newCharacter({ name, edition, cls, level }) {
     features: [],                  // {id,name,desc} — fighting styles, feats, traits, class features
     conditions: [],                // {name, rounds|null}
     customSpells: [],              // full spell objects (homebrew), with .custom=true & .sourceNote
-    proficiencies: { languages: "", armor: "", weapons: "", tools: "" },  // freeform proficiency/language notes
+    proficiencies: { languages: [], armor: [], weapons: [], tools: [] },  // add-one-by-one lists (legacy: string per field, migrated lazily)
     sessions: [],                  // session-book entries: {id,date,title,text,media:[{id,type,caption}]} — media blobs live in IndexedDB (device-only)
     summons: [],                   // active summons: {id,name,count,ac,speed,attacks,hpMax,hps:[],notes,photo,conc} — device-only photos in IndexedDB
     notes: "",

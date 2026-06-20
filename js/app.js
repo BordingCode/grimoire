@@ -680,6 +680,50 @@ function renderItemForm(d) {
     <div class="modal-btns"><button class="btn primary" data-act="itemSave">${actions._itemEditId ? "Save" : "Add"}</button></div>`, () => $("#it-name").focus());
 }
 
+/* proficiencies & languages — add one by one, with suggestions + free custom entry */
+// get a topic's items as a real array, migrating a legacy comma-string in place
+function profArray(ch, field) {
+  if (!ch.proficiencies) ch.proficiencies = {};
+  const v = ch.proficiencies[field];
+  if (Array.isArray(v)) return v;
+  const arr = (typeof v === "string" && v.trim()) ? v.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean) : [];
+  ch.proficiencies[field] = arr;
+  return arr;
+}
+function profForm(field) {
+  const topic = PROF_TOPICS.find((t) => t.key === field); if (!topic) return;
+  const ch = Store.active();
+  const items = profList(ch, field);
+  const have = new Set(items.map((x) => x.toLowerCase()));
+  const chips = items.map((it, i) => `<span class="prof-chip">${esc(it)}<button class="prof-x" data-act="profRemove" data-field="${field}" data-i="${i}" aria-label="remove ${esc(it)}">✕</button></span>`).join("")
+    || `<span class="muted small">none yet</span>`;
+  const options = topic.suggest.filter((s) => !have.has(s.toLowerCase())).map((s) => `<option value="${esc(s)}"></option>`).join("");
+  modal(`Add ${topic.noun}`, `
+    <div class="prof-chips mb">${chips}</div>
+    <label class="fld"><span>${esc(topic.label)}</span>
+      <input id="prof-in" list="prof-dl" placeholder="${esc(topic.placeholder)}" autocomplete="off" enterkeyhint="done"></label>
+    <datalist id="prof-dl">${options}</datalist>
+    <p class="muted small">Pick a suggestion or type your own, then Add. Keep adding, then Done.</p>
+    <div class="modal-btns"><button class="btn primary" data-act="profAdd" data-field="${field}">Add</button><button class="btn" data-act="closeModal">Done</button></div>`,
+    () => { const inp = $("#prof-in"); if (!inp) return; inp.focus(); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); actions.profAdd({ dataset: { field } }); } }); });
+}
+actions.profAddOpen = (el) => profForm(el.dataset.field);
+actions.profAdd = (el) => {
+  const field = el.dataset.field, inp = $("#prof-in"); if (!inp) return;
+  const val = (inp.value || "").trim(); if (!val) { inp.focus(); return; }
+  const arr = profArray(Store.active(), field);
+  if (!arr.some((x) => x.toLowerCase() === val.toLowerCase())) arr.push(val);
+  commit(); if (window.LINK) LINK.schedulePush(Store.active());
+  profForm(field); // reopen, refreshed + focused, ready for the next one
+};
+actions.profRemove = (el) => {
+  const field = el.dataset.field, i = +el.dataset.i;
+  const arr = profArray(Store.active(), field);
+  if (i >= 0 && i < arr.length) arr.splice(i, 1);
+  commit(); if (window.LINK) LINK.schedulePush(Store.active());
+  if (document.getElementById("prof-in")) profForm(field); // refresh modal if open
+};
+
 function weaponForm(w, idx) {
   actions._wpnEditIdx = (idx != null) ? idx : null;
   modal(w ? "Edit weapon" : "Add weapon / attack", `

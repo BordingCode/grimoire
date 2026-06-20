@@ -3,6 +3,35 @@
    Behaviour (actions, forms, wiring) lives in app.js. */
 "use strict";
 
+/* ---------- proficiencies & languages (add-one-by-one chips) ---------- */
+// suggestion lists are factual SRD names (not copyrighted rules text) — safe to bundle.
+const PROF_TOPICS = [
+  { key: "languages", label: "Languages", noun: "language", placeholder: "Elvish, Thieves’ Cant…",
+    suggest: ["Common", "Dwarvish", "Elvish", "Giant", "Gnomish", "Goblin", "Halfling", "Orc", "Abyssal", "Celestial", "Deep Speech", "Draconic", "Infernal", "Primordial", "Sylvan", "Undercommon", "Thieves’ Cant", "Druidic"] },
+  { key: "armor", label: "Armor", noun: "armor proficiency", placeholder: "Light armor, shields…",
+    suggest: ["Light armor", "Medium armor", "Heavy armor", "Shields"] },
+  { key: "weapons", label: "Weapons", noun: "weapon proficiency", placeholder: "Simple weapons, longswords…",
+    suggest: ["Simple weapons", "Martial weapons", "Clubs", "Daggers", "Darts", "Javelins", "Maces", "Quarterstaffs", "Sickles", "Slings", "Spears", "Light crossbows", "Shortbows", "Battleaxes", "Longswords", "Rapiers", "Scimitars", "Shortswords", "Warhammers", "Longbows", "Hand crossbows"] },
+  { key: "tools", label: "Tools", noun: "tool proficiency", placeholder: "Thieves’ tools, a lute…",
+    suggest: ["Thieves’ tools", "Disguise kit", "Forgery kit", "Herbalism kit", "Poisoner’s kit", "Navigator’s tools", "Alchemist’s supplies", "Brewer’s supplies", "Calligrapher’s supplies", "Carpenter’s tools", "Cartographer’s tools", "Cobbler’s tools", "Cook’s utensils", "Glassblower’s tools", "Jeweler’s tools", "Leatherworker’s tools", "Mason’s tools", "Painter’s supplies", "Potter’s tools", "Smith’s tools", "Tinker’s tools", "Weaver’s tools", "Woodcarver’s tools", "Dice set", "Playing card set", "Land vehicles", "Water vehicles", "Bagpipes", "Drum", "Dulcimer", "Flute", "Lute", "Lyre", "Horn", "Pan flute", "Shawm", "Viol"] },
+];
+// read a topic's items, tolerant of legacy string storage (does not mutate)
+function profList(ch, key) {
+  const v = ch.proficiencies && ch.proficiencies[key];
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string" && v.trim()) return v.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+function profSection(ch, topic) {
+  const items = profList(ch, topic.key);
+  const chips = items.map((it, i) => `<span class="prof-chip">${esc(it)}<button class="prof-x" data-act="profRemove" data-field="${topic.key}" data-i="${i}" aria-label="remove ${esc(it)}">✕</button></span>`).join("")
+    || `<span class="muted small">none yet</span>`;
+  return `<div class="prof-topic">
+    <div class="prof-topic-head"><span>${topic.label}</span><button class="mini" data-act="profAddOpen" data-field="${topic.key}">+ add</button></div>
+    <div class="prof-chips">${chips}</div>
+  </div>`;
+}
+
 /* ---------- read-only spell helpers ---------- */
 function spellPool(ch) { return [...(Grimoire.spells[ch.edition] || []), ...(ch.customSpells || [])]; }
 function findSpell(ch, id) { return spellPool(ch).find((s) => s.id === id); }
@@ -226,7 +255,6 @@ function statChip(ch, key, label, value, opts = {}) {
 }
 
 function tabStats(ch) {
-  const prof = ch.proficiencies || (ch.proficiencies = { languages: "", armor: "", weapons: "", tools: "" });
   const ab = RULES.ABILITIES.map((a) => `
     <div class="ab-card">
       <span class="ab-name">${a.toUpperCase()}</span>
@@ -270,12 +298,7 @@ function tabStats(ch) {
         ${(f.bonuses && f.bonuses.length) || (f.adv && f.adv.length) ? `<div class="feat-tags">${(f.bonuses || []).map((b) => `<span class="feat-tag">${sign(b.value)} ${esc(FEAT_TARGET_LABEL[b.target] || b.target)}</span>`).join("")}${(f.adv || []).map((t) => `<span class="feat-tag adv-tag">ADV ${esc(ADV_LABEL[t] || t)}</span>`).join("")}</div>` : ""}
       </div>`).join("") || `<span class="muted">none — fighting styles, feats, racial traits, class features…</span>`}</div>
     <h3 class="sec">Proficiencies &amp; Languages</h3>
-    <div class="prof-box">
-      <label class="fld"><span>Languages</span><textarea class="prof-ta" data-bind="proficiencies.languages" rows="2" placeholder="Common, Elvish, Thieves’ Cant…">${esc(prof.languages || "")}</textarea></label>
-      <label class="fld"><span>Armor</span><textarea class="prof-ta" data-bind="proficiencies.armor" rows="1" placeholder="Light, medium, shields…">${esc(prof.armor || "")}</textarea></label>
-      <label class="fld"><span>Weapons</span><textarea class="prof-ta" data-bind="proficiencies.weapons" rows="1" placeholder="Simple, martial, longswords…">${esc(prof.weapons || "")}</textarea></label>
-      <label class="fld"><span>Tools</span><textarea class="prof-ta" data-bind="proficiencies.tools" rows="1" placeholder="Thieves’ tools, herbalism kit, lute…">${esc(prof.tools || "")}</textarea></label>
-    </div>`;
+    <div class="prof-box">${PROF_TOPICS.map((t) => profSection(ch, t)).join("")}</div>`;
 }
 
 function tabCombat(ch) {
@@ -302,7 +325,7 @@ function tabCombat(ch) {
       <button class="weapon-main" data-act="weaponOpen" data-i="${i}">
         <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
           <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
-        <span class="wpn-go">roll</span>
+        <span class="wpn-go">›</span>
       </button>
     </div>`;
   }).join("") || `<span class="muted">none — add your weapons & attacks</span>`;
