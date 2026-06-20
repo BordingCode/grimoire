@@ -1581,26 +1581,35 @@ function dragStart(e) {
   const row = handle.closest("[data-sortid]"), container = handle.closest("[data-sortlist]");
   if (!row || !container) return;
   e.preventDefault();
-  _drag = { row, container, moved: false };
+  const rect = row.getBoundingClientRect();
+  // a placeholder holds the gap; the row lifts out of flow and follows the finger
+  const ph = document.createElement("div");
+  ph.className = "drag-placeholder"; ph.style.height = rect.height + "px";
+  row.parentNode.insertBefore(ph, row);
+  Object.assign(row.style, { position: "fixed", left: rect.left + "px", top: rect.top + "px", width: rect.width + "px", zIndex: "1000", pointerEvents: "none" });
+  row.classList.add("dragging");
+  _drag = { row, container, ph, handle, grabDy: e.clientY - rect.top, moved: false };
   try { handle.setPointerCapture(e.pointerId); } catch {}
   handle.addEventListener("pointermove", dragMove);
   handle.addEventListener("pointerup", dragEnd);
   handle.addEventListener("pointercancel", dragEnd);
-  row.classList.add("dragging");
 }
 function dragMove(e) {
   if (!_drag) return;
   _drag.moved = true;
-  const { container, row } = _drag;
+  const { container, row, ph } = _drag;
+  row.style.top = (e.clientY - _drag.grabDy) + "px"; // follow the finger
+  // drop the placeholder wherever the finger is, freely — among the OTHER rows
   const others = [...container.querySelectorAll("[data-sortid]")].filter((r) => r !== row);
   let before = null;
   for (const r of others) { const rect = r.getBoundingClientRect(); if (e.clientY < rect.top + rect.height / 2) { before = r; break; } }
-  if (before) { if (before.previousElementSibling !== row) container.insertBefore(row, before); }
-  else if (others.length && others[others.length - 1] !== row.previousElementSibling) { container.appendChild(row); }
+  if (before) container.insertBefore(ph, before); else container.appendChild(ph);
 }
 function dragEnd(e) {
   if (!_drag) return;
-  const { container, row, moved } = _drag; const handle = e.currentTarget;
+  const { container, row, ph, handle, moved } = _drag;
+  container.insertBefore(row, ph); ph.remove(); // land where the placeholder is
+  Object.assign(row.style, { position: "", left: "", top: "", width: "", zIndex: "", pointerEvents: "" });
   row.classList.remove("dragging");
   try { handle.releasePointerCapture(e.pointerId); } catch {}
   handle.removeEventListener("pointermove", dragMove);

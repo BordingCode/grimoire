@@ -498,7 +498,8 @@ input[type=checkbox] { width: auto; }
 .arrange-banner button { margin-left: auto; background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 4px 12px; font-weight: 700; cursor: pointer; }
 .drag-handle { flex: none; background: none; border: none; color: var(--muted); font-size: 1.2rem; line-height: 1; padding: 4px 6px; cursor: grab; touch-action: none; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
-.dragging { opacity: .65; background: var(--panel-2); border-radius: 10px; }
+.dragging { background: var(--panel-2); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); opacity: .96; }
+.drag-placeholder { border: 2px dashed var(--accent); border-radius: 10px; background: var(--accent-faint); box-sizing: border-box; }
 .wpn-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .wpn-name { font-weight: 700; }
 .wpn-sub { font-size: .78rem; color: var(--muted); }
