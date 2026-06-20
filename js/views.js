@@ -508,6 +508,7 @@ function itemRowsHtml(ch, items, listKey) {
       <div class="it-main">
         <span class="it-name">${esc(it.name)}${it.qty > 1 ? ` ×${it.qty}` : ""}${carried && !it.equipped && tags.length ? ' <em class="it-off">(unequipped)</em>' : ""}</span>
         ${tags.length ? `<span class="it-tags">${tags.map((t) => `<span class="it-tag${carried && !it.equipped ? " off" : ""}">${esc(t)}</span>`).join("")}</span>` : ""}
+        ${it.notes ? `<span class="it-notes muted small">${esc(it.notes)}</span>` : ""}
       </div>
       <button class="opt-btn" data-act="itemOptions" data-id="${it.id}" data-list="${listKey}">⋯</button>
     </div>`;

@@ -11,12 +11,12 @@ function mdToHtml(s) {
   return t.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
 }
 function sign(n) { return (n >= 0 ? "+" : "") + n; }
-// Look-up link: the community D&D 5e Wikidot spell page (just a link — no scraping/bundling).
+// Look-up links: community D&D 5e Wikidot pages (just links — no scraping/bundling).
 // Slug = lowercase name, apostrophes dropped, every other run of non-alphanumerics → "-".
-function wikidotSpellUrl(name) {
-  const slug = (name || "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  return "https://dnd5e.wikidot.com/spell:" + slug;
-}
+function wikidotSlug(name) { return (name || "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
+function wikidotSpellUrl(name) { return "https://dnd5e.wikidot.com/spell:" + wikidotSlug(name); }
+function wikidotFeatUrl(name) { return "https://dnd5e.wikidot.com/feat:" + wikidotSlug(name); }
+function wikidotItemUrl(name) { return "https://dnd5e.wikidot.com/wondrous-items:" + wikidotSlug(name); } // all magic items (incl. rings/weapons) live under this prefix
 // stable id for a look-up-index (non-bundled) spell, from its name
 function idxId(name) { return "idx-" + String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-"); }
 

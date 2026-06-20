@@ -305,6 +305,11 @@ const actions = {
     closeModal(); commit();
     toast(`Imported ${added} spell${added === 1 ? "" : "s"}${skipped ? ` (${skipped} already added)` : ""}, marked known.`);
   },
+  // generic "paste a feat / magic item" → fill the open form's name + description.
+  // kind = "feature" | "item"; reopens the matching form with parsed values.
+  pasteFeat() { const cur = featCapture(); openPasteEntry("feat", (p) => renderFeatureForm(p.name || cur.name, joinDesc(cur.desc, p.body))); },
+  pasteItem() { const cur = itemCapture(); openPasteEntry("magic item", (p) => renderItemForm({ name: p.name || cur.name, qty: cur.qty, equipped: cur.equipped, notes: joinDesc(cur.notes, p.body) })); },
+  pasteEntryDo() { const t = $("#pe-text") ? $("#pe-text").value : ""; const cb = actions._pasteEntryCb; actions._pasteEntryCb = null; if (cb) cb(parseEntryText(t)); },
 
   /* gear */
   addItem() { itemForm(null, "inventory"); },
@@ -338,10 +343,10 @@ const actions = {
       .filter((b) => b.target && b.value !== "" && b.value != null && !isNaN(+b.value))
       .map((b) => ({ target: b.target, value: +b.value }));
     const adv = [...new Set(actions._itemAdv.filter(Boolean))];
-    const data = { name, qty: +cap.qty || 1, equipped: !!cap.equipped, bonuses, adv };
+    const data = { name, qty: +cap.qty || 1, equipped: !!cap.equipped, notes: (cap.notes || "").trim(), bonuses, adv };
     if (!ch[list]) ch[list] = [];
     const ed = actions._itemEditId ? ch[list].find((x) => x.id === actions._itemEditId) : null;
-    if (ed) Object.assign(ed, data); else ch[list].push({ id: Gx.uid(), notes: "", acBonus: 0, ...data });
+    if (ed) Object.assign(ed, data); else ch[list].push({ id: Gx.uid(), acBonus: 0, ...data });
     actions._itemEditId = null; actions._itemBonuses = []; actions._itemAdv = []; actions._itemList = null; closeModal(); commit();
   },
   equip(el) { const ch = Store.active(); const list = el.dataset.list || "inventory"; const it = (ch[list] || []).find((x) => x.id === el.dataset.id); if (it) { it.equipped = !it.equipped; commit(); } },
@@ -596,6 +601,29 @@ function parseSpellsText(text, edition, defaultClass) {
   return out;
 }
 
+/* Simple paste for feats / magic items: first non-empty line = name, the rest = body
+   (Wikidot "Source:" line dropped). Numeric effects stay manual — too varied to parse. */
+function parseEntryText(text) {
+  const lines = (text || "").replace(/\r/g, "").split("\n").map((l) => l.trim());
+  if (!lines.some(Boolean)) return { name: "", body: "" };
+  const name = lines.find(Boolean).replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const rest = []; let seenName = false;
+  for (const l of lines) {
+    if (!seenName) { if (l) seenName = true; continue; } // skip blank lines + the name line itself
+    if (/^source\s*[:.]/i.test(l)) continue;             // drop the Wikidot "Source:" line
+    rest.push(l);
+  }
+  return { name, body: rest.join("\n").replace(/^\n+|\n+$/g, "").trim() };
+}
+function joinDesc(existing, body) { return (body && body.trim()) ? body.trim() : (existing || ""); }
+function openPasteEntry(kind, cb) {
+  actions._pasteEntryCb = cb;
+  modal(`Paste ${kind} text`, `
+    <p class="muted small">Copy the ${esc(kind)}'s text from a source you own — e.g. its page on the D&amp;D 5e Wikidot — and paste it. The first line becomes the name; the rest becomes the description. Saved only on this phone.</p>
+    <label class="fld"><span>Pasted text</span><textarea id="pe-text" rows="8" placeholder="Alert\nSource: Player’s Handbook\nAlways on the lookout for danger, you gain the following benefits:\n• You can’t be surprised while you are conscious.\n…"></textarea></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="pasteEntryDo">Fill in</button></div>`, () => { const t = $("#pe-text"); if (t) t.focus(); });
+}
+
 /* two-step delete guard so a single tap never destroys data */
 let _confirmCb = null;
 function confirmDelete(msg, onYes) {
@@ -662,6 +690,7 @@ function renderFeatureForm(name, desc) {
   const advRows = advRowsHtml(actions._featAdv, "featAdv");
   modal(actions._featEditId ? "Edit feature" : "Add feature / trait", `
     <label class="fld"><span>Name *</span><input id="ft-name" placeholder="Fighting Style: Dueling, Lucky, Darkvision…" value="${esc(name)}"></label>
+    <p class="muted small">${name ? `<a href="${wikidotFeatUrl(name)}" target="_blank" rel="noopener">Look up “${esc(name)}” on the Wikidot ↗</a> · ` : ""}<a href="#" data-act="pasteFeat">Paste a feat’s text ↧</a></p>
     <label class="fld"><span>What it does</span><textarea id="ft-desc" rows="3" placeholder="description / reminder…">${esc(desc)}</textarea></label>
     <h3 class="sec">Auto bonuses <small>added to your sheet automatically</small></h3>
     <div class="bonus-list">${rows || '<span class="muted small">none yet — e.g. +1 Armor Class, +2 all weapon damage</span>'}</div>
@@ -678,20 +707,22 @@ function itemForm(it, listKey) {
   actions._itemList = listKey || "inventory";
   actions._itemBonuses = it && it.bonuses ? it.bonuses.map((b) => ({ target: b.target, value: b.value })) : [];
   actions._itemAdv = it && it.adv ? [...it.adv] : [];
-  renderItemForm(it ? { name: it.name, qty: it.qty, equipped: it.equipped } : { name: "", qty: 1, equipped: false });
+  renderItemForm(it ? { name: it.name, qty: it.qty, equipped: it.equipped, notes: it.notes } : { name: "", qty: 1, equipped: false, notes: "" });
 }
 function itemCapture() {
   const cap = captureBonusAdvRows();
   actions._itemBonuses = cap.bonuses; actions._itemAdv = cap.adv;
-  return { name: $("#it-name") ? $("#it-name").value : "", qty: $("#it-qty") ? $("#it-qty").value : 1, equipped: $("#it-eq") ? $("#it-eq").checked : false };
+  return { name: $("#it-name") ? $("#it-name").value : "", qty: $("#it-qty") ? $("#it-qty").value : 1, equipped: $("#it-eq") ? $("#it-eq").checked : false, notes: $("#it-notes") ? $("#it-notes").value : "" };
 }
 function renderItemForm(d) {
   modal(actions._itemEditId ? "Edit item" : "Add item", `
     <label class="fld"><span>Name *</span><input id="it-name" value="${esc(d.name)}"></label>
+    <p class="muted small">${d.name ? `<a href="${wikidotItemUrl(d.name)}" target="_blank" rel="noopener">Look up “${esc(d.name)}” on the Wikidot ↗</a> · ` : ""}<a href="#" data-act="pasteItem">Paste an item’s text ↧</a></p>
     <div class="grid2">
       <label class="fld"><span>Quantity</span><input id="it-qty" type="number" min="1" value="${d.qty || 1}"></label>
       <label class="chk it-eq-chk"><input type="checkbox" id="it-eq" ${d.equipped ? "checked" : ""}> Equipped</label>
     </div>
+    <label class="fld"><span>Notes / description</span><textarea id="it-notes" rows="3" placeholder="what it does, rarity, attunement…">${esc(d.notes || "")}</textarea></label>
     <p class="muted small">Bonuses &amp; advantage below apply only while the item is <b>equipped</b> (e.g. Cloak of Protection: +1 AC, +1 all saves).</p>
     <h3 class="sec">Auto bonuses</h3>
     <div class="bonus-list">${bonusRowsHtml(actions._itemBonuses, "itemBonus") || '<span class="muted small">none — e.g. +1 Armor Class, +1 all saving throws</span>'}</div>

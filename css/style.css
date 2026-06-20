@@ -280,6 +280,7 @@ input[type=checkbox] { width: auto; }
 .it-main { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .it-off { color: var(--muted); font-size: .72rem; }
 .it-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.it-notes { display: block; line-height: 1.35; white-space: pre-wrap; }
 .it-tag { font-size: .68rem; font-weight: 700; color: var(--gold); background: rgba(255,216,107,.12); border: 1px solid rgba(255,216,107,.35); border-radius: 999px; padding: 1px 8px; }
 .it-tag.off { color: var(--muted); background: transparent; border-color: var(--line); }
 .it-eq-chk { align-self: end; }
