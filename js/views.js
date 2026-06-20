@@ -148,7 +148,7 @@ function render() {
   else if (ui.screen === "dmRun") app.innerHTML = viewDMRun();
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
   if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons", "shape"].includes(ui.screen) ? Store.active() : null);
-  if (["session", "summons"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
+  if (["session", "summons", "sheet"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
   if (typeof initSortables === "function") initSortables();
   // remember where the user is so an app refresh resumes here instead of resetting to Stats
   try { localStorage.setItem("grimoire.nav.v1", JSON.stringify({ screen: ui.screen, tab: ui.tab })); } catch (e) {}
@@ -548,7 +548,14 @@ function tabNotes(ch) {
   const photo = ch.portrait
     ? `<img class="notes-portrait" src="${ch.portrait}" data-act="charPhoto" alt="character portrait">`
     : `<button class="btn ghost notes-addphoto" data-act="charPhoto">Add a character photo</button>`;
+  const gifts = ch.dmGifts || [];
+  const giftHtml = gifts.length ? `<h3 class="sec">From your DM</h3>
+    <div class="media-grid">${gifts.slice().reverse().map((g) => `<div class="media-thumb">
+      <img data-mid="${esc(g.mediaId)}" data-act="dmGiftView" data-gid="${esc(g.id)}" alt="from your DM">
+      <button class="media-del" data-act="dmGiftDelete" data-gid="${esc(g.id)}" title="delete">✕</button>
+    </div>`).join("")}</div>` : "";
   return `${photo}<textarea class="notes" data-bind="notes" placeholder="Backstory, party, quests…">${esc(ch.notes)}</textarea>${tabSessions(ch)}
+    ${giftHtml}
     ${killsShown() ? `<h3 class="sec">Kill count</h3>${killCountSection()}` : ""}`;
 }
 // kill-count display is an opt-out global preference (shown by default), toggled in the char menu

@@ -51,6 +51,29 @@ export default {
       return json({ error: "method_not_allowed" }, 405);
     }
 
+    // ---- DM gifts: one queue per recipient's LINK code { gifts:[{from,gift,at}] } ----
+    // the DM (who has the player's link code) drops items/images here; the player's app polls its own code.
+    const gm = url.pathname.match(/^\/gift\/([A-Za-z0-9-]{4,40})$/);
+    if (gm) {
+      const gkey = "gift:" + gm[1].toUpperCase();
+      const load = async () => { const r = await env.LINKS.get(gkey); return r ? JSON.parse(r) : { gifts: [] }; };
+      const save = (d) => env.LINKS.put(gkey, JSON.stringify(d), { expirationTtl: 60 * 60 * 24 * 90 });
+      if (req.method === "GET") { const d = await load(); return json({ count: (d.gifts || []).length }); }
+      if (req.method === "POST") {
+        const b = await req.json().catch(() => null); if (!b || !b.op) return json({ error: "bad_request" }, 400);
+        const d = await load();
+        if (b.op === "send") {
+          if (!b.gift) return json({ error: "bad_request" }, 400);
+          (d.gifts = d.gifts || []).push({ from: String(b.from || "Your DM").slice(0, 40), gift: b.gift, at: new Date().toISOString() });
+          if (d.gifts.length > 40) d.gifts = d.gifts.slice(-40);
+          await save(d); return json({ ok: true });
+        }
+        if (b.op === "pull") { const gifts = d.gifts || []; d.gifts = []; await save(d); return json({ gifts }); }
+        return json({ error: "bad_op" }, 400);
+      }
+      return json({ error: "method_not_allowed" }, 405);
+    }
+
     const m = url.pathname.match(/^\/link\/([A-Za-z0-9-]{4,40})$/);
     if (!m) return json({ error: "not_found" }, 404);
     const code = m[1].toUpperCase();

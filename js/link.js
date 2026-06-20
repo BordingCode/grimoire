@@ -195,6 +195,37 @@ const PARTY = {
   },
 };
 
+/* DM gifts — the DM (who has a player's link code) drops items/images into a queue
+   keyed by that code; the player's app polls its own link code and receives them. */
+const GIFT = {
+  async req(code, body) { try { const r = await fetch(`${LINK.WORKER}/gift/${encodeURIComponent(code)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return await r.json(); } catch (e) { return null; } },
+  send(code, from, gift) { return GIFT.req(code, { op: "send", from, gift }); },
+  async receive(ch, g) {
+    const gift = g.gift || {}, from = g.from || "Your DM";
+    if (gift.kind === "item" && gift.item) {
+      if (!ch.inventory) ch.inventory = [];
+      ch.inventory.push({ id: Gx.uid(), name: gift.item.name || "Item", qty: +gift.item.qty || 1, equipped: false, acBonus: 0, notes: gift.item.notes || "", bonuses: gift.item.bonuses || [], adv: gift.item.adv || [] });
+      toast(`${esc(from)} gave you: ${esc(gift.item.name || "an item")}.`);
+    } else if (gift.kind === "image" && gift.dataUrl && window.Media) {
+      try { const mid = "m" + Gx.uid(); await Media.put({ id: mid, charId: ch.id, type: "dmgift", data: gift.dataUrl, created: nowStamp() }); if (!ch.dmGifts) ch.dmGifts = []; ch.dmGifts.push({ id: Gx.uid(), mediaId: mid, caption: gift.caption || "", from, at: g.at }); toast(`${esc(from)} sent you a ${gift.isDrawing ? "drawing" : "picture"}.`); }
+      catch (e) { toast("A picture from your DM couldn't be saved (storage full?)."); }
+    }
+  },
+  async pull(ch) {
+    if (!ch || !ch.link || !ch.link.code) return;
+    const r = await GIFT.req(ch.link.code, { op: "pull" });
+    if (!r || !r.gifts || !r.gifts.length) return;
+    for (const g of r.gifts) await GIFT.receive(ch, g);
+    Store.save(); if (Store.activeId === ch.id) render();
+  },
+  afterBoot() {
+    const ch = Store.active && Store.active(); if (ch && ch.link) GIFT.pull(ch);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.link) GIFT.pull(c); } });
+    setInterval(() => { const c = Store.active(); if (c && c.link && document.visibilityState === "visible") GIFT.pull(c); }, 30000);
+  },
+};
+window.GIFT = GIFT;
+
 function renderParty() {
   const ch = Store.active();
   if (!ch.party) {

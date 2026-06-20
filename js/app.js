@@ -1073,6 +1073,16 @@ actions.mediaView = async (el) => {
   if (!rec) { toast("Image not found on this device."); return; }
   modal("", `<img class="media-full" src="${rec.data}" alt=""><div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`);
 };
+actions.dmGiftView = async (el) => {
+  const ch = Store.active(); const g = (ch.dmGifts || []).find((x) => x.id === el.dataset.gid); if (!g) return;
+  let rec = null; try { rec = await Media.get(g.mediaId); } catch (e) {}
+  if (!rec) { toast("Image not found on this device."); return; }
+  modal(`From ${esc(g.from || "your DM")}`, `<img class="media-full" src="${rec.data}" alt="">${g.caption ? `<p class="muted small">${esc(g.caption)}</p>` : ""}<div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`);
+};
+actions.dmGiftDelete = (el) => {
+  const gid = el.dataset.gid;
+  confirmDelete("Delete this gift?", async () => { const ch = Store.active(); const g = (ch.dmGifts || []).find((x) => x.id === gid); if (g) { try { await Media.del(g.mediaId); } catch (e) {} } ch.dmGifts = (ch.dmGifts || []).filter((x) => x.id !== gid); Store.save(); render(); });
+};
 actions.mediaDelete = (el) => {
   const sid = el.dataset.sid, mid = el.dataset.mid;
   confirmDelete("Delete this picture?", async () => {
@@ -1699,6 +1709,31 @@ actions.dmSyncAll = async () => {
   DM.save(); render(); toast("Linked players synced.");
 };
 actions.dmSetAC = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`AC — ${cb.name}`, "Armor Class", (n) => { cb.ac = Math.max(0, n | 0); DM.save(); render(); }); };
+/* DM gives loot / handouts to a linked player (lands on their sheet via the gift queue) */
+actions.dmGiveItem = (el) => {
+  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; actions._giveTo = { code: cb.linkCode, name: cb.name };
+  modal(`Give an item to ${cb.name}`, `
+    <label class="fld"><span>Item name *</span><input id="gi-name" placeholder="Potion of Healing"></label>
+    <label class="fld"><span>Notes / description</span><textarea id="gi-notes" rows="3" placeholder="what it does…"></textarea></label>
+    <label class="fld"><span>Quantity</span><input id="gi-qty" type="number" min="1" value="1"></label>
+    <div class="modal-btns"><button class="btn primary" data-act="dmGiveItemGo">Send</button></div>`, () => $("#gi-name").focus());
+};
+actions.dmGiveItemGo = async () => {
+  const t = actions._giveTo; if (!t) return; const name = ($("#gi-name").value || "").trim(); if (!name) { toast("Name required."); return; }
+  const gift = { kind: "item", item: { name, notes: ($("#gi-notes").value || "").trim(), qty: Math.max(1, +$("#gi-qty").value || 1) } };
+  closeModal(); toast("Sending…");
+  const r = await GIFT.send(t.code, "Your DM", gift); toast(r && r.ok ? `“${name}” sent to ${t.name}.` : "Couldn't reach the link server.");
+};
+actions.dmGivePic = (el) => {
+  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; const code = cb.linkCode, nm = cb.name; closeModal();
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = async () => { const data = downscaleImage(im, 900); toast("Sending picture…"); const res = await GIFT.send(code, "Your DM", { kind: "image", dataUrl: data }); toast(res && res.ok ? `Picture sent to ${nm}.` : "Couldn't reach the link server."); }; im.onerror = () => toast("Couldn't read that image."); im.src = r.result; }; r.readAsDataURL(f); };
+  inp.click();
+};
+actions.dmGiveDraw = (el) => {
+  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; const code = cb.linkCode, nm = cb.name; closeModal();
+  openDrawPad(async (data) => { toast("Sending drawing…"); const res = await GIFT.send(code, "Your DM", { kind: "image", dataUrl: data, isDrawing: true }); toast(res && res.ok ? `Drawing sent to ${nm}.` : "Couldn't reach the link server."); });
+};
 actions.dmAddCustom = () => {
   modal("Add combatant", `
     <label class="fld"><span>Name *</span><input id="dmc-name" placeholder="e.g. Sera (player), or an NPC"></label>
@@ -1716,7 +1751,11 @@ actions.dmCbMenu = (el) => {
     <button class="btn ghost" data-act="dmHeal" data-id="${esc(cb.id)}" data-i="0">Heal</button>
     <button class="btn ghost" data-act="dmTemp" data-id="${esc(cb.id)}">Set temp HP</button>
     <button class="btn ghost" data-act="dmSetAC" data-id="${esc(cb.id)}">Set AC</button>
-    ${cb.kind === "link" ? `<button class="btn ghost" data-act="dmRefreshLink" data-id="${esc(cb.id)}">Refresh from link</button>` : ""}
+    ${cb.kind === "link" ? `<button class="btn ghost" data-act="dmRefreshLink" data-id="${esc(cb.id)}">Refresh from link</button>
+    <h3 class="sec">Give to ${esc(cb.name)}</h3>
+    <button class="btn ghost" data-act="dmGiveItem" data-id="${esc(cb.id)}">Give an item</button>
+    <button class="btn ghost" data-act="dmGivePic" data-id="${esc(cb.id)}">Give a picture</button>
+    <button class="btn ghost" data-act="dmGiveDraw" data-id="${esc(cb.id)}">Give a drawing</button>` : ""}
     <button class="btn danger" data-act="dmRemoveCb" data-id="${esc(cb.id)}">Remove from combat</button>
   </div>`);
 };
@@ -1930,4 +1969,5 @@ if ("serviceWorker" in navigator) {
   render();
   if (window.LINK) LINK.afterBoot();
   if (window.PARTY) PARTY.afterBoot();
+  if (window.GIFT) GIFT.afterBoot();
 })();
