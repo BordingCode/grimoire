@@ -1186,6 +1186,7 @@ actions.appearance = () => {
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
   const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
+  const sceneOn = ch.scene !== false;
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
@@ -1193,11 +1194,18 @@ actions.appearance = () => {
       <button class="btn ${mode === "light" ? "primary" : "ghost"}" data-act="setMode" data-mode="light">Light</button>
     </div>
     <p class="muted small">Dark mode paints your class's illustrated world behind the sheet. Light mode is a clean, plain sheet.</p>
+    <h3 class="sec">Illustrated world <small>${sceneOn ? "on" : "off"}</small></h3>
+    <div class="mode-row">
+      <button class="btn ${sceneOn ? "primary" : "ghost"}" data-act="setScene" data-on="1">On</button>
+      <button class="btn ${!sceneOn ? "primary" : "ghost"}" data-act="setScene" data-on="0">Off</button>
+    </div>
+    <p class="muted small">The animated ${esc(ch.cls)} scene behind this character's sheet (dark mode only). Turn it off for a plain dark sheet.</p>
     <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
     <div class="swatches">${swatches}</div>
     ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use class default</button>` : ""}`);
 };
 actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mode); render(); actions.appearance(); };
+actions.setScene = (el) => { const ch = Store.active(); ch.scene = el.dataset.on === "1"; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 
