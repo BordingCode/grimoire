@@ -196,6 +196,7 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - **Kept:** per-class colour palettes (`data/themes.json`) as the base tint under the scene (`applyTheme` reads `themes[ch.cls][mode]`). The `concept` field in themes.json is now unused (harmless). Old characters may still carry dead `theme/alignment/frames` fields — harmless, no migration.
 - **Bug fixed (latent since v50):** `applyTheme` early-returned for a null character (home), so it never reached `applyScene` → the scene stayed on over the home list. Moved `applyScene(ch, mode)` ABOVE the early return; home + light mode now correctly clear `body.has-scene`.
 - **v53:** added the **per-character "Illustrated world" On/Off toggle** in Appearance (sets `ch.scene`; `applyScene` already honoured `ch.scene !== false`). Off = plain dark sheet keeping the class base tint. Synced via identity link group. Browser-verified.
+- **v54 fix:** bottom sheet content was hidden behind the fixed `.tabbar` on phones — the bar adds `env(safe-area-inset-bottom)` to its height but `.screen.tabbed` used a static `84px` padding. Now `padding-bottom: calc(84px + env(safe-area-inset-bottom))`. Verified by simulating a 44px inset (old gap 7px → new 51px); desktop unchanged.
 - **Still open:** no light-mode scene variant (light = plain by design).
 
 ## NOT yet done / next steps
