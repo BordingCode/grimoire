@@ -189,7 +189,13 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Hooked from `applyTheme()` → `applyScene(ch, mode)`: scene ON only for the **active character in dark mode** (and `ch.scene !== false`); OFF on home + light mode so those stay clean/readable. Toggles `body.has-scene`.
 - **"Content floats over art"**: under `body.has-scene`, panels become frosted glass via `color-mix(... transparent)` + `backdrop-filter: blur` (one CSS block keyed on the class — no per-component rewrite). Bare text on the art gets a text-shadow.
 - 13 worlds: Wizard arcane-night, Druid forest, Barbarian forge, Cleric dawn, Sorcerer storm(+lightning/rain), Warlock eldritch-void, Rogue moonlit-rooftops, Ranger misty-woods, Paladin sacred-hall, Monk jade-mist, Bard festival-lights, Fighter war-camp, Artificer workshop. All browser-verified, readable, 0 errors.
-- **NOTE (decide w/ Mathias):** the old per-class colour **theme picker** + **alignment/crest frames** (v46–v49) still exist alongside the new scenes. May want to fold/remove them now that scenes are the headline. Also: scene is always-on in dark mode — consider an explicit per-character on/off (`ch.scene`) toggle in Appearance, and maybe a light-mode scene variant.
+## v52 — removed the old theme picker + alignment/crest frames (cache v52 LIVE)
+- Mathias's call: now that the illustrated worlds are the theming, the older theming was dropped.
+- **Removed:** the full-palette **theme picker** (`ch.theme` override) and the **alignment + class-crest frames** (v46–v49) — all four placements, the 13 crest SVGs, corner ornaments, `charAccent()`, and all their CSS. Also the related actions (`setTheme/resetTheme/toggleFrame/setAlignment`) and the `theme/alignment/frames` entries in link.js identity group.
+- **Appearance** is now just **Mode** (Dark/Light) + **Accent colour**, with a note that dark = your class's world, light = plain sheet.
+- **Kept:** per-class colour palettes (`data/themes.json`) as the base tint under the scene (`applyTheme` reads `themes[ch.cls][mode]`). The `concept` field in themes.json is now unused (harmless). Old characters may still carry dead `theme/alignment/frames` fields — harmless, no migration.
+- **Bug fixed (latent since v50):** `applyTheme` early-returned for a null character (home), so it never reached `applyScene` → the scene stayed on over the home list. Moved `applyScene(ch, mode)` ABOVE the early return; home + light mode now correctly clear `body.has-scene`.
+- **Still open:** scene is always-on for a character in dark mode (no explicit per-character on/off toggle — `ch.scene !== false` is checked but nothing sets it); no light-mode scene variant (light = plain by design).
 
 ## NOT yet done / next steps
 - [ ] Phase 5 polish: printable sheet (leveling helper DONE).
