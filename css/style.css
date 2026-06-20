@@ -72,7 +72,9 @@ body.has-scene { background: #07061a; }
 
 /* screen */
 .screen { flex: 1; padding: 14px; padding-bottom: 24px; }
-.screen.tabbed { padding-bottom: 84px; }
+/* clear the fixed bottom tabbar — its height grows by the phone's safe-area
+   (home-indicator) gap, so the scroll padding must include the same value */
+.screen.tabbed { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
 /* home */
 .char-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
