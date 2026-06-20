@@ -1649,9 +1649,56 @@ actions.dmEndCombat = () => { confirmDelete("End this combat? The tracker is cle
 actions.dmAddMonster = () => { DM._pickInto = "run"; dmOpenMonsterPick(); };
 actions.dmAddChar = () => {
   const list = Store.characters.map((c) => `<button class="btn ghost" data-act="dmAddCharGo" data-id="${esc(c.id)}">${esc(c.name)} <span class="muted small">${esc(classSummary(c))} · AC ${Calc.armorClass(c)} · ${Calc.maxHP(c)} HP</span></button>`).join("") || `<p class="muted small">No saved characters on this device.</p>`;
-  modal("Add a character", `<div class="menu-list">${list}</div><p class="muted small">For players who don't use the app, use “Add custom” instead.</p>`);
+  modal("Add a character", `<div class="menu-list">${list}</div>
+    <h3 class="sec">Players who use the app</h3>
+    <button class="btn ghost" data-act="dmAddLink">+ Add by link code (live HP/AC)</button>
+    <p class="muted small">For players who don't use the app, use “Add custom”.</p>`);
 };
 actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === el.dataset.id); if (!c) return; DM.active.combatants.push(dmCharCombatant(c)); DM.save(); closeModal(); render(); };
+/* live link-pull: a player who uses the app shares their link code; the tracker pulls
+   their real HP/AC (and conditions) and can refresh anytime — read-only, never pushes back */
+function dmComputeAC(p) {
+  try { if (!p.abilities || !p.combat) return null; return Calc.armorClass({ combat: p.combat, abilities: p.abilities, inventory: p.inventory || [], features: p.features || [], overrides: p.overrides || {}, cls: p.cls || "", multiclass: p.multiclass || [], level: p.level || 1 }); } catch (e) { return null; }
+}
+function dmApplyLink(cb, p) {
+  if (p.combat) { cb.hpMax = p.combat.hpMax || cb.hpMax; cb.hps = [p.combat.hpCur != null ? p.combat.hpCur : cb.hps[0]]; cb.hpTemp = p.combat.hpTemp || 0; }
+  const ac = dmComputeAC(p); if (ac) cb.ac = ac;
+  if (p.name) cb.name = p.name;
+  if (p.conditions) cb.conditions = p.conditions.map((c) => ({ name: c.name, rounds: c.rounds || null }));
+}
+function dmLinkCombatant(p, code) {
+  const cb = { id: "cb" + Gx.uid(), name: p.name || "Player", kind: "link", ref: null, linkCode: code, ac: 10, hpMax: (p.combat && p.combat.hpMax) || 10, hps: [(p.combat && p.combat.hpCur != null) ? p.combat.hpCur : ((p.combat && p.combat.hpMax) || 10)], hpTemp: 0, init: null, conditions: [], conc: false, icon: "" };
+  dmApplyLink(cb, p); return cb;
+}
+actions.dmAddLink = () => {
+  modal("Add a player by link code", `
+    <p class="muted small">Enter a player's link code (from their character's <b>Link with another player</b> screen). Pulls their live HP, AC &amp; conditions; refresh anytime. Read-only — it never changes their sheet.</p>
+    <label class="fld"><span>Link code</span><input id="dm-link-code" placeholder="paste the code" autocapitalize="characters" autocomplete="off"></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmAddLinkGo">Add</button></div>`, () => { const i = $("#dm-link-code"); if (i) i.focus(); });
+};
+actions.dmAddLinkGo = async () => {
+  const code = ($("#dm-link-code") ? $("#dm-link-code").value : "").trim(); if (!code) return;
+  toast("Fetching the player…");
+  try {
+    const p = await LINK.fetchSnapshot(code);
+    if (!p) { toast("Nothing shared on that code yet — the player must link & sync once."); return; }
+    DM.active.combatants.push(dmLinkCombatant(p, code)); DM.save(); closeModal(); render();
+    toast(`Added ${p.name || "the player"} — live.`);
+  } catch (e) { toast("Couldn't reach the link server (offline?)."); }
+};
+actions.dmRefreshLink = async (el) => {
+  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return;
+  try { const p = await LINK.fetchSnapshot(cb.linkCode); if (!p) { toast("No data."); return; } dmApplyLink(cb, p); DM.save(); render(); toast(`${cb.name} refreshed.`); }
+  catch (e) { toast("Couldn't reach the link server."); }
+};
+actions.dmSyncAll = async () => {
+  const a = DM.active; if (!a) return; const links = a.combatants.filter((c) => c.kind === "link" && c.linkCode);
+  if (!links.length) { toast("No linked players to sync."); return; }
+  toast("Syncing linked players…");
+  for (const cb of links) { try { const p = await LINK.fetchSnapshot(cb.linkCode); if (p) dmApplyLink(cb, p); } catch (e) {} }
+  DM.save(); render(); toast("Linked players synced.");
+};
+actions.dmSetAC = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`AC — ${cb.name}`, "Armor Class", (n) => { cb.ac = Math.max(0, n | 0); DM.save(); render(); }); };
 actions.dmAddCustom = () => {
   modal("Add combatant", `
     <label class="fld"><span>Name *</span><input id="dmc-name" placeholder="e.g. Sera (player), or an NPC"></label>
@@ -1668,6 +1715,8 @@ actions.dmCbMenu = (el) => {
     <button class="btn ghost" data-act="dmSetInit" data-id="${esc(cb.id)}">Set initiative</button>
     <button class="btn ghost" data-act="dmHeal" data-id="${esc(cb.id)}" data-i="0">Heal</button>
     <button class="btn ghost" data-act="dmTemp" data-id="${esc(cb.id)}">Set temp HP</button>
+    <button class="btn ghost" data-act="dmSetAC" data-id="${esc(cb.id)}">Set AC</button>
+    ${cb.kind === "link" ? `<button class="btn ghost" data-act="dmRefreshLink" data-id="${esc(cb.id)}">Refresh from link</button>` : ""}
     <button class="btn danger" data-act="dmRemoveCb" data-id="${esc(cb.id)}">Remove from combat</button>
   </div>`);
 };

@@ -807,6 +807,7 @@ function viewDMRun() {
       <button class="btn ghost" data-act="dmAddMonster">+ Monster</button>
       <button class="btn ghost" data-act="dmAddChar">+ PC</button>
       <button class="btn ghost" data-act="dmAddCustom">+ Custom</button>
+      ${a.combatants.some((c) => c.kind === "link") ? `<button class="btn ghost" data-act="dmSyncAll">↻ Sync PCs</button>` : ""}
     </div>
     <div class="screen">
       <div class="dm-cb-list">${rows}</div>
@@ -832,7 +833,8 @@ function dmCombatantRow(a, cb) {
   return `<div class="dm-cb ${isTurn ? "on" : ""} ${down ? "dead" : ""}">
     <div class="dm-cb-head">
       <button class="dm-init" data-act="dmSetInit" data-id="${esc(cb.id)}" title="set initiative">${cb.init == null ? "—" : cb.init}</button>
-      <button class="dm-cb-name" ${canStat ? `data-act="dmStat" data-id="${esc(cb.id)}"` : "disabled"}>${esc(cb.name)}${group ? ` ×${cb.hps.filter((h) => h > 0).length}` : ""}${bloodied ? ` <em class="dm-bloodied">bloodied</em>` : ""}</button>
+      <button class="dm-cb-name" ${canStat ? `data-act="dmStat" data-id="${esc(cb.id)}"` : "disabled"}>${esc(cb.name)}${group ? ` ×${cb.hps.filter((h) => h > 0).length}` : ""}${cb.kind === "link" ? ` <em class="dm-live">live</em>` : ""}${bloodied ? ` <em class="dm-bloodied">bloodied</em>` : ""}</button>
+      ${cb.kind === "link" ? `<button class="dm-refresh" data-act="dmRefreshLink" data-id="${esc(cb.id)}" title="refresh from link">↻</button>` : ""}
       ${dmOn("ac") ? `<span class="dm-ac">AC ${cb.ac}</span>` : ""}
       <button class="opt-btn" data-act="dmCbMenu" data-id="${esc(cb.id)}">⋯</button>
     </div>

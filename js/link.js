@@ -73,6 +73,13 @@ LINK.push = async function (ch) {
   } catch (e) { console.warn("link push failed", e); }
 };
 
+// read-only snapshot of whatever a link code currently holds (used by DM mode to pull a player's live HP/AC)
+LINK.fetchSnapshot = async function (code) {
+  const r = await fetch(`${LINK.WORKER}/link/${encodeURIComponent(code)}?since=0`);
+  const data = await r.json();
+  return (data && data.payload) ? data.payload : null;
+};
+
 LINK.pull = async function (ch, { announce = false } = {}) {
   if (!ch || !ch.link) return;
   try {

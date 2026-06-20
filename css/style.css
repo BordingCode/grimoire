@@ -617,3 +617,5 @@ body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,
 .dm-cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
 .dm-cond-grid .btn { text-align: left; }
 .dm-end { width: 100%; margin-top: 6px; }
+.dm-live { color: var(--good); font-style: normal; font-size: .62rem; border: 1px solid var(--good); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: middle; }
+.dm-refresh { flex: none; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--accent-2); cursor: pointer; font-size: 1rem; }
