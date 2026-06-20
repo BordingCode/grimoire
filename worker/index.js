@@ -147,6 +147,29 @@ export default {
       return json({ error: "bad_op" }, 400);
     }
 
+    // ---- Cloud backup: full account snapshot under a private code { version, updatedAt, payload } ----
+    // payload = { v, chars:[full character objects, media embedded] }. Newest-wins; kept 2 years (refreshed on write).
+    const bm = url.pathname.match(/^\/backup\/([A-Za-z0-9-]{4,40})$/);
+    if (bm) {
+      const bkey = "backup:" + bm[1].toUpperCase();
+      if (req.method === "GET") {
+        const raw = await env.LINKS.get(bkey);
+        if (!raw) return json({ empty: true });
+        const d = JSON.parse(raw);
+        return json({ updatedAt: d.updatedAt, version: d.version, payload: d.payload });
+      }
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => null);
+        if (!body || typeof body.payload !== "object" || body.payload === null) return json({ error: "bad_payload" }, 400);
+        const raw = await env.LINKS.get(bkey);
+        const prev = raw ? JSON.parse(raw) : { version: 0 };
+        const data = { version: (prev.version || 0) + 1, updatedAt: new Date().toISOString(), payload: body.payload };
+        await env.LINKS.put(bkey, JSON.stringify(data), { expirationTtl: 60 * 60 * 24 * 730 });
+        return json({ ok: true, version: data.version, updatedAt: data.updatedAt });
+      }
+      return json({ error: "method_not_allowed" }, 405);
+    }
+
     const m = url.pathname.match(/^\/link\/([A-Za-z0-9-]{4,40})$/);
     if (!m) return json({ error: "not_found" }, 404);
     const code = m[1].toUpperCase();

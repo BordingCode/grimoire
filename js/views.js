@@ -167,13 +167,14 @@ function viewHome() {
       <span class="cc-go">›</span>
     </button>`).join("");
   return `
-    <header class="topbar home-head"><img src="icons/logo-tome.svg?v=75" class="logo logo-tome" alt=""><h1>Grimoire</h1></header>
+    <header class="topbar home-head"><img src="icons/logo-tome.svg?v=76" class="logo logo-tome" alt=""><h1>Grimoire</h1></header>
     <div class="screen">
       ${Store.characters.length ? `<div class="char-list">${list}</div>` : `<p class="empty">No characters yet. Create your first adventurer.</p>`}
       <div class="home-actions">
         <button class="btn primary" data-act="goNew">+ New character</button>
         <button class="btn ghost" data-act="goParty">Kill count</button>
         <button class="btn ghost" data-act="openDM">DM mode — encounters &amp; combat tracker</button>
+        <button class="btn ghost" data-act="cloudBackup">☁ Back up &amp; restore (cloud)</button>
         <button class="btn ghost" data-act="importFile">Import from file</button>
         <button class="btn ghost" data-act="forceUpdate">Update app (keeps characters)</button>
       </div>

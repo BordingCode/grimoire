@@ -588,6 +588,84 @@ const actions = {
   closeModal() { closeModal(); },
 };
 
+/* ===================== Cloud backup & restore =====================
+   Saves ALL characters (sheets + portraits + session media) to the cloud under a private
+   backup code, so they survive a lost/wiped phone and can be pulled onto a new device.
+   Newest-wins snapshot; restore is non-destructive (dedupes by original id). */
+const BACKUP = {
+  KEY: "grimoire.backup.v1",
+  base() { return (window.LINK && LINK.WORKER) || "https://grimoire-sync.mathiasjob.workers.dev"; },
+  load() { try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; } catch { return {}; } },
+  saveMeta(m) { localStorage.setItem(this.KEY, JSON.stringify(m)); },
+  ensureCode() { const m = this.load(); if (!m.code) { m.code = genCode(); this.saveMeta(m); } return m.code; },
+  async buildPayload() {
+    const chars = JSON.parse(JSON.stringify(Store.characters));
+    if (window.Media) { for (const ch of chars) { try { ch._media = await Media.forChar(ch.id); } catch (e) { ch._media = []; } } }
+    let payload = { v: 1, chars };
+    if (JSON.stringify(payload).length > 20 * 1024 * 1024) { chars.forEach((c) => delete c._media); payload = { v: 1, chars, mediaSkipped: true }; }
+    return payload;
+  },
+  async backup() {
+    const code = this.ensureCode();
+    const payload = await this.buildPayload();
+    try {
+      const r = await fetch(`${this.base()}/backup/${code}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload }) });
+      const d = await r.json();
+      if (d && d.ok) { const m = this.load(); m.lastAt = d.updatedAt; m.lastCount = payload.chars.length; this.saveMeta(m); return { ok: true, count: payload.chars.length, mediaSkipped: payload.mediaSkipped }; }
+      return { ok: false };
+    } catch (e) { return { ok: false }; }
+  },
+  async restore(code) {
+    let payload;
+    try { const r = await fetch(`${this.base()}/backup/${encodeURIComponent(code)}`); const d = await r.json(); payload = d && d.payload; }
+    catch (e) { return { ok: false, reason: "net" }; }
+    if (!payload || !Array.isArray(payload.chars)) return { ok: false, reason: "empty" };
+    let added = 0, skipped = 0, mediaFail = 0;
+    for (const c of payload.chars) {
+      if (Store.characters.some((x) => x.id === c.id)) { skipped++; continue; }
+      const media = Array.isArray(c._media) ? c._media : [];
+      const ch = JSON.parse(JSON.stringify(c)); delete ch._media;
+      Store.characters.push(ch); added++;
+      if (media.length && window.Media) { for (const mm of media) { try { await Media.put({ ...mm, charId: ch.id }); } catch (e) { mediaFail++; } } }
+    }
+    if (added) { if (!Store.activeId) Store.activeId = Store.characters[0].id; Store.save(); }
+    return { ok: true, added, skipped, mediaFail };
+  },
+};
+window.BACKUP = BACKUP;
+function renderBackup() {
+  const m = BACKUP.load();
+  const code = BACKUP.ensureCode();
+  const rel = (window.relTime ? relTime(m.lastAt) : m.lastAt);
+  const last = m.lastAt ? `Last backup: ${esc(rel)} · ${m.lastCount || 0} character${m.lastCount === 1 ? "" : "s"}` : "Not backed up yet.";
+  modal("Cloud backup", `
+    <p class="muted small">Saves <b>all</b> your characters to the cloud under your private code. Keep the code safe — anyone with it can restore your characters.</p>
+    <div class="link-code">Your backup code: <b>${esc(code)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(code)}">copy</button></div>
+    <p class="muted small">${last}</p>
+    <div class="modal-btns"><button class="btn primary" data-act="cloudBackupNow">Back up now</button></div>
+    <h3 class="sec">Restore on another device</h3>
+    <p class="muted small">On a new phone, enter your backup code to bring your characters back. Characters already here are kept — nothing is overwritten.</p>
+    <div class="join-row"><input id="bk-code" placeholder="backup code" maxlength="9" autocapitalize="characters"><button class="btn" data-act="cloudRestore">Restore</button></div>`);
+}
+actions.cloudBackup = () => renderBackup();
+actions.cloudBackupNow = async () => {
+  toast("Backing up…");
+  const r = await BACKUP.backup();
+  if (r.ok) { toast(`Backed up ${r.count} character${r.count === 1 ? "" : "s"}${r.mediaSkipped ? " (session photos too big — skipped)" : ""}.`); renderBackup(); }
+  else toast("Couldn't reach the backup server.");
+};
+actions.cloudRestore = async () => {
+  const raw = ($("#bk-code") ? $("#bk-code").value : "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{4}-?[A-Z0-9]{4}$/.test(raw)) { toast("Enter a code like ABCD-2345."); return; }
+  const code = raw.includes("-") ? raw : raw.slice(0, 4) + "-" + raw.slice(4);
+  toast("Restoring…");
+  const r = await BACKUP.restore(code);
+  if (!r.ok) { toast(r.reason === "empty" ? "Nothing backed up on that code yet." : "Couldn't reach the backup server."); return; }
+  render();
+  toast(r.added ? `Restored ${r.added} character${r.added === 1 ? "" : "s"}${r.skipped ? ` (${r.skipped} already here)` : ""}.` : "All characters are already on this device.");
+  renderBackup();
+};
+
 /* ---------- shared action helpers ---------- */
 function toggleList(list, id) { const ch = Store.active(); const arr = ch.spells[list]; const i = arr.indexOf(id); if (i >= 0) arr.splice(i, 1); else arr.push(id); commit(); }
 function spendHitDieManual(die) {
