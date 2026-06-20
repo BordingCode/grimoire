@@ -12,7 +12,7 @@ const LINK = {
   GROUPS: {
     physical: ["combat", "conditions"],
     resources: ["spells.slots", "spells.pact", "spells.concentratingOn", "resources"],
-    mental: ["abilities", "saveProf", "skillProf", "proficiencies", "overrides", "features", "subSpells", "spells.known", "spells.prepared", "spells.favorites", "spells.abilityOverride", "customSpells"],
+    mental: ["abilities", "saveProf", "skillProf", "proficiencies", "overrides", "features", "subSpells", "spells.known", "spells.prepared", "spells.favorites", "spells.abilityOverride", "customSpells", "summonKnown", "summonFav"],
     identity: ["name", "cls", "level", "multiclass", "subclass", "portrait", "accent", "scene", "edition", "notes"],
     gear: ["inventory", "weapons", "bag"], // NOT currency — coins are personal; syncing them let a linked partner's (often zero) coins overwrite yours on every pull
   },

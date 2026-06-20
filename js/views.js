@@ -640,6 +640,9 @@ function summonCard(ch, s) {
   const def = creatureDef(s);
   const hasDetail = creatureHasDetail(def);
   const open = !(ui.sumCollapsed && ui.sumCollapsed.has(s.id)); // details shown by default
+  const boosts = [];
+  if (s.mighty) { const hd = s._mightyDelta ? s._mightyDelta / 2 : (s.hd || 0); boosts.push(`<b>Mighty Summoner.</b> +2 HP per Hit Die${s._mightyDelta ? ` (+${s._mightyDelta} max HP for ${hd} HD)` : ""}, and its attacks count as magical for overcoming resistance/immunity.`); }
+  if (s.thralls) { boosts.push(`<b>Undead Thralls.</b> ${s._thrallHp ? `+${s._thrallHp} HP (your wizard level)` : "+your wizard level in HP"}, and ${s._thrallDmg ? `+${s._thrallDmg}` : "+your proficiency bonus"} to each attack’s damage.`); }
   return `<div class="summon-card">
     <div class="sm-head">
       ${s.photo ? `<img class="sm-photo" data-mid="${esc(s.photo)}" data-act="summonPhoto" data-id="${esc(s.id)}" alt="">` : `<button class="sm-photo sm-photo-add" data-act="summonPhoto" data-id="${esc(s.id)}" title="add a picture">${creatureIcon(s.icon)}</button>`}
@@ -654,6 +657,7 @@ function summonCard(ch, s) {
     ${s.notes ? `<div class="sm-notes muted">${esc(s.notes)}</div>` : ""}
     ${hasDetail ? `<button class="sm-detail-toggle" data-act="summonToggle" data-id="${esc(s.id)}">${open ? "▾ Hide stat block" : "▸ Show stat block & actions"}</button>` : ""}
     ${hasDetail && open ? `<div class="sm-detail">${statBlockBody(def, s)}</div>` : ""}
+    ${boosts.length ? `<div class="sm-boost">${boosts.map((b) => `<p>${b}</p>`).join("")}</div>` : ""}
     <div class="sm-insts">${insts || '<span class="muted small">all defeated</span>'}<button class="btn small-b sm-addone" data-act="summonAddOne" data-id="${esc(s.id)}">+1</button></div>
   </div>`;
 }

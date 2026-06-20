@@ -4,7 +4,7 @@
 "use strict";
 
 const Grimoire = { spells: { "2014": [], "2024": [] } };
-const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" }, sumCollapsed: new Set() };
+const ui = { screen: "home", tab: "stats", reorder: false, editSlots: false, spellFilter: { q: "", level: "all", list: "available" }, sumCollapsed: new Set(), sumPick: { q: "", type: "all", sort: "crAsc", tab: "all" } };
 
 /* team kill-count tracker (local to this device, separate from characters) */
 const Party = {
@@ -1052,35 +1052,109 @@ function adjustDamage(dmg, delta) {
   if (m) { const mod = (m[2] ? parseInt(m[2].replace(/\s/g, ""), 10) : 0) + delta; return m[1] + (mod ? (mod > 0 ? "+" : "") + mod : "") + (m[3] || ""); }
   const n = parseInt(dmg, 10); return isNaN(n) ? dmg : String(n + delta);
 }
-function summonLibRows(q) {
+const SUMMON_TYPES = ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "swarm", "undead"];
+// CR string ("1/4", "5", "—") → sortable number
+function crToNum(cr) {
+  cr = String(cr == null ? "" : cr).trim();
+  if (cr === "" || cr === "—") return -1;
+  if (cr.includes("/")) { const [a, b] = cr.split("/").map(Number); return b ? a / b : -1; }
+  const n = parseFloat(cr); return isNaN(n) ? -1 : n;
+}
+// the whole creature pool: bundled stat-block library + non-bundled name stubs
+function summonCandidates() {
   const lib = Grimoire.summonLib || [], idx = Grimoire.creatureIndex || [];
-  const ql = (q || "").toLowerCase();
   const have = new Set(lib.map((d) => d.name.toLowerCase()));
-  const items = [
-    ...lib.filter((d) => !ql || d.name.toLowerCase().includes(ql)).map((d) => ({ d, stub: false })),
-    ...idx.filter((d) => !have.has(d.name.toLowerCase()) && (!ql || d.name.toLowerCase().includes(ql))).map((d) => ({ d, stub: true })),
-  ].sort((x, y) => x.d.name.localeCompare(y.d.name));
-  if (!items.length) return `<p class="muted small pad">No match — use “Custom summon”.</p>`;
-  return items.map(({ d, stub }) => stub
-    ? `<button class="sum-pick stub" data-act="summonStub" data-name="${esc(d.name)}" data-type="${esc(d.type || "")}"><span class="sp-ic">${creatureIcon(d.type)}</span><span class="sp-n">${esc(d.name)}</span><span class="muted small">${d.cr && d.cr !== "—" ? "CR " + esc(d.cr) + " · " : ""}${esc(d.type || "")} · not bundled</span></button>`
-    : `<button class="sum-pick" data-act="summonLibPick" data-name="${esc(d.name)}"><span class="sp-ic">${creatureIcon(d.type || d.icon)}</span><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · AC ${d.ac} · ${d.hp} HP</span></button>`
-  ).join("");
+  return [...lib.map((d) => ({ d, stub: false })), ...idx.filter((d) => !have.has(d.name.toLowerCase())).map((d) => ({ d, stub: true }))];
+}
+function creatureFind(name) {
+  const nl = (name || "").toLowerCase();
+  return (Grimoire.summonLib || []).find((d) => d.name.toLowerCase() === nl)
+    || (Grimoire.creatureIndex || []).find((d) => d.name.toLowerCase() === nl) || null;
+}
+function summonLibRows(ch) {
+  const p = ui.sumPick;
+  const fav = new Set((ch.summonFav || []).map((s) => s.toLowerCase()));
+  const known = new Set((ch.summonKnown || []).map((s) => s.toLowerCase()));
+  let items = summonCandidates();
+  if (p.tab === "fav") items = items.filter(({ d }) => fav.has(d.name.toLowerCase()));
+  else if (p.tab === "known") items = items.filter(({ d }) => known.has(d.name.toLowerCase()));
+  if (p.type !== "all") items = items.filter(({ d }) => (d.type || "").toLowerCase() === p.type);
+  if (p.q) { const ql = p.q.toLowerCase(); items = items.filter(({ d }) => d.name.toLowerCase().includes(ql)); }
+  const byName = (a, b) => a.d.name.localeCompare(b.d.name);
+  items.sort((a, b) => p.sort === "az" ? byName(a, b) : p.sort === "crDesc" ? (crToNum(b.d.cr) - crToNum(a.d.cr) || byName(a, b)) : (crToNum(a.d.cr) - crToNum(b.d.cr) || byName(a, b)));
+  if (!items.length) return `<p class="muted small pad">Nothing here${p.tab === "fav" ? " — tap ★ on a creature to favorite it" : p.tab === "known" ? " — tap ✓ to mark what you can summon (or just add one)" : " — try a different filter"}.</p>`;
+  return items.map(({ d, stub }) => {
+    const isFav = fav.has(d.name.toLowerCase()), isKnown = known.has(d.name.toLowerCase());
+    const meta = stub
+      ? `${d.cr && d.cr !== "—" ? "CR " + esc(d.cr) + " · " : ""}${esc(d.type || "")} · not bundled`
+      : `CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP`;
+    return `<div class="sum-row">
+      <button class="sum-pick ${stub ? "stub" : ""}" data-act="summonPreview" data-name="${esc(d.name)}">
+        <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
+        <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">${meta}</span></span></button>
+      <button class="sum-mark ${isKnown ? "on" : ""}" data-act="summonKnownToggle" data-name="${esc(d.name)}" title="Known / available to you">✓</button>
+      <button class="sum-mark star ${isFav ? "on" : ""}" data-act="summonFavToggle" data-name="${esc(d.name)}" title="Favorite">★</button>
+    </div>`;
+  }).join("");
 }
 actions.openSummons = () => { ui.screen = "summons"; render(); };
 actions.summonBack = () => { ui.screen = "sheet"; ui.tab = "combat"; render(); };
 actions.summonAdd = () => {
+  actions._sumPreviewName = null;
+  const ch = Store.active(); const p = ui.sumPick;
+  const present = new Set(summonCandidates().map(({ d }) => (d.type || "").toLowerCase()));
+  const types = SUMMON_TYPES.filter((t) => present.has(t));
+  const tab = (k, l) => `<button class="${p.tab === k ? "on" : ""}" data-act="summonTab" data-tab="${k}">${l}</button>`;
+  const sort = (k, l) => `<button class="${p.sort === k ? "on" : ""}" data-act="summonSort" data-sort="${k}">${l}</button>`;
+  const typeOpts = `<option value="all">All types</option>` + types.map((t) => `<option value="${t}" ${p.type === t ? "selected" : ""}>${t[0].toUpperCase() + t.slice(1)}</option>`).join("");
   modal("Add summon", `
-    <p class="muted small">Pick a creature (SRD stats) or add a custom one — then choose how many.</p>
-    <input class="search" id="sum-search" data-act="summonSearch" placeholder="Search creatures…">
-    <div class="sum-lib" id="sum-lib">${summonLibRows("")}</div>
-    <div class="modal-btns"><button class="btn" data-act="summonCustom">Custom summon</button></div>`, () => $("#sum-search").focus());
+    <div class="seg">${tab("all", "All")}${tab("known", "Known")}${tab("fav", "Favorites")}</div>
+    <input class="search" id="sum-search" data-act="summonSearch" placeholder="Search creatures…" value="${esc(p.q)}">
+    <div class="sum-controls">
+      <select id="sum-type" data-act="summonType" aria-label="Filter by type">${typeOpts}</select>
+      <div class="seg sm">${sort("crAsc", "CR ↑")}${sort("crDesc", "CR ↓")}${sort("az", "A–Z")}</div>
+    </div>
+    <div class="sum-lib" id="sum-lib">${summonLibRows(ch)}</div>
+    <div class="modal-btns"><button class="btn" data-act="summonCustom">Custom summon</button></div>`);
 };
-actions.summonSearch = (el) => { const box = $("#sum-lib"); if (box) box.innerHTML = summonLibRows(el.value); };
-actions.summonLibPick = (el) => {
+function summonListRefresh() { const box = $("#sum-lib"); if (box) box.innerHTML = summonLibRows(Store.active()); }
+// after marking ★/✓: refresh the list if the picker is open, else refresh the preview
+function summonMarkRefresh() {
+  if ($("#sum-lib")) summonListRefresh();
+  else if (actions._sumPreviewName) actions.summonPreview({ dataset: { name: actions._sumPreviewName } });
+}
+actions.summonSearch = (el) => { ui.sumPick.q = el.value; summonListRefresh(); };
+actions.summonType = (el) => { ui.sumPick.type = el.value; summonListRefresh(); };
+actions.summonTab = (el) => { ui.sumPick.tab = el.dataset.tab; actions.summonAdd(); };
+actions.summonSort = (el) => { ui.sumPick.sort = el.dataset.sort; actions.summonAdd(); };
+actions.summonFavToggle = (el) => { const ch = Store.active(); const n = el.dataset.name; ch.summonFav = ch.summonFav || []; const i = ch.summonFav.findIndex((x) => x.toLowerCase() === n.toLowerCase()); if (i >= 0) ch.summonFav.splice(i, 1); else ch.summonFav.push(n); Store.touch(); if (window.LINK) LINK.schedulePush(ch); summonMarkRefresh(); };
+actions.summonKnownToggle = (el) => { const ch = Store.active(); const n = el.dataset.name; ch.summonKnown = ch.summonKnown || []; const i = ch.summonKnown.findIndex((x) => x.toLowerCase() === n.toLowerCase()); if (i >= 0) ch.summonKnown.splice(i, 1); else ch.summonKnown.push(n); Store.touch(); if (window.LINK) LINK.schedulePush(ch); summonMarkRefresh(); };
+function markKnown(ch, name) { ch.summonKnown = ch.summonKnown || []; if (!ch.summonKnown.some((x) => x.toLowerCase() === name.toLowerCase())) ch.summonKnown.push(name); }
+// preview a creature's full stat card before committing to add it
+actions.summonPreview = (el) => {
+  const name = el.dataset.name, def = creatureFind(name); if (!def) return;
+  actions._sumPreviewName = name;
+  const ch = Store.active();
+  const isFav = (ch.summonFav || []).some((x) => x.toLowerCase() === name.toLowerCase());
+  const isKnown = (ch.summonKnown || []).some((x) => x.toLowerCase() === name.toLowerCase());
+  const stub = !(Grimoire.summonLib || []).some((d) => d.name.toLowerCase() === name.toLowerCase());
+  const head = `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p>
+    ${!stub ? `<div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp ?? "?"}</b>${def.hd ? ` (${def.hd} HD)` : ""}</span><span>${esc(def.speed || "")}</span></div>` : ""}`;
+  const body = stub
+    ? `<p class="muted small">Not bundled (SRD-only library). Add it as a custom summon, then fill in or paste its stats.</p>`
+    : statBlockBody(def, null);
+  const marks = `<div class="seg"><button class="${isKnown ? "on" : ""}" data-act="summonKnownToggle" data-name="${esc(name)}">✓ Known</button><button class="${isFav ? "on" : ""}" data-act="summonFavToggle" data-name="${esc(name)}">★ Favorite</button></div>`;
+  const addBtn = stub
+    ? `<button class="btn primary" data-act="summonCustom" data-name="${esc(name)}" data-type="${esc(def.type || "")}">Add as custom</button>`
+    : `<button class="btn primary" data-act="summonAddDo" data-name="${esc(name)}">Add to summons</button>`;
+  modal(def.name, `${head}${marks}${body}
+    <div class="modal-btns"><button class="btn" data-act="summonAdd">‹ Back</button>${addBtn}</div>`);
+};
+actions.summonAddDo = (el) => {
   const def = (Grimoire.summonLib || []).find((d) => d.name === el.dataset.name); if (!def) return;
   amountPrompt(`How many ${def.name}?`, "Count (e.g. 8 for Conjure Animals)", (n) => {
     const ch = Store.active(); if (!ch.summons) ch.summons = []; const c = Math.max(1, n || 1);
-    ch.summons.push(makeSummon(def, c)); commit(); toast(`Added ${c}× ${def.name}.`);
+    ch.summons.push(makeSummon(def, c)); markKnown(ch, def.name); commit(); toast(`Added ${c}× ${def.name}.`);
   });
 };
 actions.summonStep = (el) => { const s = activeSummon(el.dataset.id); if (!s) return; const i = +el.dataset.i; s.hps[i] = Math.max(0, Math.min(s.hpMax, s.hps[i] + (+el.dataset.d || 0))); commit(); };
@@ -1180,15 +1254,6 @@ actions.summonEditSave = () => {
   s.hps = s.hps.map((hp) => full ? s.hpMax : Math.min(hp, s.hpMax));
   actions._sumEditId = null; closeModal(); commit();
 };
-actions.summonStub = (el) => {
-  const name = el.dataset.name, type = el.dataset.type;
-  const c = (Grimoire.creatureIndex || []).find((x) => x.name === name) || { name, type, cr: "", source: "" };
-  modal(name, `
-    <p class="sp-line">${c.cr && c.cr !== "—" ? "CR " + esc(c.cr) + " · " : ""}${esc(c.type || "")}${c.source ? ` · <span class="muted">${esc(c.source)}</span>` : ""}</p>
-    <p class="muted small">Not bundled — Grimoire only ships free SRD creatures. Look up its stats, then add it as a custom summon.</p>
-    <p class="sp-lookup"><a href="${wikidotSpellUrl(name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
-    <div class="modal-btns"><button class="btn" data-act="closeModal">Close</button><button class="btn primary" data-act="summonCustom" data-name="${esc(name)}" data-type="${esc(type)}">Add as custom</button></div>`);
-};
 actions.summonCustom = (el) => {
   const pname = el && el.dataset ? (el.dataset.name || "") : "";
   actions._sumType = el && el.dataset ? (el.dataset.type || "") : "";
@@ -1220,7 +1285,7 @@ actions.summonCustomSave = () => {
   if (an) atks.push({ name: an, atk: +$("#sc-atk").value || 0, damage: $("#sc-dmg").value.trim(), type: $("#sc-dtype").value.trim(), notes: "" });
   const ch = Store.active(); if (!ch.summons) ch.summons = [];
   ch.summons.push({ id: "sm" + Gx.uid(), name, ac: +$("#sc-ac").value || 10, speed: $("#sc-speed").value.trim(), attacks: atks, hpMax: hp, hps: Array(count).fill(hp), notes: $("#sc-notes").value.trim(), icon: actions._sumType || "", photo: null, conc: false });
-  actions._sumType = null; closeModal(); commit(); toast(`Added ${count}× ${name}.`);
+  markKnown(ch, name); actions._sumType = null; closeModal(); commit(); toast(`Added ${count}× ${name}.`);
 };
 actions.summonPhoto = (el) => {
   const id = el.dataset.id; closeModal();

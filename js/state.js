@@ -81,6 +81,8 @@ function newCharacter({ name, edition, cls, level }) {
     proficiencies: { languages: [], armor: [], weapons: [], tools: [] },  // add-one-by-one lists (legacy: string per field, migrated lazily)
     sessions: [],                  // session-book entries: {id,date,title,text,media:[{id,type,caption}]} — media blobs live in IndexedDB (device-only)
     summons: [],                   // active summons: {id,name,count,ac,speed,attacks,hpMax,hps:[],notes,photo,conc} — device-only photos in IndexedDB
+    summonKnown: [],               // creature names you've marked as available to you (auto-filled when you add one)
+    summonFav: [],                 // starred creature names for quick access in the picker
     notes: "",
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
