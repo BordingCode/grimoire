@@ -20,8 +20,9 @@ const DM = {
   encounters: [],   // [{id, name, monsters:[{name,count}]}]
   active: null,     // running combat {name, round, turnId, combatants:[...]}
   settings: {},     // per-feature toggles (default on) so each DM can keep it lean
-  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)) || {}; this.encounters = d.encounters || []; this.active = d.active || null; this.settings = d.settings || {}; } catch { this.encounters = []; this.active = null; this.settings = {}; } },
-  save() { localStorage.setItem(this.KEY, JSON.stringify({ encounters: this.encounters, active: this.active, settings: this.settings })); },
+  players: [],      // saved party roster {id, name, code} — link codes kept between sessions so the DM can gift any time
+  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)) || {}; this.encounters = d.encounters || []; this.active = d.active || null; this.settings = d.settings || {}; this.players = d.players || []; } catch { this.encounters = []; this.active = null; this.settings = {}; this.players = []; } },
+  save() { localStorage.setItem(this.KEY, JSON.stringify({ encounters: this.encounters, active: this.active, settings: this.settings, players: this.players })); },
 };
 // feature toggles — default ON; the DM can switch any off for a clean setup
 const DM_FEATURES = [
@@ -1659,10 +1660,23 @@ actions.dmEndCombat = () => { confirmDelete("End this combat? The tracker is cle
 actions.dmAddMonster = () => { DM._pickInto = "run"; dmOpenMonsterPick(); };
 actions.dmAddChar = () => {
   const list = Store.characters.map((c) => `<button class="btn ghost" data-act="dmAddCharGo" data-id="${esc(c.id)}">${esc(c.name)} <span class="muted small">${esc(classSummary(c))} · AC ${Calc.armorClass(c)} · ${Calc.maxHP(c)} HP</span></button>`).join("") || `<p class="muted small">No saved characters on this device.</p>`;
+  const saved = (DM.players || []).map((p) => `<button class="btn ghost" data-act="dmAddSavedPlayer" data-id="${esc(p.id)}">${esc(p.name)} <span class="muted small">live HP/AC</span></button>`).join("");
   modal("Add a character", `<div class="menu-list">${list}</div>
     <h3 class="sec">Players who use the app</h3>
+    ${saved ? `<div class="menu-list">${saved}</div>` : ""}
     <button class="btn ghost" data-act="dmAddLink">+ Add by link code (live HP/AC)</button>
     <p class="muted small">For players who don't use the app, use “Add custom”.</p>`);
+};
+actions.dmAddSavedPlayer = async (el) => {
+  const p = DM.players.find((x) => x.id === el.dataset.id); if (!p || !DM.active) return;
+  if (DM.active.combatants.some((c) => c.kind === "link" && c.linkCode && c.linkCode.toUpperCase() === p.code.toUpperCase())) { toast(`${p.name} is already in this fight.`); closeModal(); return; }
+  toast("Fetching the player…");
+  try {
+    const snap = await LINK.fetchSnapshot(p.code);
+    if (!snap) { toast("Nothing shared on that code yet — the player must link & sync once."); return; }
+    DM.active.combatants.push(dmLinkCombatant(snap, p.code)); DM.save(); closeModal(); render();
+    toast(`Added ${snap.name || p.name} — live.`);
+  } catch (e) { toast("Couldn't reach the link server (offline?)."); }
 };
 actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === el.dataset.id); if (!c) return; DM.active.combatants.push(dmCharCombatant(c)); DM.save(); closeModal(); render(); };
 /* live link-pull: a player who uses the app shares their link code; the tracker pulls
@@ -1692,7 +1706,9 @@ actions.dmAddLinkGo = async () => {
   try {
     const p = await LINK.fetchSnapshot(code);
     if (!p) { toast("Nothing shared on that code yet — the player must link & sync once."); return; }
-    DM.active.combatants.push(dmLinkCombatant(p, code)); DM.save(); closeModal(); render();
+    DM.active.combatants.push(dmLinkCombatant(p, code));
+    if (!DM.players.some((x) => x.code.toUpperCase() === code.toUpperCase())) DM.players.push({ id: "pl" + Gx.uid(), name: p.name || "Player", code });
+    DM.save(); closeModal(); render();
     toast(`Added ${p.name || "the player"} — live.`);
   } catch (e) { toast("Couldn't reach the link server (offline?)."); }
 };
@@ -1709,10 +1725,17 @@ actions.dmSyncAll = async () => {
   DM.save(); render(); toast("Linked players synced.");
 };
 actions.dmSetAC = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`AC — ${cb.name}`, "Armor Class", (n) => { cb.ac = Math.max(0, n | 0); DM.save(); render(); }); };
-/* DM gives loot / handouts to a linked player (lands on their sheet via the gift queue) */
+/* DM gives loot / handouts to a linked player (lands on their sheet via the gift queue).
+   Target resolves from EITHER a saved roster player (data-code) or a live combatant (data-id),
+   so gifting works from the DM home roster as well as inside the combat tracker. */
+function dmGiftTarget(el) {
+  if (el.dataset.code) return { code: el.dataset.code, name: el.dataset.name || "the player" };
+  const cb = dmFindCb(el.dataset.id); if (cb && cb.linkCode) return { code: cb.linkCode, name: cb.name };
+  return null;
+}
 actions.dmGiveItem = (el) => {
-  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; actions._giveTo = { code: cb.linkCode, name: cb.name };
-  modal(`Give an item to ${cb.name}`, `
+  const t = dmGiftTarget(el); if (!t) return; actions._giveTo = t;
+  modal(`Give an item to ${esc(t.name)}`, `
     <label class="fld"><span>Item name *</span><input id="gi-name" placeholder="Potion of Healing"></label>
     <label class="fld"><span>Notes / description</span><textarea id="gi-notes" rows="3" placeholder="what it does…"></textarea></label>
     <label class="fld"><span>Quantity</span><input id="gi-qty" type="number" min="1" value="1"></label>
@@ -1725,14 +1748,51 @@ actions.dmGiveItemGo = async () => {
   const r = await GIFT.send(t.code, "Your DM", gift); toast(r && r.ok ? `“${name}” sent to ${t.name}.` : "Couldn't reach the link server.");
 };
 actions.dmGivePic = (el) => {
-  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; const code = cb.linkCode, nm = cb.name; closeModal();
+  const t = dmGiftTarget(el); if (!t) return; const code = t.code, nm = t.name; closeModal();
   const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
   inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = async () => { const data = downscaleImage(im, 900); toast("Sending picture…"); const res = await GIFT.send(code, "Your DM", { kind: "image", dataUrl: data }); toast(res && res.ok ? `Picture sent to ${nm}.` : "Couldn't reach the link server."); }; im.onerror = () => toast("Couldn't read that image."); im.src = r.result; }; r.readAsDataURL(f); };
   inp.click();
 };
 actions.dmGiveDraw = (el) => {
-  const cb = dmFindCb(el.dataset.id); if (!cb || !cb.linkCode) return; const code = cb.linkCode, nm = cb.name; closeModal();
+  const t = dmGiftTarget(el); if (!t) return; const code = t.code, nm = t.name; closeModal();
   openDrawPad(async (data) => { toast("Sending drawing…"); const res = await GIFT.send(code, "Your DM", { kind: "image", dataUrl: data, isDrawing: true }); toast(res && res.ok ? `Drawing sent to ${nm}.` : "Couldn't reach the link server."); });
+};
+/* ---- DM party roster: save players by link code so the DM can gift any time (not only mid-combat) ---- */
+actions.dmAddPlayer = () => {
+  modal("Add a player", `
+    <p class="muted small">Save a player by their link code (from their character's <b>Link with another player</b> screen). They stay on your roster so you can hand them items, pictures &amp; drawings any time — no fight needed.</p>
+    <label class="fld"><span>Link code</span><input id="dmp-code" placeholder="paste the code" autocapitalize="characters" autocomplete="off"></label>
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmAddPlayerGo">Add</button></div>`, () => { const i = $("#dmp-code"); if (i) i.focus(); });
+};
+actions.dmAddPlayerGo = async () => {
+  const code = ($("#dmp-code") ? $("#dmp-code").value : "").trim(); if (!code) return;
+  if (DM.players.some((p) => p.code.toUpperCase() === code.toUpperCase())) { toast("That player's already on your roster."); closeModal(); return; }
+  toast("Looking up the player…");
+  let name = "Player";
+  try { const p = await LINK.fetchSnapshot(code); if (p && p.name) name = p.name; else if (p === null) { /* code exists but no name */ } } catch (e) {}
+  DM.players.push({ id: "pl" + Gx.uid(), name, code }); DM.save(); closeModal(); render();
+  toast(`${name} added to your roster.`);
+};
+actions.dmPlayerMenu = (el) => {
+  const p = DM.players.find((x) => x.id === el.dataset.id); if (!p) return;
+  modal(esc(p.name), `<div class="menu-list">
+    <h3 class="sec">Give to ${esc(p.name)}</h3>
+    <button class="btn ghost" data-act="dmGiveItem" data-code="${esc(p.code)}" data-name="${esc(p.name)}">Give an item</button>
+    <button class="btn ghost" data-act="dmGivePic" data-code="${esc(p.code)}" data-name="${esc(p.name)}">Give a picture</button>
+    <button class="btn ghost" data-act="dmGiveDraw" data-code="${esc(p.code)}" data-name="${esc(p.name)}">Give a drawing</button>
+    <button class="btn ghost" data-act="dmPlayerRefresh" data-id="${esc(p.id)}">Refresh name from link</button>
+    <button class="btn danger" data-act="dmPlayerRemove" data-id="${esc(p.id)}">Remove from roster</button>
+  </div>`);
+};
+actions.dmPlayerRefresh = async (el) => {
+  const p = DM.players.find((x) => x.id === el.dataset.id); if (!p) return;
+  try { const s = await LINK.fetchSnapshot(p.code); if (s && s.name) { p.name = s.name; DM.save(); render(); toast(`Updated to ${p.name}.`); } else toast("Nothing shared on that code yet."); }
+  catch (e) { toast("Couldn't reach the link server."); }
+  closeModal();
+};
+actions.dmPlayerRemove = (el) => {
+  const p = DM.players.find((x) => x.id === el.dataset.id); if (!p) return;
+  confirmDelete(`Remove ${p.name} from your roster? (Their sheet isn't affected.)`, () => { DM.players = DM.players.filter((x) => x.id !== el.dataset.id); DM.save(); closeModal(); render(); });
 };
 actions.dmAddCustom = () => {
   modal("Add combatant", `

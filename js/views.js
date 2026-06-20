@@ -766,6 +766,12 @@ function viewDM() {
       <span class="muted small">${(e.monsters || []).reduce((t, m) => t + (m.count || 0), 0)} monsters · tap to run</span></button>
     <button class="opt-btn" data-act="dmEditEncounter" data-id="${esc(e.id)}">⋯</button>
   </div>`).join("") || `<p class="muted pad">No saved encounters yet. Build one to launch fast at the table.</p>`;
+  const players = (DM.players || []).map((p) => `<div class="dm-enc">
+    <div class="dm-enc-main" style="display:flex;flex-direction:column;align-items:flex-start">
+      <span class="dm-enc-name">${esc(p.name)}</span>
+      <span class="muted small">linked · tap ⋯ to give items, pictures &amp; drawings</span></div>
+    <button class="opt-btn" data-act="dmPlayerMenu" data-id="${esc(p.id)}">⋯</button>
+  </div>`).join("") || `<p class="muted pad">No players saved yet. Add a player by their link code to hand them loot &amp; handouts any time — even outside combat.</p>`;
   return `
     <header class="topbar">
       <button class="back" data-act="dmBackHome">‹</button>
@@ -778,6 +784,8 @@ function viewDM() {
         <button class="btn primary" data-act="dmNewEncounter">+ New encounter</button>
         <button class="btn ghost" data-act="dmQuickFight">Quick fight</button>
       </div>
+      <h3 class="sec">Players <button class="mini" data-act="dmAddPlayer">+ add</button></h3>
+      <div class="dm-enc-list">${players}</div>
       <h3 class="sec">Saved encounters</h3>
       <div class="dm-enc-list">${encs}</div>
     </div>`;
