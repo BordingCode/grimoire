@@ -14,6 +14,27 @@ const Party = {
   save() { localStorage.setItem(this.KEY, JSON.stringify(this.members)); },
 };
 
+/* DM mode — saved encounters + a live initiative/combat tracker (device-local, any copy can use it) */
+const DM = {
+  KEY: "grimoire.dm.v1",
+  encounters: [],   // [{id, name, monsters:[{name,count}]}]
+  active: null,     // running combat {name, round, turnId, combatants:[...]}
+  settings: {},     // per-feature toggles (default on) so each DM can keep it lean
+  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)) || {}; this.encounters = d.encounters || []; this.active = d.active || null; this.settings = d.settings || {}; } catch { this.encounters = []; this.active = null; this.settings = {}; } },
+  save() { localStorage.setItem(this.KEY, JSON.stringify({ encounters: this.encounters, active: this.active, settings: this.settings })); },
+};
+// feature toggles — default ON; the DM can switch any off for a clean setup
+const DM_FEATURES = [
+  { key: "conditions", label: "Conditions", note: "tag combatants (poisoned, prone…)" },
+  { key: "durations", label: "Condition timers", note: "round countdown on conditions" },
+  { key: "conc", label: "Concentration reminder", note: "prompt a save when a flagged caster is hit" },
+  { key: "bloodied", label: "Bloodied marker", note: "flag at ≤ half HP" },
+  { key: "undo", label: "Undo button", note: "revert the last HP change" },
+  { key: "statblock", label: "Stat block on tap", note: "tap a monster for its full block" },
+  { key: "ac", label: "Show AC", note: "display each combatant's armor class" },
+];
+function dmOn(key) { return DM.settings[key] !== false; } // default on
+
 async function loadSpells() {
   const [a, b, idx, sl, ci] = await Promise.all([
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
@@ -1544,6 +1565,138 @@ function revertShape(ch, carry) {
   toast(carry > 0 ? `Reverted — ${carry} leftover damage carried to you.` : "Reverted to your normal form.");
 }
 
+/* ===================================================================== */
+/*  DM MODE — saved encounters + live initiative/combat tracker          */
+/* ===================================================================== */
+function dmCreatureCombatant(def, count) {
+  return { id: "cb" + Gx.uid(), name: def.name, kind: "monster", ref: def.name, ac: def.ac, hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), hpTemp: 0, init: null, conditions: [], conc: false, icon: def.type || def.icon || "" };
+}
+function dmCharCombatant(ch) {
+  const max = Calc.maxHP(ch);
+  return { id: "cb" + Gx.uid(), name: ch.name, kind: "char", ref: null, ac: Calc.armorClass(ch), hpMax: max, hps: [ch.combat ? ch.combat.hpCur : max], hpTemp: ch.combat ? (ch.combat.hpTemp || 0) : 0, init: null, conditions: [], conc: false, icon: "" };
+}
+function dmCustomCombatant(name, hp, ac) { hp = Math.max(1, hp | 0); return { id: "cb" + Gx.uid(), name: name || "Combatant", kind: "custom", ref: null, ac: (ac | 0) || 10, hpMax: hp, hps: [hp], hpTemp: 0, init: null, conditions: [], conc: false, icon: "" }; }
+function dmInstantiate(enc) { const cbs = []; (enc.monsters || []).forEach((m) => { const def = creatureFind(m.name); if (def && (Grimoire.summonLib || []).some((d) => d.name === def.name)) cbs.push(dmCreatureCombatant(def, m.count || 1)); }); return cbs; }
+function dmSorted(a) { return (a.combatants || []).slice().sort((x, y) => (y.init ?? -999) - (x.init ?? -999) || x.name.localeCompare(y.name)); }
+function dmCbDown(cb) { return cb.hps.every((h) => h <= 0); }
+function dmCbHpNow(cb) { return cb.hps.reduce((t, h) => t + Math.max(0, h), 0); }
+function dmCbBloodied(cb) { return !dmCbDown(cb) && dmCbHpNow(cb) <= (cb.hpMax * cb.hps.length) / 2; }
+function dmActiveEnc() { return DM.active; }
+function dmFindCb(id) { return DM.active && DM.active.combatants.find((c) => c.id === id); }
+function dmPushUndo(cb) { DM.active._undo = { id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp, label: cb.name }; }
+
+/* --- navigation --- */
+actions.openDM = () => { ui.screen = "dm"; render(); };
+actions.dmHome = () => { ui.screen = "dm"; render(); };
+actions.dmBackHome = () => { ui.screen = "home"; render(); };
+actions.dmSettings = () => {
+  modal("DM features", `
+    <p class="muted small">Switch features on or off — keep it lean or turn everything on.</p>
+    <div class="menu-list">${DM_FEATURES.map((f) => `<button class="btn ${dmOn(f.key) ? "primary" : "ghost"}" data-act="dmToggle" data-key="${f.key}">${dmOn(f.key) ? "✓ " : ""}${esc(f.label)} <span class="muted small">${esc(f.note)}</span></button>`).join("")}</div>`);
+};
+actions.dmToggle = (el) => { const k = el.dataset.key; DM.settings[k] = !dmOn(k); DM.save(); actions.dmSettings(); render(); };
+
+/* --- encounters (prep) --- */
+actions.dmNewEncounter = () => { const e = { id: Gx.uid(), name: "", monsters: [] }; DM.encounters.push(e); DM._editId = e.id; DM.save(); ui.screen = "dmEdit"; render(); };
+actions.dmEditEncounter = (el) => { DM._editId = el.dataset.id; ui.screen = "dmEdit"; render(); };
+actions.dmEncName = (el) => { const e = DM.encounters.find((x) => x.id === DM._editId); if (e) { e.name = el.value; DM.save(); } };
+actions.dmEncDone = () => { const e = DM.encounters.find((x) => x.id === DM._editId); if (e && !e.name.trim() && !e.monsters.length) DM.encounters = DM.encounters.filter((x) => x.id !== e.id); DM.save(); ui.screen = "dm"; render(); };
+actions.dmEncDelete = (el) => { const id = el.dataset.id; confirmDelete("Delete this encounter?", () => { DM.encounters = DM.encounters.filter((x) => x.id !== id); DM.save(); ui.screen = "dm"; render(); }); };
+actions.dmEncAddMonster = () => { DM._pickInto = "enc"; dmOpenMonsterPick(); };
+actions.dmEncMonStep = (el) => { const e = DM.encounters.find((x) => x.id === DM._editId); if (!e) return; const m = e.monsters.find((x) => x.name === el.dataset.name); if (m) { m.count = Math.max(0, m.count + (+el.dataset.d || 0)); if (m.count <= 0) e.monsters = e.monsters.filter((x) => x !== m); DM.save(); render(); } };
+
+/* --- monster picker (shared by encounter editor & live combat) --- */
+function dmOpenMonsterPick() {
+  ui.dmPick = ui.dmPick || { q: "", type: "all", sort: "crAsc" }; const p = ui.dmPick;
+  const present = new Set((Grimoire.summonLib || []).map((d) => (d.type || "").toLowerCase()));
+  const types = SUMMON_TYPES.filter((t) => present.has(t));
+  const sort = (k, l) => `<button class="${p.sort === k ? "on" : ""}" data-act="dmPickSort" data-sort="${k}">${l}</button>`;
+  const typeOpts = `<option value="all">All types</option>` + types.map((t) => `<option value="${t}" ${p.type === t ? "selected" : ""}>${t[0].toUpperCase() + t.slice(1)}</option>`).join("");
+  modal("Add monster", `
+    <input class="search" id="dm-search" data-act="dmPickSearch" placeholder="Search creatures…" value="${esc(p.q)}">
+    <div class="sum-controls"><select id="dm-type" data-act="dmPickType">${typeOpts}</select><div class="seg sm">${sort("crAsc", "CR ↑")}${sort("crDesc", "CR ↓")}${sort("az", "A–Z")}</div></div>
+    <div class="sum-lib" id="dm-lib">${dmPickRows()}</div>`);
+}
+function dmPickRows() {
+  const p = ui.dmPick; let items = (Grimoire.summonLib || []).slice();
+  if (p.type !== "all") items = items.filter((d) => (d.type || "").toLowerCase() === p.type);
+  if (p.q) { const ql = p.q.toLowerCase(); items = items.filter((d) => d.name.toLowerCase().includes(ql)); }
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  items.sort((a, b) => p.sort === "az" ? byName(a, b) : p.sort === "crDesc" ? (crToNum(b.cr) - crToNum(a.cr) || byName(a, b)) : (crToNum(a.cr) - crToNum(b.cr) || byName(a, b)));
+  if (!items.length) return `<p class="muted small pad">No match.</p>`;
+  return items.map((d) => `<div class="sum-row"><button class="sum-pick" data-act="dmPickAdd" data-name="${esc(d.name)}">
+    <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
+    <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP</span></span></button></div>`).join("");
+}
+actions.dmPickSearch = (el) => { ui.dmPick.q = el.value; const b = $("#dm-lib"); if (b) b.innerHTML = dmPickRows(); };
+actions.dmPickType = (el) => { ui.dmPick.type = el.value; const b = $("#dm-lib"); if (b) b.innerHTML = dmPickRows(); };
+actions.dmPickSort = (el) => { ui.dmPick.sort = el.dataset.sort; dmOpenMonsterPick(); };
+actions.dmPickAdd = (el) => {
+  const name = el.dataset.name, def = (Grimoire.summonLib || []).find((d) => d.name === name); if (!def) return;
+  if (DM._pickInto === "enc") {
+    amountPrompt(`How many ${name}?`, "Count", (n) => { const e = DM.encounters.find((x) => x.id === DM._editId); if (!e) return; const m = e.monsters.find((x) => x.name === name); if (m) m.count += Math.max(1, n || 1); else e.monsters.push({ name, count: Math.max(1, n || 1) }); DM.save(); render(); });
+  } else {
+    amountPrompt(`How many ${name}? (one shared turn)`, "Count", (n) => { DM.active.combatants.push(dmCreatureCombatant(def, Math.max(1, n || 1))); DM.save(); closeModal(); render(); });
+  }
+};
+
+/* --- running combat --- */
+actions.dmRunEncounter = (el) => { const e = DM.encounters.find((x) => x.id === el.dataset.id); if (!e) return; DM.active = { name: e.name || "Encounter", round: 0, turnId: null, combatants: dmInstantiate(e), _undo: null }; DM.save(); ui.screen = "dmRun"; render(); };
+actions.dmQuickFight = () => { DM.active = { name: "Quick fight", round: 0, turnId: null, combatants: [], _undo: null }; DM.save(); ui.screen = "dmRun"; render(); };
+actions.dmResume = () => { ui.screen = "dmRun"; render(); };
+actions.dmRunBack = () => { ui.screen = "dm"; render(); };
+actions.dmEndCombat = () => { confirmDelete("End this combat? The tracker is cleared.", () => { DM.active = null; DM.save(); ui.screen = "dm"; render(); }); };
+actions.dmAddMonster = () => { DM._pickInto = "run"; dmOpenMonsterPick(); };
+actions.dmAddChar = () => {
+  const list = Store.characters.map((c) => `<button class="btn ghost" data-act="dmAddCharGo" data-id="${esc(c.id)}">${esc(c.name)} <span class="muted small">${esc(classSummary(c))} · AC ${Calc.armorClass(c)} · ${Calc.maxHP(c)} HP</span></button>`).join("") || `<p class="muted small">No saved characters on this device.</p>`;
+  modal("Add a character", `<div class="menu-list">${list}</div><p class="muted small">For players who don't use the app, use “Add custom” instead.</p>`);
+};
+actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === el.dataset.id); if (!c) return; DM.active.combatants.push(dmCharCombatant(c)); DM.save(); closeModal(); render(); };
+actions.dmAddCustom = () => {
+  modal("Add combatant", `
+    <label class="fld"><span>Name *</span><input id="dmc-name" placeholder="e.g. Sera (player), or an NPC"></label>
+    <div class="grid2"><label class="fld"><span>HP</span><input id="dmc-hp" type="number" min="1" value="10"></label>
+      <label class="fld"><span>AC</span><input id="dmc-ac" type="number" value="12"></label></div>
+    <div class="modal-btns"><button class="btn primary" data-act="dmAddCustomGo">Add</button></div>`, () => $("#dmc-name").focus());
+};
+actions.dmAddCustomGo = () => { const n = ($("#dmc-name").value || "").trim(); if (!n) { toast("Name required."); return; } DM.active.combatants.push(dmCustomCombatant(n, +$("#dmc-hp").value, +$("#dmc-ac").value)); DM.save(); closeModal(); render(); };
+actions.dmRemoveCb = (el) => { const id = el.dataset.id; DM.active.combatants = DM.active.combatants.filter((c) => c.id !== id); if (DM.active.turnId === id) DM.active.turnId = null; DM.save(); closeModal(); render(); };
+actions.dmCbMenu = (el) => {
+  const cb = dmFindCb(el.dataset.id); if (!cb) return;
+  modal(cb.name, `<div class="menu-list">
+    ${cb.kind === "monster" && dmOn("statblock") ? `<button class="btn ghost" data-act="dmStat" data-id="${esc(cb.id)}">View stat block</button>` : ""}
+    <button class="btn ghost" data-act="dmSetInit" data-id="${esc(cb.id)}">Set initiative</button>
+    <button class="btn ghost" data-act="dmHeal" data-id="${esc(cb.id)}" data-i="0">Heal</button>
+    <button class="btn ghost" data-act="dmTemp" data-id="${esc(cb.id)}">Set temp HP</button>
+    <button class="btn danger" data-act="dmRemoveCb" data-id="${esc(cb.id)}">Remove from combat</button>
+  </div>`);
+};
+actions.dmTemp = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`Temp HP — ${cb.name}`, "Temporary HP", (n) => { cb.hpTemp = Math.max(0, n | 0); DM.save(); render(); }); };
+actions.dmSetInit = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`Initiative — ${cb.name}`, "Initiative roll", (n) => { cb.init = n | 0; DM.save(); render(); }); };
+actions.dmDmg = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; amountPrompt(`Damage — ${cb.name}`, "How much damage?", (n) => { n = Math.max(0, n | 0); if (!n) return; dmPushUndo(cb); let rem = n; if (i === 0 && cb.hpTemp) { const ft = Math.min(cb.hpTemp, rem); cb.hpTemp -= ft; rem -= ft; } cb.hps[i] = Math.max(0, cb.hps[i] - rem); if (cb.conc) toast(`${cb.name}: concentration check — DC ${Math.max(10, Math.floor(n / 2))}.`); DM.save(); render(); }); };
+actions.dmHeal = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; amountPrompt(`Heal — ${cb.name}`, "How much healing?", (n) => { dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (n | 0))); DM.save(); render(); }); };
+actions.dmHpStep = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (+el.dataset.d || 0))); DM.save(); render(); };
+actions.dmInstKill = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.hps.length <= 1) return; cb.hps.splice(+el.dataset.i, 1); DM.save(); render(); };
+actions.dmUndo = () => { const a = DM.active; if (!a || !a._undo) return; const cb = a.combatants.find((c) => c.id === a._undo.id); if (cb) { cb.hps = a._undo.hps.slice(); cb.hpTemp = a._undo.hpTemp; } a._undo = null; DM.save(); render(); };
+actions.dmConc = (el) => { const cb = dmFindCb(el.dataset.id); if (cb) { cb.conc = !cb.conc; DM.save(); render(); } };
+actions.dmStat = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.kind !== "monster") return; const def = creatureDef({ ref: cb.ref }); modal(def.name, `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p><div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp}</b></span><span>${esc(def.speed || "")}</span></div>${statBlockBody(def, null)}<div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`); };
+/* conditions on a combatant (with optional round timer) */
+actions.dmCondOpen = (el) => {
+  const id = el.dataset.id;
+  modal("Add condition", `<div class="dm-cond-grid">${RULES.CONDITIONS.map((c) => `<button class="btn ghost small-b" data-act="dmCondAdd" data-id="${id}" data-name="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+    <label class="fld"><span>Lasts (rounds, optional)</span><input id="dm-cond-rounds" type="number" min="1" placeholder="∞"></label>`);
+};
+actions.dmCondAdd = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; const r = $("#dm-cond-rounds") ? +$("#dm-cond-rounds").value : 0; cb.conditions = cb.conditions || []; if (!cb.conditions.some((c) => c.name === el.dataset.name)) cb.conditions.push({ name: el.dataset.name, rounds: r > 0 ? r : null }); DM.save(); closeModal(); render(); };
+actions.dmCondRemove = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; cb.conditions = (cb.conditions || []).filter((c) => c.name !== el.dataset.name); DM.save(); render(); };
+actions.dmNext = () => {
+  const a = DM.active; if (!a) return; const order = dmSorted(a); if (!order.length) return;
+  if (!a.turnId) { a.turnId = order[0].id; a.round = 1; }
+  else { const i = order.findIndex((c) => c.id === a.turnId); if (i < 0 || i + 1 >= order.length) { a.round = (a.round || 1) + 1; a.turnId = order[0].id; } else a.turnId = order[i + 1].id; }
+  const cur = a.combatants.find((c) => c.id === a.turnId); // tick this combatant's conditions (until your next turn)
+  if (cur) cur.conditions = (cur.conditions || []).filter((cd) => { if (cd.rounds == null) return true; cd.rounds -= 1; return cd.rounds > 0; });
+  DM.save(); render();
+};
+
 /* ---------- appearance (dark/light + accent) ---------- */
 actions.appearance = () => {
   const ch = Store.active();
@@ -1716,6 +1869,7 @@ if ("serviceWorker" in navigator) {
 (async function boot() {
   Store.load();
   Party.load();
+  DM.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
   if (Store.active()) {
     // resume where the user left off (screen + tab) instead of always resetting to Stats

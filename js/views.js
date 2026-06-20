@@ -143,6 +143,9 @@ function render() {
   else if (ui.screen === "session") app.innerHTML = viewSession(Store.active());
   else if (ui.screen === "summons") app.innerHTML = viewSummons(Store.active());
   else if (ui.screen === "shape") app.innerHTML = viewShape(Store.active());
+  else if (ui.screen === "dm") app.innerHTML = viewDM();
+  else if (ui.screen === "dmEdit") app.innerHTML = viewDMEdit();
+  else if (ui.screen === "dmRun") app.innerHTML = viewDMRun();
   else if (ui.screen === "sheet") app.innerHTML = viewSheet(Store.active());
   if (typeof applyTheme === "function") applyTheme(["sheet", "session", "summons", "shape"].includes(ui.screen) ? Store.active() : null);
   if (["session", "summons"].includes(ui.screen) && typeof hydrateSessionMedia === "function") hydrateSessionMedia();
@@ -169,6 +172,7 @@ function viewHome() {
       <div class="home-actions">
         <button class="btn primary" data-act="goNew">+ New character</button>
         <button class="btn ghost" data-act="goParty">Kill count</button>
+        <button class="btn ghost" data-act="openDM">DM mode — encounters &amp; combat tracker</button>
         <button class="btn ghost" data-act="importFile">Import from file</button>
         <button class="btn ghost" data-act="forceUpdate">Update app (keeps characters)</button>
       </div>
@@ -743,5 +747,96 @@ function shapeCard(ch, f) {
     ${atks ? `<div class="sm-atks">${atks}</div>` : ""}
     ${f.notes ? `<div class="sm-notes muted">${esc(f.notes)}</div>` : ""}
     ${creatureHasDetail(def) ? `<div class="sm-detail">${statBlockBody(def, f)}</div>` : ""}
+  </div>`;
+}
+
+/* ---- DM mode: encounters + combat tracker ---- */
+function viewDM() {
+  const a = DM.active;
+  const encs = DM.encounters.map((e) => `<div class="dm-enc">
+    <button class="dm-enc-main" data-act="dmRunEncounter" data-id="${esc(e.id)}">
+      <span class="dm-enc-name">${esc(e.name || "Untitled encounter")}</span>
+      <span class="muted small">${(e.monsters || []).reduce((t, m) => t + (m.count || 0), 0)} monsters · tap to run</span></button>
+    <button class="opt-btn" data-act="dmEditEncounter" data-id="${esc(e.id)}">⋯</button>
+  </div>`).join("") || `<p class="muted pad">No saved encounters yet. Build one to launch fast at the table.</p>`;
+  return `
+    <header class="topbar">
+      <button class="back" data-act="dmBackHome">‹</button>
+      <div class="sheet-id"><span class="s-name">DM mode</span><span class="s-sub">encounters & combat tracker</span></div>
+      <button class="kebab" data-act="dmSettings" title="Features">≡</button>
+    </header>
+    <div class="screen">
+      ${a ? `<button class="dm-resume" data-act="dmResume"><b>Resume combat</b><span class="muted small">${esc(a.name)} · round ${a.round || 1} · ${a.combatants.length} in play</span></button>` : ""}
+      <div class="summon-actions">
+        <button class="btn primary" data-act="dmNewEncounter">+ New encounter</button>
+        <button class="btn ghost" data-act="dmQuickFight">Quick fight</button>
+      </div>
+      <h3 class="sec">Saved encounters</h3>
+      <div class="dm-enc-list">${encs}</div>
+    </div>`;
+}
+function viewDMEdit() {
+  const e = DM.encounters.find((x) => x.id === DM._editId);
+  if (!e) { ui.screen = "dm"; return viewDM(); }
+  const mons = (e.monsters || []).map((m) => `<div class="dm-mon-row">
+    <span class="dm-mon-name">${esc(m.name)}</span>
+    <div class="dm-mon-ct"><button data-act="dmEncMonStep" data-name="${esc(m.name)}" data-d="-1">−</button><span>${m.count}</span><button data-act="dmEncMonStep" data-name="${esc(m.name)}" data-d="1">+</button></div>
+  </div>`).join("") || `<p class="muted small">No monsters yet — tap “+ add”.</p>`;
+  return `
+    <header class="topbar"><button class="back" data-act="dmEncDone">‹</button><div class="sheet-id"><span class="s-name">Edit encounter</span><span class="s-sub">DM mode</span></div></header>
+    <div class="screen">
+      <label class="fld"><span>Name</span><input data-act="dmEncName" value="${esc(e.name)}" placeholder="e.g. Goblin Ambush"></label>
+      <h3 class="sec">Monsters <button class="mini" data-act="dmEncAddMonster">+ add</button></h3>
+      <div class="dm-mon-list">${mons}</div>
+      <div class="summon-actions"><button class="btn primary" data-act="dmEncDone">Done</button><button class="btn danger" data-act="dmEncDelete" data-id="${esc(e.id)}">Delete</button></div>
+    </div>`;
+}
+function viewDMRun() {
+  const a = DM.active;
+  if (!a) { ui.screen = "dm"; return viewDM(); }
+  const rows = dmSorted(a).map((cb) => dmCombatantRow(a, cb)).join("") || `<p class="muted pad">No combatants. Add monsters and the party, then tap each initiative.</p>`;
+  return `
+    <header class="topbar">
+      <button class="back" data-act="dmRunBack">‹</button>
+      <div class="sheet-id"><span class="s-name">${esc(a.name)}</span><span class="s-sub">Round ${a.round || 0} · ${a.combatants.length} combatants</span></div>
+      <button class="kebab" data-act="dmSettings" title="Features">≡</button>
+    </header>
+    <div class="dm-run-bar">
+      <button class="btn primary" data-act="dmNext">${a.turnId ? "Next ▸" : "Start ▸"}</button>
+      ${dmOn("undo") && a._undo ? `<button class="btn ghost" data-act="dmUndo">Undo</button>` : ""}
+      <button class="btn ghost" data-act="dmAddMonster">+ Monster</button>
+      <button class="btn ghost" data-act="dmAddChar">+ PC</button>
+      <button class="btn ghost" data-act="dmAddCustom">+ Custom</button>
+    </div>
+    <div class="screen">
+      <div class="dm-cb-list">${rows}</div>
+      ${a.combatants.length ? `<button class="btn danger dm-end" data-act="dmEndCombat">End combat</button>` : ""}
+    </div>`;
+}
+function dmCombatantRow(a, cb) {
+  const isTurn = a.turnId === cb.id;
+  const down = dmCbDown(cb);
+  const group = cb.hps.length > 1;
+  const bloodied = dmOn("bloodied") && dmCbBloodied(cb);
+  const conds = cb.conditions || [];
+  let hpHtml;
+  if (group) {
+    hpHtml = `<div class="dm-insts">${cb.hps.map((h, i) => `<button class="dm-inst ${h <= 0 ? "down" : ""}" data-act="dmDmg" data-id="${esc(cb.id)}" data-i="${i}" title="tap to damage">${Math.max(0, h)}</button>`).join("")}</div>`;
+  } else {
+    hpHtml = `<button class="dm-hp ${down ? "down" : ""}" data-act="dmDmg" data-id="${esc(cb.id)}" data-i="0" title="tap to damage">${Math.max(0, cb.hps[0])}<small>/${cb.hpMax}${cb.hpTemp ? " +" + cb.hpTemp : ""}</small></button>
+      <button class="dm-step" data-act="dmHpStep" data-id="${esc(cb.id)}" data-i="0" data-d="-1">−</button>
+      <button class="dm-step" data-act="dmHpStep" data-id="${esc(cb.id)}" data-i="0" data-d="1">+</button>
+      <button class="dm-step heal" data-act="dmHeal" data-id="${esc(cb.id)}" data-i="0" title="heal">♥</button>`;
+  }
+  const canStat = cb.kind === "monster" && dmOn("statblock");
+  return `<div class="dm-cb ${isTurn ? "on" : ""} ${down ? "dead" : ""}">
+    <div class="dm-cb-head">
+      <button class="dm-init" data-act="dmSetInit" data-id="${esc(cb.id)}" title="set initiative">${cb.init == null ? "—" : cb.init}</button>
+      <button class="dm-cb-name" ${canStat ? `data-act="dmStat" data-id="${esc(cb.id)}"` : "disabled"}>${esc(cb.name)}${group ? ` ×${cb.hps.filter((h) => h > 0).length}` : ""}${bloodied ? ` <em class="dm-bloodied">bloodied</em>` : ""}</button>
+      ${dmOn("ac") ? `<span class="dm-ac">AC ${cb.ac}</span>` : ""}
+      <button class="opt-btn" data-act="dmCbMenu" data-id="${esc(cb.id)}">⋯</button>
+    </div>
+    <div class="dm-cb-hp">${hpHtml}</div>
+    ${dmOn("conditions") ? `<div class="dm-conds">${conds.map((c) => `<button class="dm-cond" data-act="dmCondRemove" data-id="${esc(cb.id)}" data-name="${esc(c.name)}">${esc(c.name)}${dmOn("durations") && c.rounds ? ` ${c.rounds}r` : ""} ✕</button>`).join("")}<button class="dm-cond-add" data-act="dmCondOpen" data-id="${esc(cb.id)}">+ cond</button>${dmOn("conc") ? `<button class="dm-conc ${cb.conc ? "on" : ""}" data-act="dmConc" data-id="${esc(cb.id)}" title="concentrating">conc</button>` : ""}</div>` : ""}
   </div>`;
 }
