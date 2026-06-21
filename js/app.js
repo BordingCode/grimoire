@@ -94,7 +94,9 @@ function applyTheme(ch) {
   const mode = localStorage.getItem("grimoire.mode") || "dark";
   root.dataset.theme = mode;
   applyScene(ch, mode); // also turns the scene OFF on home/light (ch null or light mode)
-  const t = ch && Grimoire.themes && Grimoire.themes[ch.cls] && Grimoire.themes[ch.cls][mode];
+  // a character uses its class's palette by default, but ch.theme can pick any other class's world
+  const themeKey = (ch && ch.theme) || (ch && ch.cls);
+  const t = ch && Grimoire.themes && Grimoire.themes[themeKey] && Grimoire.themes[themeKey][mode];
   if (!t) { THEME_VARS.forEach((v) => root.style.removeProperty(v)); return; }
   const p = { ...t };
   // the Appearance accent picker (ch.accent) still overrides just the accent pair
@@ -114,7 +116,7 @@ function applyScene(ch, mode) {
   if (!window.Scene) return;
   const on = !!ch && mode === "dark" && ch.scene !== false;
   document.body.classList.toggle("has-scene", on);
-  if (on) Scene.set(ch.cls, mode); else Scene.stop();
+  if (on) Scene.set(ch.theme || ch.cls, mode); else Scene.stop();
 }
 // shrink a chosen image to a small JPEG data-URL so it doesn't bloat storage
 function downscaleImage(img, max = 320) {
@@ -2053,6 +2055,19 @@ actions.appearance = () => {
   const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
   const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
   const sceneOn = ch.scene !== false;
+  // theme picker: any class's full colour world. Default = your own class.
+  const themes = Grimoire.themes || {};
+  const curTheme = ch.theme || ch.cls;
+  const themeCards = Object.keys(themes).map((k) => {
+    const d = themes[k].dark || {};
+    return `<button class="theme-card ${curTheme === k ? "on" : ""}" data-act="setTheme" data-key="${esc(k)}" title="${esc(themes[k].concept || "")}">
+      <span class="theme-swatch" style="background:linear-gradient(135deg, ${d.bg2 || "#222"} 0%, ${d.panel || "#333"} 60%);">
+        <span class="theme-dot" style="background:${d.accent || "#888"}"></span>
+        <span class="theme-dot" style="background:${d.accent2 || "#aaa"}"></span>
+      </span>
+      <span class="theme-name">${esc(k)}${k === ch.cls ? " ·" : ""}</span>
+    </button>`;
+  }).join("");
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
@@ -2065,7 +2080,11 @@ actions.appearance = () => {
       <button class="btn ${sceneOn ? "primary" : "ghost"}" data-act="setScene" data-on="1">On</button>
       <button class="btn ${!sceneOn ? "primary" : "ghost"}" data-act="setScene" data-on="0">Off</button>
     </div>
-    <p class="muted small">The animated ${esc(ch.cls)} scene behind this character's sheet (dark mode only). Turn it off for a plain dark sheet.</p>
+    <p class="muted small">The animated ${esc(ch.theme || ch.cls)} scene behind this character's sheet (dark mode only). Turn it off for a plain dark sheet.</p>
+    <h3 class="sec">Theme <small>${ch.theme ? "custom" : "class default"}</small></h3>
+    <p class="muted small">Pick any class's colour world for this character — your own class (·) is the default.</p>
+    <div class="theme-grid">${themeCards}</div>
+    ${ch.theme ? `<button class="btn ghost" data-act="resetTheme">Use class default (${esc(ch.cls)})</button>` : ""}
     <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
     <div class="swatches">${swatches}</div>
     ${ch.accent ? `<button class="btn ghost" data-act="resetAccent">Use class default</button>` : ""}`);
@@ -2074,6 +2093,9 @@ actions.setMode = (el) => { localStorage.setItem("grimoire.mode", el.dataset.mod
 actions.setScene = (el) => { const ch = Store.active(); ch.scene = el.dataset.on === "1"; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.setAccent = (el) => { const ch = Store.active(); ch.accent = el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 actions.resetAccent = () => { const ch = Store.active(); ch.accent = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+// theme: picking your own class clears the override; picking another stores it
+actions.setTheme = (el) => { const ch = Store.active(); ch.theme = el.dataset.key === ch.cls ? "" : el.dataset.key; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
+actions.resetTheme = () => { const ch = Store.active(); ch.theme = ""; commit(); if (window.LINK) LINK.schedulePush(ch); actions.appearance(); };
 
 /* ---------- drag-to-reorder (only active in Arrange mode) ---------- */
 actions.toggleReorder = () => { ui.reorder = !ui.reorder; render(); };
