@@ -167,5 +167,70 @@
       "panel": "#ffffff", "panel2": "#f8f1e2", "ink": "#2e2412", "muted": "#7d6c4d",
       "line": "#e9dcc3", "gold": "#876c12"
     }
+  },
+  "Midnight": {
+    "concept": "deep indigo night, cool and minimal — for any class",
+    "dark": {
+      "accent": "#5b7cfa", "accent2": "#8aa2ff", "bg": "#0b0f1e", "bg2": "#121a30",
+      "panel": "#18223e", "panel2": "#1f2c4d", "ink": "#e7ecff", "muted": "#9aa6c8",
+      "line": "#2a3a5e", "gold": "#e0c46b"
+    },
+    "light": {
+      "accent": "#3a56c4", "accent2": "#5b7cfa", "bg": "#eef1fa", "bg2": "#e3e8f5",
+      "panel": "#ffffff", "panel2": "#eef2fb", "ink": "#16203c", "muted": "#5a6485",
+      "line": "#d9e0f0", "gold": "#9a7a1c"
+    }
+  },
+  "Parchment": {
+    "concept": "warm candlelit paper and old-tome sepia",
+    "dark": {
+      "accent": "#c89a52", "accent2": "#e2bd7e", "bg": "#18120a", "bg2": "#221a0f",
+      "panel": "#2c2316", "panel2": "#372c1c", "ink": "#f4e8d2", "muted": "#c7b393",
+      "line": "#4a3c28", "gold": "#ffd87a"
+    },
+    "light": {
+      "accent": "#8a6a28", "accent2": "#a8843a", "bg": "#f6efdf", "bg2": "#efe5cf",
+      "panel": "#fdf9ee", "panel2": "#f4ecd8", "ink": "#3a2c14", "muted": "#7d6c4c",
+      "line": "#e6d8ba", "gold": "#936a14"
+    }
+  },
+  "Rose": {
+    "concept": "soft dusty rose and warm blush",
+    "dark": {
+      "accent": "#d97a8e", "accent2": "#efa3b3", "bg": "#160e10", "bg2": "#201418",
+      "panel": "#2b1a1f", "panel2": "#351f26", "ink": "#fbe6ea", "muted": "#cfa3ab",
+      "line": "#4a2a31", "gold": "#f0c46b"
+    },
+    "light": {
+      "accent": "#b8556a", "accent2": "#d4798c", "bg": "#faeef0", "bg2": "#f4e1e4",
+      "panel": "#ffffff", "panel2": "#fce9ec", "ink": "#34141a", "muted": "#8a5a62",
+      "line": "#f0d4d8", "gold": "#a06b1c"
+    }
+  },
+  "Ember": {
+    "concept": "dark charcoal forge lit by a single warm ember glow",
+    "dark": {
+      "accent": "#f0863a", "accent2": "#ffac6b", "bg": "#100e0c", "bg2": "#1a1614",
+      "panel": "#231d18", "panel2": "#2d251e", "ink": "#f4ece4", "muted": "#bdae9f",
+      "line": "#403428", "gold": "#ffc46b"
+    },
+    "light": {
+      "accent": "#c25f1c", "accent2": "#d98038", "bg": "#f7f2ec", "bg2": "#efe7dc",
+      "panel": "#ffffff", "panel2": "#f7efe6", "ink": "#2e2418", "muted": "#7d6e5c",
+      "line": "#e8dccc", "gold": "#9a6f18"
+    }
+  },
+  "Monochrome": {
+    "concept": "neutral greyscale — clean and quiet, no hue",
+    "dark": {
+      "accent": "#9aa0aa", "accent2": "#c2c7cf", "bg": "#0e0f11", "bg2": "#16181b",
+      "panel": "#1d2024", "panel2": "#262a2f", "ink": "#eceef1", "muted": "#9ba1aa",
+      "line": "#343a41", "gold": "#c9b98e"
+    },
+    "light": {
+      "accent": "#4a4f57", "accent2": "#6b7079", "bg": "#f2f3f5", "bg2": "#e7e9ec",
+      "panel": "#ffffff", "panel2": "#f1f2f4", "ink": "#1c1e22", "muted": "#5e636b",
+      "line": "#dcdee2", "gold": "#8a7c54"
+    }
   }
 }

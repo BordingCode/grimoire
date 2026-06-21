@@ -143,6 +143,49 @@ const Scene = (() => {
         { type: "stars", count: 14, color: "#e8c98a", sizeMin: .5, sizeMax: 1.3, twinkle: 1.2 },
       ],
     }),
+    /* ---- non-class themes: pick any of these for any character ---- */
+    Midnight: () => ({
+      sky: "radial-gradient(80% 55% at 50% 8%, #1c2a5a 0%, transparent 52%), linear-gradient(180deg, #0a0f20 0%, #080c1a 55%, #05070f 100%)",
+      orb: { x: .76, y: .14, r: .16, color: "rgba(180,200,255,0.30)" },
+      layers: [
+        { type: "stars", count: 80, color: "#cfd8ff", sizeMin: .4, sizeMax: 1.6, twinkle: 1 },
+        { type: "stars", count: 18, color: "#9ab0ff", sizeMin: 1, sizeMax: 2.2, twinkle: 1.6, glow: 1 },
+      ],
+      shoot: { every: 9, color: "#dfe6ff" },
+    }),
+    Parchment: () => ({
+      sky: "radial-gradient(85% 60% at 50% 4%, #4a3a1e 0%, transparent 52%), radial-gradient(120% 60% at 50% 100%, #2a200f 0%, transparent 55%), linear-gradient(180deg, #1d160c 0%, #160f08 55%, #0e0905 100%)",
+      orb: { x: .5, y: .04, r: .34, color: "rgba(255,210,140,0.20)" },
+      layers: [
+        { type: "drift", count: 28, color: "rgba(230,200,140,0.7)", sizeMin: 1, sizeMax: 2.4, speed: 5, dir: -1, glow: 1, sway: .8 },
+        { type: "stars", count: 16, color: "#f0dcae", sizeMin: .5, sizeMax: 1.4, twinkle: 1 },
+      ],
+    }),
+    Rose: () => ({
+      sky: "radial-gradient(80% 55% at 30% 10%, #4a2030 0%, transparent 48%), radial-gradient(70% 50% at 80% 18%, #3a1c2c 0%, transparent 50%), linear-gradient(180deg, #1a0e13 0%, #150b0f 55%, #0d060a 100%)",
+      layers: [
+        { type: "drift", count: 24, color: "rgba(255,180,200,0.8)", sizeMin: 1.6, sizeMax: 3.6, speed: 6, dir: 1, glow: 1, sway: 1.6, blob: 1 },
+        { type: "drift", count: 14, color: "rgba(255,210,200,0.85)", sizeMin: 1, sizeMax: 2, speed: 4, dir: 1, glow: 1, sway: 1.2 },
+        { type: "stars", count: 14, color: "#ffd6e2", sizeMin: .5, sizeMax: 1.3, twinkle: 1.2 },
+      ],
+    }),
+    Ember: () => ({
+      sky: "radial-gradient(120% 55% at 50% 106%, #5a2408 0%, transparent 50%), radial-gradient(70% 45% at 50% 98%, #a8501a 0%, transparent 42%), linear-gradient(180deg, #120d09 0%, #0d0805 60%, #080503 100%)",
+      orb: { x: .5, y: .98, r: .3, color: "rgba(255,150,60,0.22)" },
+      layers: [
+        { type: "drift", count: 32, color: "rgba(255,150,60,0.95)", sizeMin: 1, sizeMax: 2.6, speed: 15, dir: -1, glow: 1, sway: 1.4 },
+        { type: "drift", count: 12, color: "rgba(255,210,120,1)", sizeMin: .8, sizeMax: 1.8, speed: 24, dir: -1, glow: 1 },
+        { type: "stars", count: 14, color: "#e8b48a", sizeMin: .4, sizeMax: 1.1, twinkle: 1 },
+      ],
+    }),
+    Monochrome: () => ({
+      sky: "radial-gradient(90% 60% at 50% 6%, #2a2d33 0%, transparent 54%), linear-gradient(180deg, #121316 0%, #0d0e10 55%, #08090b 100%)",
+      orb: { x: .72, y: .12, r: .15, color: "rgba(220,224,230,0.20)" },
+      layers: [
+        { type: "stars", count: 60, color: "#d2d6dd", sizeMin: .4, sizeMax: 1.5, twinkle: .9 },
+        { type: "fog", count: 5, color: "rgba(140,146,156,0.12)", sizeMin: 120, sizeMax: 240, speed: 4, dir: 1 },
+      ],
+    }),
     _default: () => ({
       sky: "radial-gradient(110% 80% at 50% 0%, #241b3e 0%, transparent 55%), linear-gradient(180deg, #120c26 0%, #0a0718 100%)",
       layers: [{ type: "stars", count: 70, color: "#cfd0ff", sizeMin: .4, sizeMax: 1.6, twinkle: 1 }],

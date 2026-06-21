@@ -80,7 +80,7 @@ async function loadSpells() {
   enrich(a); enrich(b);
   Grimoire.spells["2014"] = a; Grimoire.spells["2024"] = b;
   Grimoire.spellIndex = idx || [];   // factual name index powering the non-SRD stubs in "All spells"
-  try { Grimoire.themes = await fetch("data/themes.json?v=46").then((r) => r.json()); } catch (e) { Grimoire.themes = null; }
+  try { Grimoire.themes = await fetch("data/themes.json?v=47").then((r) => r.json()); } catch (e) { Grimoire.themes = null; }
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
@@ -2055,10 +2055,11 @@ actions.appearance = () => {
   const cur = ch.accent || RULES.CLASS_ACCENT[ch.cls] || "violet";
   const swatches = Object.entries(RULES.ACCENTS).map(([k, v]) => `<button class="swatch ${cur === k ? "on" : ""}" data-act="setAccent" data-key="${k}" style="background:${v[0]}" title="${k}"></button>`).join("");
   const sceneOn = ch.scene !== false;
-  // theme picker: any class's full colour world. Default = your own class.
+  // theme picker: any full colour world. Class worlds default to your own class;
+  // the non-class themes (not in RULES.CLASSES) are listed separately below.
   const themes = Grimoire.themes || {};
   const curTheme = ch.theme || ch.cls;
-  const themeCards = Object.keys(themes).map((k) => {
+  const card = (k) => {
     const d = themes[k].dark || {};
     return `<button class="theme-card ${curTheme === k ? "on" : ""}" data-act="setTheme" data-key="${esc(k)}" title="${esc(themes[k].concept || "")}">
       <span class="theme-swatch" style="background:linear-gradient(135deg, ${d.bg2 || "#222"} 0%, ${d.panel || "#333"} 60%);">
@@ -2067,7 +2068,10 @@ actions.appearance = () => {
       </span>
       <span class="theme-name">${esc(k)}${k === ch.cls ? " ·" : ""}</span>
     </button>`;
-  }).join("");
+  };
+  const keys = Object.keys(themes);
+  const classCards = keys.filter((k) => RULES.CLASSES[k]).map(card).join("");
+  const extraCards = keys.filter((k) => !RULES.CLASSES[k]).map(card).join("");
   modal("Appearance", `
     <h3 class="sec">Mode</h3>
     <div class="mode-row">
@@ -2082,8 +2086,11 @@ actions.appearance = () => {
     </div>
     <p class="muted small">The animated ${esc(ch.theme || ch.cls)} scene behind this character's sheet (dark mode only). Turn it off for a plain dark sheet.</p>
     <h3 class="sec">Theme <small>${ch.theme ? "custom" : "class default"}</small></h3>
-    <p class="muted small">Pick any class's colour world for this character — your own class (·) is the default.</p>
-    <div class="theme-grid">${themeCards}</div>
+    <p class="muted small">Pick any colour world for this character — your own class (·) is the default.</p>
+    <p class="theme-grouplabel">Class worlds</p>
+    <div class="theme-grid">${classCards}</div>
+    <p class="theme-grouplabel">Other themes</p>
+    <div class="theme-grid">${extraCards}</div>
     ${ch.theme ? `<button class="btn ghost" data-act="resetTheme">Use class default (${esc(ch.cls)})</button>` : ""}
     <h3 class="sec">Accent colour <small>${ch.accent ? "custom" : "class default"}</small></h3>
     <div class="swatches">${swatches}</div>
