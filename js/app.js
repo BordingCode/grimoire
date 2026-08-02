@@ -232,14 +232,46 @@ const actions = {
     modal("Spend which hit die?", `<div class="modal-btns">${dice.map((d) => `<button class="btn" data-act="hitDiePick" data-die="${d}">d${d}</button>`).join("")}</div>`);
   },
   hitDiePick(el) { closeModal(); spendHitDieManual(+el.dataset.die); },
-  longRest() { const ch = Store.active(); const c = ch.combat;
+  longRest() {
+    const ch = Store.active(); const c = ch.combat;
+    const before = {
+      hpCur: c.hpCur, hpMax: Calc.maxHP(ch),
+      death: { ...c.death },
+      hitDiceUsed: c.hitDiceUsed,
+      slotsUsed: Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [i, ch.spells.slots[i].used])),
+      pactUsed: ch.spells.pact.used,
+      resourcesUsed: (ch.resources || []).map((r) => ({ name: r.name, used: r.used })),
+      concentratingOn: ch.spells.concentratingOn,
+    };
+
     c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
-    c.hitDiceUsed = Math.max(0, c.hitDiceUsed - Math.max(1, Math.floor(Calc.totalLevel(ch) / 2)));
+    const diceRestore = Math.max(1, Math.floor(Calc.totalLevel(ch) / 2));
+    const diceRestored = Math.min(before.hitDiceUsed, diceRestore);
+    c.hitDiceUsed = Math.max(0, c.hitDiceUsed - diceRestore);
     for (let i = 1; i <= 9; i++) ch.spells.slots[i].used = 0;
     ch.spells.pact.used = 0;
     (ch.resources || []).forEach((r) => (r.used = 0));
     ch.spells.concentratingOn = null;
-    commit(); toast("Long rest — HP, all slots, and daily resources restored.");
+    commit(); if (window.LINK) LINK.schedulePush(ch);
+
+    const lines = [];
+    const hpGain = before.hpMax - before.hpCur;
+    lines.push(hpGain > 0 ? `<b>+${hpGain} HP</b> — ${before.hpCur} → ${before.hpMax}.` : `HP was already full (${before.hpMax}).`);
+    if (before.death.succ || before.death.fail) lines.push(`<b>Death saves cleared</b> (${before.death.succ} success, ${before.death.fail} fail).`);
+    if (diceRestored > 0) lines.push(`<b>${diceRestored} hit ${diceRestored === 1 ? "die" : "dice"}</b> restored.`);
+    const slotsRestored = [];
+    for (let i = 1; i <= 9; i++) if (before.slotsUsed[i] > 0) slotsRestored.push(`${before.slotsUsed[i]}× level-${i}`);
+    if (slotsRestored.length) lines.push(`<b>Spell slots restored:</b> ${slotsRestored.join(", ")}.`);
+    if (before.pactUsed > 0) lines.push(`<b>Pact magic slots restored:</b> ${before.pactUsed}.`);
+    const resRestored = before.resourcesUsed.filter((r) => r.used > 0);
+    if (resRestored.length) lines.push(`<b>Resources restored:</b> ${resRestored.map((r) => esc(r.name)).join(", ")}.`);
+    if (before.concentratingOn) { const sp = findSpell(ch, before.concentratingOn); lines.push(`Concentration on <b>${esc(sp ? sp.name : "a spell")}</b> ended.`); }
+
+    modal("Long rest", `
+      <p>Eight hours pass. ${ch.name ? esc(ch.name) : "Your character"} wakes rested.</p>
+      <ul class="lvl-sum">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+      <div class="modal-btns"><button class="btn primary" data-act="closeModal">Done</button></div>`,
+      () => render());
   },
 
   /* conditions */
