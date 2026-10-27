@@ -170,6 +170,7 @@ function viewHome() {
     <header class="topbar home-head"><img src="icons/logo-tome.svg?v=77" class="logo logo-tome" alt=""><h1>Grimoire</h1></header>
     <div class="screen">
       ${Store.characters.length ? `<div class="char-list">${list}</div>` : `<p class="empty">No characters yet. Create your first adventurer.</p>`}
+      ${backupBanner()}
       <div class="home-actions">
         <button class="btn primary" data-act="goNew">+ New character</button>
         <button class="btn ghost" data-act="goParty">Kill count</button>
@@ -179,6 +180,14 @@ function viewHome() {
         <button class="btn ghost" data-act="forceUpdate">Update app (keeps characters)</button>
       </div>
     </div>`;
+}
+
+/* home-screen nudge: the browser is the only copy until you sign in to cloud backup */
+function backupBanner() {
+  const acct = window.BACKUP && BACKUP.account();
+  if (acct) return `<button class="backup-ok" data-act="cloudBackup">☁ Backed up to your account <b>${esc(acct.name)}</b></button>`;
+  if (!Store.characters.length) return `<button class="backup-warn" data-act="cloudBackup"><b>Lost your characters?</b><span>Sign in (or enter an old backup code) to bring them back.</span></button>`;
+  return `<button class="backup-warn" data-act="cloudBackup"><b>⚠ Not backed up</b><span>Your characters only live in this browser — clearing it deletes them. Tap to sign in and keep them safe.</span></button>`;
 }
 
 /* ---- Kill count (team) — shared list, also embedded in the Notes tab ---- */

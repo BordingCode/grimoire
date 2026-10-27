@@ -11,7 +11,7 @@ const Party = {
   KEY: "grimoire.party.v1",
   members: [],
   load() { try { this.members = JSON.parse(localStorage.getItem(this.KEY)) || []; } catch { this.members = []; } },
-  save() { localStorage.setItem(this.KEY, JSON.stringify(this.members)); },
+  save() { localStorage.setItem(this.KEY, JSON.stringify(this.members)); if (window.BACKUP) BACKUP.schedule(); },
 };
 
 /* DM mode — saved encounters + a live initiative/combat tracker (device-local, any copy can use it) */
@@ -37,7 +37,7 @@ const DM = {
       this.campaigns = [c]; this.currentId = c.id; this.save();
     } else { this.campaigns = []; this.currentId = null; }
   },
-  save() { localStorage.setItem(this.KEY, JSON.stringify({ campaigns: this.campaigns, currentId: this.currentId })); },
+  save() { localStorage.setItem(this.KEY, JSON.stringify({ campaigns: this.campaigns, currentId: this.currentId })); if (window.BACKUP) BACKUP.schedule(); },
 };
 // proxy the working fields to the current campaign so all DM features stay campaign-scoped
 [["encounters", []], ["players", []], ["active", null], ["settings", {}]].forEach(([k, empty]) => {
@@ -623,88 +623,187 @@ const actions = {
 };
 
 /* ===================== Cloud backup & restore =====================
-   Saves ALL characters (sheets + portraits + session media) to the cloud under a private
-   backup code, so they survive a lost/wiped phone and can be pulled onto a new device.
-   Newest-wins snapshot; restore is non-destructive (dedupes by original id). */
+   Two ways to keep everything safe in the cloud:
+   1. ACCOUNT (preferred): sign in with a name + password you choose. Backups are encrypted
+      on the phone (js/vault.js). After a cleared browser or on a new phone you just sign in
+      again — nothing to have written down except what you already remember.
+   2. CODE (older): a random backup code. Still works, but the code itself lives in browser
+      storage, so clearing the browser loses it unless it was written down.
+   Both back up ALL characters (sheets + portraits + session media), DM campaigns and the kill
+   count. Auto-backup runs a few seconds after any change; newest upload wins. */
 const BACKUP = {
   KEY: "grimoire.backup.v1",
-  base() { return (window.LINK && LINK.WORKER) || "https://grimoire-sync.mathiasjob.workers.dev"; },
+  ACCT_KEY: "grimoire.account.v1",
+  base() { return (typeof LINK !== "undefined" && LINK.WORKER) || "https://grimoire-sync.mathiasjob.workers.dev"; },
   load() { try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; } catch { return {}; } },
   saveMeta(m) { localStorage.setItem(this.KEY, JSON.stringify(m)); },
   ensureCode() { const m = this.load(); if (!m.code) { m.code = genCode(); this.saveMeta(m); } return m.code; },
+  account() { try { return JSON.parse(localStorage.getItem(this.ACCT_KEY)) || null; } catch { return null; } },
+  hasData() { return Store.characters.length > 0 || DM.campaigns.length > 0 || Party.members.length > 0; },
   async buildPayload() {
     const chars = JSON.parse(JSON.stringify(Store.characters));
     if (window.Media) { for (const ch of chars) { try { ch._media = await Media.forChar(ch.id); } catch (e) { ch._media = []; } } }
-    let payload = { v: 1, chars };
-    if (JSON.stringify(payload).length > 20 * 1024 * 1024) { chars.forEach((c) => delete c._media); payload = { v: 1, chars, mediaSkipped: true }; }
+    const extra = { dm: { campaigns: DM.campaigns, currentId: DM.currentId }, party: Party.members };
+    let payload = { v: 2, chars, ...extra };
+    if (JSON.stringify(payload).length > 20 * 1024 * 1024) { chars.forEach((c) => delete c._media); payload = { v: 2, chars, ...extra, mediaSkipped: true }; }
     return payload;
   },
   async backup() {
-    const code = this.ensureCode();
     const payload = await this.buildPayload();
+    const acct = this.account();
     try {
-      const r = await fetch(`${this.base()}/backup/${code}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload }) });
-      const d = await r.json();
-      if (d && d.ok) { const m = this.load(); m.lastAt = d.updatedAt; m.lastCount = payload.chars.length; m.lastSig = this._sig(); this.saveMeta(m); return { ok: true, count: payload.chars.length, mediaSkipped: payload.mediaSkipped }; }
-      return { ok: false };
+      let at;
+      if (acct) {
+        const blob = await VAULT.seal(payload, acct.keyHex, acct.user);
+        const d = await this._acct("push", { user: acct.user, auth: acct.auth, blob });
+        if (!d || !d.ok) return { ok: false, reason: d && d.error };
+        at = new Date(d.updated).toISOString();
+      } else {
+        const r = await fetch(`${this.base()}/backup/${this.ensureCode()}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload }) });
+        const d = await r.json();
+        if (!d || !d.ok) return { ok: false };
+        at = d.updatedAt;
+      }
+      const m = this.load(); m.lastAt = at; m.lastCount = payload.chars.length; m.lastSig = this._sig(); this.saveMeta(m);
+      return { ok: true, count: payload.chars.length, mediaSkipped: payload.mediaSkipped };
     } catch (e) { return { ok: false }; }
   },
-  // cheap signature of the character sheets, to skip redundant auto-backups (navigation, switching active char)
-  _sig() { try { const s = JSON.stringify(Store.characters); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
+  // cheap signature of everything backed up, to skip redundant auto-backups (navigation, switching active char)
+  _sig() { try { const s = JSON.stringify([Store.characters, DM.campaigns, Party.members, !!this.account()]); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
   enabled() { return this.load().auto !== false; }, // default ON
-  // debounced auto-backup, called whenever characters are saved
+  // debounced auto-backup, called whenever characters / DM / kill count are saved
   schedule() {
     if (!this.enabled()) return;
-    if (!Store.characters.length) return; // never overwrite a good cloud backup with an empty one
+    if (!this.hasData()) return; // never overwrite a good cloud backup with an empty one
     clearTimeout(this._timer);
     this._timer = setTimeout(() => this._autoRun(), 8000);
   },
   async _autoRun() {
-    if (!this.enabled() || !Store.characters.length) return;
+    if (!this.enabled() || !this.hasData()) return;
     const sig = this._sig();
     if (sig && sig === this.load().lastSig) return; // nothing actually changed
-    const r = await this.backup();
-    if (r.ok) {
-      const m = this.load();
-      if (!m.autoNudged) { m.autoNudged = true; this.saveMeta(m); toast(`Auto-backup on. Your backup code is ${m.code} (in ☁ Back up & restore) — save it to restore on a new phone.`); }
+    await this.backup();
+  },
+  // fold a backup into this device. preferNewer: a character already here is replaced when the
+  // backup's copy is newer (used by sign-in); otherwise it's kept as-is (code restore never overwrites).
+  async merge(payload, preferNewer) {
+    let added = 0, updated = 0, skipped = 0, mediaFail = 0;
+    for (const c of payload.chars || []) {
+      const i = Store.characters.findIndex((x) => x.id === c.id);
+      if (i >= 0 && !(preferNewer && (c.updatedAt || "") > (Store.characters[i].updatedAt || ""))) { skipped++; continue; }
+      const media = Array.isArray(c._media) ? c._media : [];
+      const ch = JSON.parse(JSON.stringify(c)); delete ch._media;
+      if (i >= 0) { Store.characters[i] = ch; updated++; } else { Store.characters.push(ch); added++; }
+      if (media.length && window.Media) { for (const mm of media) { try { await Media.put({ ...mm, charId: ch.id }); } catch (e) { mediaFail++; } } }
     }
+    if (added || updated) { if (!Store.active()) Store.activeId = Store.characters[0].id; Store.save(); }
+    const dm = payload.dm && Array.isArray(payload.dm.campaigns) ? payload.dm.campaigns : [];
+    let camps = 0;
+    for (const c of dm) if (!DM.campaigns.some((x) => x.id === c.id)) { DM.campaigns.push(c); camps++; }
+    if (camps) { if (!DM.cur()) DM.currentId = payload.dm.currentId || DM.campaigns[0].id; DM.save(); }
+    let kills = 0;
+    for (const p of payload.party || []) if (!Party.members.some((x) => x.id === p.id)) { Party.members.push(p); kills++; }
+    if (kills) Party.save();
+    return { ok: true, added, updated, skipped, mediaFail, camps };
   },
   async restore(code) {
     let payload;
     try { const r = await fetch(`${this.base()}/backup/${encodeURIComponent(code)}`); const d = await r.json(); payload = d && d.payload; }
     catch (e) { return { ok: false, reason: "net" }; }
     if (!payload || !Array.isArray(payload.chars)) return { ok: false, reason: "empty" };
-    let added = 0, skipped = 0, mediaFail = 0;
-    for (const c of payload.chars) {
-      if (Store.characters.some((x) => x.id === c.id)) { skipped++; continue; }
-      const media = Array.isArray(c._media) ? c._media : [];
-      const ch = JSON.parse(JSON.stringify(c)); delete ch._media;
-      Store.characters.push(ch); added++;
-      if (media.length && window.Media) { for (const mm of media) { try { await Media.put({ ...mm, charId: ch.id }); } catch (e) { mediaFail++; } } }
-    }
-    if (added) { if (!Store.activeId) Store.activeId = Store.characters[0].id; Store.save(); }
-    return { ok: true, added, skipped, mediaFail };
+    return this.merge(payload, false);
   },
+  async _acct(op, body) {
+    const r = await fetch(`${this.base()}/account/${op}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return r.json();
+  },
+  // create a new account and back everything up to it straight away
+  async signUp(name, password) {
+    const a = await VAULT.deriveAccount(name, password);
+    let d; try { d = await this._acct("register", { user: a.user, auth: a.auth }); } catch (e) { return { ok: false, reason: "net" }; }
+    if (!d || !d.ok) return { ok: false, reason: d && d.error };
+    localStorage.setItem(this.ACCT_KEY, JSON.stringify({ name: name.trim(), ...a }));
+    const b = this.hasData() ? await this.backup() : { ok: true };
+    return { ok: b.ok, reason: b.ok ? null : "net" };
+  },
+  // sign in: pull the account's backup, fold it into this device, then upload the combined result
+  async signIn(name, password) {
+    const a = await VAULT.deriveAccount(name, password);
+    let d; try { d = await this._acct("pull", { user: a.user, auth: a.auth }); } catch (e) { return { ok: false, reason: "net" }; }
+    if (!d || d.error) return { ok: false, reason: d && d.error, retryAfter: d && d.retryAfter };
+    let res = { ok: true, added: 0, updated: 0, camps: 0 };
+    if (d.blob) {
+      let payload; try { payload = await VAULT.open(d.blob, a.keyHex, a.user); } catch (e) { return { ok: false, reason: "decrypt" }; }
+      res = await this.merge(payload, true);
+    }
+    localStorage.setItem(this.ACCT_KEY, JSON.stringify({ name: name.trim(), ...a }));
+    if (this.hasData()) await this.backup();
+    return res;
+  },
+  signOut() { localStorage.removeItem(this.ACCT_KEY); const m = this.load(); delete m.lastSig; delete m.lastAt; this.saveMeta(m); },
 };
 window.BACKUP = BACKUP;
 function renderBackup() {
   const m = BACKUP.load();
-  const code = BACKUP.ensureCode();
+  const acct = BACKUP.account();
   const rel = (window.relTime ? relTime(m.lastAt) : m.lastAt);
   const last = m.lastAt ? `Last backup: ${esc(rel)} · ${m.lastCount || 0} character${m.lastCount === 1 ? "" : "s"}` : "Not backed up yet.";
   const auto = m.auto !== false;
-  modal("Cloud backup", `
-    <p class="muted small">Saves <b>all</b> your characters to the cloud under your private code. Keep the code safe — anyone with it can restore your characters.</p>
-    <div class="link-code">Your backup code: <b>${esc(code)}</b> <button class="mini" data-act="partyCopy" data-code="${esc(code)}">copy</button></div>
+  const autoBtn = `<button class="btn ${auto ? "primary" : "ghost"}" data-act="cloudAutoToggle" style="width:100%">Auto-backup: ${auto ? "On" : "Off"}</button>
+    <p class="muted small">${auto ? "Backs up automatically a few seconds after you change anything." : "Turn on to back up automatically whenever you change something."}</p>`;
+  const acctPart = acct ? `
+    <div class="acct-ok">✓ Signed in as <b>${esc(acct.name)}</b></div>
+    <p class="muted small">Your characters, DM campaigns and kill count are backed up, encrypted, to your account. If this browser is ever cleared — or you get a new phone — just sign in again with the same name and password.</p>
     <p class="muted small">${last}</p>
-    <button class="btn ${auto ? "primary" : "ghost"}" data-act="cloudAutoToggle" style="width:100%">Auto-backup: ${auto ? "On" : "Off"}</button>
-    <p class="muted small">${auto ? "Backs up automatically a few seconds after you change a character." : "Turn on to back up automatically whenever you change a character."}</p>
-    <div class="modal-btns"><button class="btn" data-act="cloudBackupNow">Back up now</button></div>
-    <h3 class="sec">Restore on another device</h3>
-    <p class="muted small">On a new phone, enter your backup code to bring your characters back. Characters already here are kept — nothing is overwritten.</p>
-    <div class="join-row"><input id="bk-code" placeholder="backup code" maxlength="9" autocapitalize="characters"><button class="btn" data-act="cloudRestore">Restore</button></div>`);
+    ${autoBtn}
+    <div class="modal-btns"><button class="btn ghost" data-act="cloudSignOut">Sign out</button><button class="btn" data-act="cloudBackupNow">Back up now</button></div>` : `
+    <p class="muted small">Pick a <b>name</b> and <b>password</b> you'll remember. Everything is backed up, encrypted, to that account — so if this browser is cleared or you get a new phone, you just sign in again.</p>
+    <div class="acct-form">
+      <input id="ac-name" placeholder="Name (e.g. your name or email)" autocomplete="username" autocapitalize="off" maxlength="80">
+      <input id="ac-pass" type="password" placeholder="Password (at least 8 characters)" autocomplete="current-password" maxlength="200">
+    </div>
+    <p class="muted small warn-note">⚠ Nobody can reset a forgotten password — not even the app's maker — because only your phone holds the key. Write it down somewhere safe.</p>
+    <div class="modal-btns"><button class="btn" data-act="cloudSignUp">Create account</button><button class="btn primary" data-act="cloudSignIn">Sign in</button></div>`;
+  const codePart = acct ? "" : `
+    <h3 class="sec">Old backup code</h3>
+    <p class="muted small">Have a backup code (like ABCD-2345) from before? Enter it to bring those characters back. Characters already here are kept — nothing is overwritten.</p>
+    <div class="join-row"><input id="bk-code" placeholder="backup code" maxlength="9" autocapitalize="characters"><button class="btn" data-act="cloudRestore">Restore</button></div>`;
+  modal(acct ? "Cloud backup" : "Sign in to keep your characters safe", acctPart + codePart);
 }
+// make the browser keep our storage instead of clearing it on its own (e.g. iPhone after a few unused weeks)
+async function askPersistentStorage() {
+  try { if (navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted())) await navigator.storage.persist(); } catch (e) {}
+}
+function acctFormValues() {
+  const name = ($("#ac-name") ? $("#ac-name").value : "").trim();
+  const pass = $("#ac-pass") ? $("#ac-pass").value : "";
+  if (name.length < 3) { toast("Pick a name of at least 3 letters."); return null; }
+  if (pass.length < 8) { toast("The password needs at least 8 characters."); return null; }
+  return { name, pass };
+}
+const ACCT_ERR = { exists: "That name is taken — sign in instead, or pick another name.", wrong_login: "Wrong name or password.", decrypt: "Wrong name or password.", locked: "Too many wrong tries — wait 15 minutes and try again.", net: "Couldn't reach the backup server — check your internet." };
 actions.cloudBackup = () => renderBackup();
+actions.cloudSignUp = async () => {
+  const v = acctFormValues(); if (!v) return;
+  toast("Creating your account…", 8000);
+  const r = await BACKUP.signUp(v.name, v.pass);
+  if (!r.ok) { toast(ACCT_ERR[r.reason] || "Something went wrong — try again."); return; }
+  askPersistentStorage(); render(); renderBackup();
+  toast("Account created — you're backed up. Remember your password!", 4000);
+};
+actions.cloudSignIn = async () => {
+  const v = acctFormValues(); if (!v) return;
+  toast("Signing in…", 8000);
+  const r = await BACKUP.signIn(v.name, v.pass);
+  if (!r.ok) { toast(ACCT_ERR[r.reason] || "Something went wrong — try again."); return; }
+  askPersistentStorage(); render(); renderBackup();
+  const n = r.added + r.updated;
+  toast(n ? `Signed in — brought back ${n} character${n === 1 ? "" : "s"}${r.camps ? ` and ${r.camps} DM campaign${r.camps === 1 ? "" : "s"}` : ""}.` : "Signed in — you're backed up.", 4000);
+};
+actions.cloudSignOut = () => {
+  if (!confirm("Sign out of cloud backup on this device? Your characters stay here, but stop being backed up until you sign in again.")) return;
+  BACKUP.signOut(); render(); renderBackup();
+};
 actions.cloudAutoToggle = () => {
   const m = BACKUP.load(); m.auto = m.auto === false ? true : false; BACKUP.saveMeta(m);
   renderBackup();
@@ -722,7 +821,7 @@ actions.cloudRestore = async () => {
   const code = raw.includes("-") ? raw : raw.slice(0, 4) + "-" + raw.slice(4);
   toast("Restoring…");
   const r = await BACKUP.restore(code);
-  if (!r.ok) { toast(r.reason === "empty" ? "Nothing backed up on that code yet." : "Couldn't reach the backup server."); return; }
+  if (!r.ok) { toast(r.reason === "empty" ? "Nothing backed up on that code." : "Couldn't reach the backup server."); return; }
   render();
   toast(r.added ? `Restored ${r.added} character${r.added === 1 ? "" : "s"}${r.skipped ? ` (${r.skipped} already here)` : ""}.` : "All characters are already on this device.");
   renderBackup();
@@ -2289,6 +2388,7 @@ if ("serviceWorker" in navigator) {
     ui.spellFilter.list = defaultSpellList(Store.active());
   }
   render();
+  if (Store.characters.length) askPersistentStorage();
   if (window.LINK) LINK.afterBoot();
   if (window.GROUP) GROUP.afterBoot();
   if (window.GIFT) GIFT.afterBoot();

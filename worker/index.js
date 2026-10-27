@@ -170,6 +170,56 @@ export default {
       return json({ error: "method_not_allowed" }, 405);
     }
 
+    // ---- Account backup: sign in with a name + password you remember (survives a cleared browser) ----
+    // The phone turns name+password into: user (fingerprint of the name), auth (password proof)
+    // and an encryption key the server never sees. We only store a salted hash of auth and the
+    // already-encrypted blob. acct:USER -> {salt,hash,fails,lockUntil,rev,updated,blob}.
+    // acctprev:USER keeps an older copy (refreshed at most hourly) in case a bad upload overwrites it.
+    const am = url.pathname.match(/^\/account\/(register|login|pull|push)$/);
+    if (am) {
+      if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+      const HEX64 = /^[0-9a-f]{64}$/;
+      const b = await req.json().catch(() => null);
+      if (!b || !HEX64.test(b.user || "") || !HEX64.test(b.auth || "")) return json({ error: "bad_request" }, 400);
+      const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
+      const sha = async (s) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+      const same = (x, y) => { if (x.length !== y.length) return false; let d = 0; for (let i = 0; i < x.length; i++) d |= x.charCodeAt(i) ^ y.charCodeAt(i); return d === 0; };
+      const akey = "acct:" + b.user;
+      const now = Date.now();
+      const raw = await env.LINKS.get(akey);
+      const acc = raw ? JSON.parse(raw) : null;
+      const put = (a) => env.LINKS.put(akey, JSON.stringify(a));
+
+      if (am[1] === "register") {
+        if (acc) return json({ error: "exists" }, 409);
+        const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+        await put({ salt, hash: await sha(salt + b.auth), fails: 0, lockUntil: 0, rev: 0, updated: 0, blob: null, created: now });
+        return json({ ok: true, rev: 0 });
+      }
+      // everything else needs the right password
+      if (!acc) return json({ error: "wrong_login" }, 401); // same answer as a wrong password
+      if (acc.lockUntil > now) return json({ error: "locked", retryAfter: Math.ceil((acc.lockUntil - now) / 1000) }, 429);
+      if (!same(await sha(acc.salt + b.auth), acc.hash)) {
+        acc.fails = (acc.fails || 0) + 1;
+        if (acc.fails >= 10) { acc.fails = 0; acc.lockUntil = now + 15 * 60000; } // 10 wrong tries -> 15 min pause
+        await put(acc);
+        return json({ error: "wrong_login" }, 401);
+      }
+      if (acc.fails) { acc.fails = 0; await put(acc); }
+      if (am[1] === "login") return json({ ok: true, rev: acc.rev, updated: acc.updated });
+      if (am[1] === "pull") return json({ rev: acc.rev, updated: acc.updated, blob: acc.blob || null });
+      // push
+      if (typeof b.blob !== "string" || !b.blob) return json({ error: "bad_request" }, 400);
+      if (b.blob.length > 24000000) return json({ error: "too_big" }, 413); // KV values top out at 25 MB
+      if (acc.blob && now - (acc.prevAt || 0) > 3600000) {
+        await env.LINKS.put("acctprev:" + b.user, JSON.stringify({ rev: acc.rev, updated: acc.updated, blob: acc.blob }));
+        acc.prevAt = now;
+      }
+      acc.blob = b.blob; acc.rev = (acc.rev || 0) + 1; acc.updated = now;
+      await put(acc);
+      return json({ ok: true, rev: acc.rev, updated: now });
+    }
+
     const m = url.pathname.match(/^\/link\/([A-Za-z0-9-]{4,40})$/);
     if (!m) return json({ error: "not_found" }, 404);
     const code = m[1].toUpperCase();

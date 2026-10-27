@@ -634,3 +634,14 @@ body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,
 .dm-end { width: 100%; margin-top: 6px; }
 .dm-live { color: var(--good); font-style: normal; font-size: .62rem; border: 1px solid var(--good); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: middle; }
 .dm-refresh { flex: none; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--accent-2); cursor: pointer; font-size: 1rem; }
+
+/* cloud backup: home banner + sign-in form */
+.backup-warn, .backup-ok { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; font: inherit; cursor: pointer; }
+.backup-warn { background: color-mix(in srgb, var(--gold) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); color: var(--ink); }
+.backup-warn span { color: var(--muted); font-size: .9rem; }
+.backup-ok { background: transparent; border: 1px dashed var(--line); color: var(--muted); font-size: .9rem; text-align: center; }
+.backup-ok b { color: var(--ink); }
+.acct-form { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.acct-form input { width: 100%; }
+.acct-ok { font-size: 1.05rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
+.warn-note { color: var(--ink); }
