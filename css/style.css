@@ -697,3 +697,34 @@ body.has-scene .summon-conc { background: color-mix(in srgb, var(--panel) 72%, t
 .hb-abis input { width: 100%; min-width: 0; }
 .dm-note-peek { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .dm-cb.dying { border-color: var(--bad); }
+
+/* class features & trackers checklist (v87) */
+.cl-list { display: flex; flex-direction: column; gap: 8px; }
+.cl-row { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.cl-chk { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.cl-chk input { width: 20px; height: 20px; flex: 0 0 20px; margin-top: 1px; accent-color: var(--accent); }
+.cl-tag { font-style: normal; font-size: .72rem; color: var(--muted); margin-left: 4px; }
+.cl-tag.k-new { color: var(--good); }
+.cl-tag.k-update { color: var(--gold); }
+.cl-tag.k-rule { color: var(--accent); }
+.cl-tag.k-differs { color: var(--warn); }
+.cl-sub { margin-left: 30px; line-height: 1.35; }
+.cl-edit { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: 30px; }
+.cl-edit label { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); }
+.cl-edit input, .cl-rule input[type=number] { width: 64px; }
+.cl-edit select { flex: 1 1 160px; min-width: 0; }
+.cl-rule { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .85rem; margin-left: 30px; }
+.cl-rule select, #res-rule select { width: auto; flex: 0 1 auto; min-width: 0; }
+.cl-desc { margin-left: 30px; font-size: .85rem; }
+.cl-desc summary { color: var(--accent); cursor: pointer; }
+.cl-row.own .cl-edit, .cl-row.own .cl-rule { margin-left: 0; }
+.own-head { display: flex; justify-content: space-between; align-items: center; }
+.own-head .del { background: none; border: 0; color: var(--bad); font-size: 1rem; cursor: pointer; }
+.cl-own-btns { display: flex; gap: 8px; margin-top: 8px; }
+#res-rule { margin: 0 0 10px; }
+#res-rule input[type=number] { width: 64px; }
+.item .drink { flex: 0 0 auto; }
+.armor-row { flex-wrap: wrap; }
+.armor-row label { flex: 1 1 150px; min-width: 0; }
+.armor-row select { width: 100%; min-width: 0; }
+.armor-row label.chk { flex: 1 0 100%; flex-direction: row; align-items: center; gap: 8px; }

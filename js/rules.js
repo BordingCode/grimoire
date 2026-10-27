@@ -171,4 +171,48 @@ const XP_BUDGET_2024 = [null, [50, 75, 100], [100, 150, 200], [150, 225, 400], [
 const XP_MULT_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5];
 function xpMultIndex(n) { return n <= 1 ? 1 : n === 2 ? 2 : n <= 6 ? 3 : n <= 10 ? 4 : n <= 14 ? 5 : 6; }
 
-window.RULES = { XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };
+/* Class trackers (limited-use features) per edition — the numbers the level-up checklist
+   suggests. step({lvl: value, ...}) reads a class-table column. reset "long"+regain 1 =
+   "regain one use on a Short Rest, all on a Long Rest" (2024 wording).
+   2014 checked against SRD 5.1 (dnd5eapi), 2024 against SRD 5.2 class tables (open5e). */
+const step = (t) => (lvl) => { let v = 0; for (const k in t) if (lvl >= +k) v = t[k]; return v; };
+const atLeast1 = (n) => Math.max(1, n);
+const CLASS_TRACKERS = {
+  "2014": [
+    { key: "barbarian.rage", cls: "Barbarian", name: "Rage", from: 1, max: (l) => l >= 20 ? 99 : step({ 1: 2, 3: 3, 6: 4, 12: 5, 17: 6 })(l), reset: "long", note: (l) => l >= 20 ? "Unlimited at Barbarian 20" : "" },
+    { key: "bard.inspiration", cls: "Bard", name: "Bardic Inspiration", from: 1, max: (l, m) => atLeast1(m.cha), reset: (l) => l >= 5 ? "short" : "long" },
+    { key: "cleric.channel", cls: "Cleric", name: "Channel Divinity", from: 2, max: step({ 2: 1, 6: 2, 18: 3 }), reset: "short" },
+    { key: "druid.wildshape", cls: "Druid", name: "Wild Shape", from: 2, max: () => 2, reset: "short" },
+    { key: "fighter.secondwind", cls: "Fighter", name: "Second Wind", from: 1, max: () => 1, reset: "short" },
+    { key: "fighter.surge", cls: "Fighter", name: "Action Surge", from: 2, max: step({ 2: 1, 17: 2 }), reset: "short" },
+    { key: "fighter.indomitable", cls: "Fighter", name: "Indomitable", from: 9, max: step({ 9: 1, 13: 2, 17: 3 }), reset: "long" },
+    { key: "monk.ki", cls: "Monk", name: "Ki", from: 2, max: (l) => l, reset: "short", pool: true },
+    { key: "paladin.sense", cls: "Paladin", name: "Divine Sense", from: 1, max: (l, m) => atLeast1(1 + m.cha), reset: "long" },
+    { key: "paladin.loh", cls: "Paladin", name: "Lay on Hands", from: 1, max: (l) => 5 * l, reset: "long", pool: true },
+    { key: "paladin.channel", cls: "Paladin", name: "Channel Divinity", from: 3, max: () => 1, reset: "short" },
+    { key: "rogue.luck", cls: "Rogue", name: "Stroke of Luck", from: 20, max: () => 1, reset: "short" },
+    { key: "sorcerer.points", cls: "Sorcerer", name: "Sorcery Points", from: 2, max: (l) => l, reset: "long", pool: true },
+    { key: "wizard.recovery", cls: "Wizard", name: "Arcane Recovery", from: 1, max: () => 1, reset: "long" },
+  ],
+  "2024": [
+    { key: "barbarian.rage", cls: "Barbarian", name: "Rage", from: 1, max: step({ 1: 2, 3: 3, 6: 4, 12: 5, 17: 6 }), reset: "long", regain: 1 },
+    { key: "bard.inspiration", cls: "Bard", name: "Bardic Inspiration", from: 1, max: (l, m) => atLeast1(m.cha), reset: (l) => l >= 5 ? "short" : "long" },
+    { key: "cleric.channel", cls: "Cleric", name: "Channel Divinity", from: 2, max: step({ 2: 2, 6: 3, 18: 4 }), reset: "long", regain: 1 },
+    { key: "druid.wildshape", cls: "Druid", name: "Wild Shape", from: 2, max: step({ 2: 2, 6: 3, 17: 4 }), reset: "long", regain: 1 },
+    { key: "fighter.secondwind", cls: "Fighter", name: "Second Wind", from: 1, max: step({ 1: 2, 4: 3, 10: 4 }), reset: "long", regain: 1 },
+    { key: "fighter.surge", cls: "Fighter", name: "Action Surge", from: 2, max: step({ 2: 1, 17: 2 }), reset: "short" },
+    { key: "fighter.indomitable", cls: "Fighter", name: "Indomitable", from: 9, max: step({ 9: 1, 13: 2, 17: 3 }), reset: "long" },
+    { key: "monk.focus", cls: "Monk", name: "Focus Points", from: 2, max: (l) => l, reset: "short", pool: true },
+    { key: "paladin.loh", cls: "Paladin", name: "Lay on Hands", from: 1, max: (l) => 5 * l, reset: "long", pool: true },
+    { key: "paladin.channel", cls: "Paladin", name: "Channel Divinity", from: 3, max: step({ 3: 2, 11: 3 }), reset: "long", regain: 1 },
+    { key: "ranger.favored", cls: "Ranger", name: "Favored Enemy", from: 1, max: step({ 1: 2, 5: 3, 9: 4, 13: 5, 17: 6 }), reset: "long", note: () => "Free Hunter's Mark casts" },
+    { key: "rogue.luck", cls: "Rogue", name: "Stroke of Luck", from: 20, max: () => 1, reset: "short" },
+    { key: "sorcerer.innate", cls: "Sorcerer", name: "Innate Sorcery", from: 1, max: () => 2, reset: "long" },
+    { key: "sorcerer.points", cls: "Sorcerer", name: "Sorcery Points", from: 2, max: (l) => l, reset: "long", pool: true },
+    { key: "wizard.recovery", cls: "Wizard", name: "Arcane Recovery", from: 1, max: () => 1, reset: "long" },
+  ],
+};
+// 2014 app subclass names → the 2024 SRD's names, so SRD subclass features match either way
+const SUBCLASS_2024 = { "Way of the Open Hand": "Warrior of the Open Hand", "School of Evocation": "Evoker", "The Fiend": "Fiend Patron", "Draconic Bloodline": "Draconic Sorcery" };
+
+window.RULES = { CLASS_TRACKERS, SUBCLASS_2024, XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };

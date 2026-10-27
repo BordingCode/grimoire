@@ -230,13 +230,14 @@ const actions = {
   hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
-  shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
+  shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
   spendHitDie() {
     const ch = Store.active(); const c = ch.combat;
-    if (Calc.totalLevel(ch) - c.hitDiceUsed <= 0) { toast("No hit dice left."); return; }
-    const dice = Object.keys(Calc.hitDicePool(ch)).map(Number).sort((a, b) => b - a);
+    const left = hitDiceLeft(ch);
+    const dice = Object.keys(left).map(Number).sort((a, b) => b - a);
+    if (!dice.some((d) => left[d] > 0)) { toast("No hit dice left."); return; }
     if (dice.length === 1) return spendHitDieManual(dice[0]);
-    modal("Spend which hit die?", `<div class="modal-btns">${dice.map((d) => `<button class="btn" data-act="hitDiePick" data-die="${d}">d${d}</button>`).join("")}</div>`);
+    modal("Spend which hit die?", `<div class="modal-btns">${dice.map((d) => `<button class="btn" data-act="hitDiePick" data-die="${d}" ${left[d] > 0 ? "" : "disabled"}>d${d} · ${left[d]} left</button>`).join("")}</div>`);
   },
   hitDiePick(el) { closeModal(); spendHitDieManual(+el.dataset.die); },
   longRest() {
@@ -254,7 +255,7 @@ const actions = {
     c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
     const diceRestore = Math.max(1, Math.floor(Calc.totalLevel(ch) / 2));
     const diceRestored = Math.min(before.hitDiceUsed, diceRestore);
-    c.hitDiceUsed = Math.max(0, c.hitDiceUsed - diceRestore);
+    restoreHitDice(ch, diceRestore);
     for (let i = 1; i <= 9; i++) ch.spells.slots[i].used = 0;
     ch.spells.pact.used = 0;
     (ch.resources || []).forEach((r) => (r.used = 0));
@@ -304,14 +305,28 @@ const actions = {
   resEdit(el) { const ch = Store.active(); resForm(ch.resources.find((x) => x.id === el.dataset.id)); },
   resSave() {
     const ch = Store.active(); const name = $("#res-name").value.trim(); if (!name) { toast("Name required."); return; }
-    const fields = { name, max: Math.max(1, +$("#res-max").value || 1), resetOn: $("#res-reset").value, note: $("#res-note").value.trim() };
+    const rk = $("#res-reset").value;
+    const fields = { name, max: Math.max(1, +$("#res-max").value || 1), resetOn: rk === "short" ? "short" : "long", regain: rk === "long1" ? 1 : 0, note: $("#res-note").value.trim() };
+    if ($("#res-grow").checked) { fields.rule = { mult: +$("#res-mult").value || 0, cls: $("#res-cls").value, add: +$("#res-add").value || 0 }; fields.max = ruleMax(ch, fields.rule); }
+    else fields.rule = null;
     const editing = actions._resEditId ? ch.resources.find((x) => x.id === actions._resEditId) : null;
     if (editing) { Object.assign(editing, fields); editing.used = Math.min(editing.used, editing.max); }
     else ch.resources.push({ id: Gx.uid(), used: 0, ...fields });
     actions._resEditId = null; closeModal(); commit();
   },
-  resUse(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used < r.max) r.used++; commit(); },
-  resRestore(el) { const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (r && r.used > 0) r.used--; commit(); },
+  resUse(el) {
+    const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (!r) return;
+    if (!isPool(r)) { if (r.used < r.max) r.used++; commit(); return; }
+    amountPrompt(`Use ${r.name}`, `How many? (${r.max - r.used} left)`, (n) => {
+      const take = Math.min(n, r.max - r.used); if (take <= 0) return;
+      r.used += take; commit(); toast(`${r.name}: used ${take} — ${r.max - r.used} left.`);
+    });
+  },
+  resRestore(el) {
+    const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (!r) return;
+    if (!isPool(r)) { if (r.used > 0) r.used--; commit(); return; }
+    amountPrompt(`Restore ${r.name}`, `How many back? (${r.used} spent)`, (n) => { r.used = Math.max(0, r.used - n); commit(); });
+  },
   resOptions(el) { const r = Store.active().resources.find((x) => x.id === el.dataset.id); optionsMenu(r ? r.name : "Resource", "res", `data-id="${el.dataset.id}"`); },
   resDel(el) { const ch = Store.active(); ch.resources = ch.resources.filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Tracker deleted."); },
 
@@ -477,6 +492,15 @@ const actions = {
     actions._wpnEditIdx = null; closeModal(); commit();
   },
 
+  /* potions: drink one from the carried inventory */
+  drinkItem(el) {
+    const ch = Store.active(); const it = (ch.inventory || []).find((x) => x.id === el.dataset.id); if (!it) return;
+    const dice = healPotionDice(it.name);
+    if (dice) amountPrompt(`Drink ${it.name}`, `Roll ${dice} and enter the total`, (n) => { consumeItem(ch, it); commit(); applyHeal(n); });
+    else modal(`Drink ${it.name}?`, `<p>One will be used up${it.notes ? ` — ${esc(it.notes)}` : ""}.</p><div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="drinkConfirm" data-id="${it.id}">Drink</button></div>`);
+  },
+  drinkConfirm(el) { const ch = Store.active(); const it = (ch.inventory || []).find((x) => x.id === el.dataset.id); closeModal(); if (!it) return; consumeItem(ch, it); commit(); toast(`Drank ${it.name}.`); },
+
   /* concentration */
   dropConc() { const ch = Store.active(); ch.spells.concentratingOn = null; commit(); },
 
@@ -489,6 +513,7 @@ const actions = {
         <h4 class="menu-h">Build</h4>
         <button class="btn ghost" data-act="levelUp">Level up</button>
         <button class="btn ghost" data-act="manageClasses">Classes &amp; levels</button>
+        <button class="btn ghost" data-act="classChecklist">Class features &amp; trackers</button>
         <button class="btn ghost" data-act="renameChar">Rename</button>
       </div>
       <div class="menu-group">
@@ -567,7 +592,7 @@ const actions = {
       <p class="muted small">Roll your class's hit die and enter it (blank = average). CON ${sign(con)} is added, min 1 HP.</p>
       <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="levelApply">Level up</button></div>`);
   },
-  levelApply() {
+  async levelApply() {
     const ch = Store.active();
     const idx = +$("#lvl-cls").value || 0;
     const hpInput = $("#lvl-hp-roll").value;
@@ -578,6 +603,7 @@ const actions = {
 
     // snapshot BEFORE so we can show the diff
     const before = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
+    const prevClsLevel = target.level;
 
     // apply the level to the right place (primary class or a multiclass entry)
     if (idx === 0) ch.level += 1;
@@ -611,16 +637,22 @@ const actions = {
     const asiLevels = ASI[target.cls] || [4, 8, 12, 16, 19];
     if (asiLevels.includes(newClsLevel)) lines.push(`<b>Ability Score Improvement / feat</b> available — edit your abilities or add a feature.`);
 
-    const reminders = [`Check the <b>${esc(target.cls)}</b> class for new features at level ${newClsLevel} and add them under Features & traits.`];
+    const reminders = [];
     if (Calc.isCaster(ch)) reminders.push(`Review your spellbook — newly available spell levels can now be learned/prepared.`);
 
+    // checklist of what this level brings (features + trackers), pre-ticked, all editable
+    const feats = await loadClassFeatures(ch.edition === "2024" ? "2024" : "2014");
+    const rows = checklistRows(ch, [{ cls: target.cls, prev: prevClsLevel, to: newClsLevel }], "levelup", feats);
+    actions._cl = { rows };
+    render();
     modal("Leveled up", `
       <p>${esc(target.cls)} is now <b>level ${newClsLevel}</b> (total ${Calc.totalLevel(ch)}).</p>
       <ul class="lvl-sum">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
-      <h3 class="sec">Don't forget</h3>
-      <ul class="lvl-sum muted">${reminders.map((r) => `<li>${r}</li>`).join("")}</ul>
-      <div class="modal-btns"><button class="btn primary" data-act="closeModal">Done</button></div>`,
-      () => render());
+      ${reminders.length ? `<ul class="lvl-sum muted">${reminders.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
+      <p class="muted small">New at this level — untick anything your table does differently, change the numbers, or add your own.</p>
+      ${checklistHtml(ch, rows, !!feats[target.cls])}
+      <div class="modal-btns"><button class="btn primary" data-act="clSave">Save</button></div>`,
+      (wrap) => checklistWire(wrap, ch));
   },
   async deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { if (window.Media) { try { for (const m of await Media.forChar(ch.id)) { try { await Media.del(m.id); } catch (e) {} } } catch (e) {} } Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
@@ -708,7 +740,7 @@ const BACKUP = {
       if (i >= 0) { Store.characters[i] = ch; updated++; } else { Store.characters.push(ch); added++; }
       if (media.length && window.Media) { for (const mm of media) { try { await Media.put({ ...mm, charId: ch.id }); } catch (e) { mediaFail++; } } }
     }
-    if (added || updated) { if (!Store.active()) Store.activeId = Store.characters[0].id; Store.save(); }
+    if (added || updated) { if (!Store.active()) Store.activeId = Store.characters[0].id; Store.save(); fixupChars(); }
     const dm = payload.dm && Array.isArray(payload.dm.campaigns) ? payload.dm.campaigns : [];
     let camps = 0;
     for (const c of dm) if (!DM.campaigns.some((x) => x.id === c.id)) { DM.campaigns.push(c); camps++; }
@@ -845,11 +877,31 @@ actions.cloudRestore = async () => {
 
 /* ---------- shared action helpers ---------- */
 function toggleList(list, id) { const ch = Store.active(); const arr = ch.spells[list]; const i = arr.indexOf(id); if (i >= 0) arr.splice(i, 1); else arr.push(id); commit(); }
+/* Spent hit dice per die size ({12: 1, 10: 3}). Older saves only kept a total, so when the
+   two disagree the total is re-spread biggest die first. c.hitDiceUsed stays the total. */
+function hitDiceUsedBy(ch) {
+  const c = ch.combat, pool = Calc.hitDicePool(ch);
+  let by = c.hitDiceBy && typeof c.hitDiceBy === "object" ? c.hitDiceBy : null;
+  const sum = by ? Object.values(by).reduce((a, b) => a + (+b || 0), 0) : -1;
+  if (!by || sum !== (c.hitDiceUsed || 0) || Object.keys(by).some((d) => by[d] > (pool[d] || 0))) {
+    by = {}; let rest = c.hitDiceUsed || 0;
+    for (const d of Object.keys(pool).map(Number).sort((a, b) => b - a)) { const t = Math.min(rest, pool[d]); if (t) by[d] = t; rest -= t; }
+    c.hitDiceBy = by; c.hitDiceUsed = Object.values(by).reduce((a, b) => a + b, 0);
+  }
+  return by;
+}
+function hitDiceLeft(ch) { const pool = Calc.hitDicePool(ch), by = hitDiceUsedBy(ch); return Object.fromEntries(Object.keys(pool).map((d) => [d, pool[d] - (by[d] || 0)])); }
+// long rest: give back up to n dice, biggest first
+function restoreHitDice(ch, n) {
+  const by = hitDiceUsedBy(ch);
+  for (const d of Object.keys(by).map(Number).sort((a, b) => b - a)) { const t = Math.min(n, by[d]); by[d] -= t; n -= t; if (!by[d]) delete by[d]; }
+  ch.combat.hitDiceUsed = Object.values(by).reduce((a, b) => a + b, 0);
+}
 function spendHitDieManual(die) {
   const ch = Store.active(); const con = Calc.abilityMod(ch, "con");
   amountPrompt(`Spend a d${die}`, `You rolled the d${die} — enter it (CON ${sign(con)} is added)`, (n) => {
     const c = Store.active().combat; const heal = Math.max(1, (n || 0) + con);
-    c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(Store.active()), c.hpCur + heal); commit();
+    const by = hitDiceUsedBy(Store.active()); by[die] = (by[die] || 0) + 1; c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(Store.active()), c.hpCur + heal); commit();
     toast(`Spent d${die}: healed ${heal} (${n || 0} ${sign(con)} CON).`);
   });
 }
@@ -1001,7 +1053,9 @@ function resForm(r) {
   modal(r ? "Edit resource" : "Add resource tracker", `
     <label class="fld"><span>Name</span><input id="res-name" placeholder="e.g. Rage, Ki, Channel Divinity" value="${r ? esc(r.name) : ""}"></label>
     <label class="fld"><span>Max uses</span><input id="res-max" type="number" min="1" value="${r ? r.max : 3}"></label>
-    <label class="fld"><span>Resets on</span><select id="res-reset"><option value="long"${r && r.resetOn === "long" ? " selected" : ""}>Long rest</option><option value="short"${r && r.resetOn === "short" ? " selected" : ""}>Short rest</option></select></label>
+    <label class="fld"><span>Resets on</span>${resetSelect("", r ? resetKey(r.resetOn, r.regain) : "long").replace("<select", '<select id="res-reset"')}</label>
+    <label class="chk"><input type="checkbox" id="res-grow" ${r && r.rule ? "checked" : ""} onchange="document.getElementById('res-rule').hidden=!this.checked"> Grows with level (house rule)</label>
+    <div id="res-rule" class="cl-rule" ${r && r.rule ? "" : "hidden"}>Max = <input id="res-mult" type="number" min="0" value="${r && r.rule ? r.rule.mult : 1}"> × <select id="res-cls">${Calc.classList(Store.active()).map((c) => `<option ${r && r.rule && r.rule.cls === c.cls ? "selected" : ""}>${esc(c.cls)}</option>`).join("")}</select> level + <input id="res-add" type="number" value="${r && r.rule ? r.rule.add || 0 : 0}"></div>
     <label class="fld"><span>Note (optional)</span><textarea id="res-note" rows="2" placeholder="what it does, reminders…">${r && r.note ? esc(r.note) : ""}</textarea></label>
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
 }
@@ -1190,6 +1244,16 @@ function applyDamage(n) {
   const fromTemp = Math.min(c.hpTemp, n); c.hpTemp -= fromTemp;
   c.hpCur = Math.max(0, c.hpCur - (n - fromTemp));
   commit(); toast(`Took ${n} damage.`); maybeConcentration(ch, n);
+}
+const POTION_RE = /\b(potion|elixir|philter)\b/i;
+function healPotionDice(name) {
+  if (!/potion/i.test(name) || !/heal/i.test(name)) return null; // "Potion of Healing", "Greater healing potion"…
+  return /supreme/i.test(name) ? "10d4+20" : /superior/i.test(name) ? "8d4+8" : /greater/i.test(name) ? "4d4+4" : "2d4+2";
+}
+// use one of a stack; the last one leaves the inventory
+function consumeItem(ch, it) {
+  const q = (+it.qty || 1) - 1;
+  if (q <= 0) ch.inventory = ch.inventory.filter((x) => x !== it); else it.qty = q;
 }
 function applyHeal(n) {
   n = Math.max(0, n | 0); if (!n) return;
@@ -2658,6 +2722,7 @@ if ("serviceWorker" in navigator) {
   DM.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
   DM.syncHomebrew();
+  fixupChars();
   if (Store.active()) {
     // resume where the user left off (screen + tab) instead of always resetting to Stats
     let nav = null; try { nav = JSON.parse(localStorage.getItem("grimoire.nav.v1") || "null"); } catch (e) {}

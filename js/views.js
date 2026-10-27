@@ -307,7 +307,7 @@ function tabStats(ch) {
     <div class="lines">${saves}</div>
     <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
     <div class="lines">${skills}</div>
-    <h3 class="sec">Features &amp; traits <button class="mini" data-act="addFeature">+ add</button></h3>
+    <h3 class="sec">Features &amp; traits <span class="hdr-btns"><button class="mini" data-act="classChecklist">from class</button><button class="mini" data-act="addFeature">+ add</button></span></h3>
     <div class="features" ${ui.reorder ? 'data-sortlist="features"' : ""}>${(ch.features || []).map((f) => `
       <div class="feat" ${ui.reorder ? `data-sortid="${esc(f.id)}"` : ""}>
         <div class="feat-top">${handle()}<span class="feat-name">${esc(f.name)}</span>
@@ -328,11 +328,11 @@ function tabCombat(ch) {
   const res = (ch.resources || []).map((r) => `
     <div class="res" ${ui.reorder ? `data-sortid="${esc(r.id)}"` : ""}>
       <div class="res-top">${handle()}<span>${esc(r.name)}</span>
-        <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn} rest</span>
+        <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn === "short" ? "short rest" : r.regain ? "long rest, +" + r.regain + " on short" : "long rest"}${r.rule ? ` · <span title="house rule">${r.rule.mult}×${esc(r.rule.cls)}</span>` : ""}</span>
           <button class="opt-btn" data-act="resOptions" data-id="${r.id}">⋯</button></span></div>
       ${r.note ? `<div class="res-note">${esc(r.note)}</div>` : ""}
       <div class="res-btns">
-        <button data-act="resUse" data-id="${r.id}">Use</button>
+        <button data-act="resUse" data-id="${r.id}">${isPool(r) ? "Use…" : "Use"}</button>
         <button data-act="resRestore" data-id="${r.id}">+</button>
       </div>
     </div>`).join("");
@@ -380,7 +380,7 @@ function tabCombat(ch) {
       <span class="ds">✗ ${[0,1,2].map((i)=>`<button class="pip ${c.death.fail>i?"on bad":""}" data-act="death" data-t="fail" data-i="${i}"></button>`).join("")}</span>
     </div>
     <div class="hitdice">
-      <span>Hit dice <b>${Math.max(0, Calc.totalLevel(ch) - c.hitDiceUsed)}/${Calc.totalLevel(ch)}</b> · ${Object.entries(Calc.hitDicePool(ch)).sort((a, b) => b[0] - a[0]).map(([d, n]) => n + "d" + d).join(" + ")}</span>
+      <span>Hit dice <b>${Math.max(0, Calc.totalLevel(ch) - c.hitDiceUsed)}/${Calc.totalLevel(ch)}</b> · ${(() => { const pool = Calc.hitDicePool(ch), left = hitDiceLeft(ch); return Object.keys(pool).sort((a, b) => b - a).map((d) => `d${d} ${left[d]}/${pool[d]}`).join(" · "); })()}</span>
       <button class="btn small-b" data-act="spendHitDie" ${Calc.totalLevel(ch) - c.hitDiceUsed <= 0 ? "disabled" : ""}>Spend (heal)</button>
     </div>
     <div class="rest-row">
@@ -527,6 +527,7 @@ function itemRowsHtml(ch, items, listKey) {
         ${tags.length ? `<span class="it-tags">${tags.map((t) => `<span class="it-tag${carried && !it.equipped ? " off" : ""}">${esc(t)}</span>`).join("")}</span>` : ""}
         ${it.notes ? `<span class="it-notes muted small">${esc(it.notes)}</span>` : ""}
       </div>
+      ${carried && POTION_RE.test(it.name) ? `<button class="mini drink" data-act="drinkItem" data-id="${it.id}">Drink</button>` : ""}
       <button class="opt-btn" data-act="itemOptions" data-id="${it.id}" data-list="${listKey}">⋯</button>
     </div>`;
   }).join("") || `<span class="muted">empty</span>`;

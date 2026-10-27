@@ -244,3 +244,13 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Spell damage dice aren't in SRD data cleanly → cast modal has a damage field that REMEMBERS what you type per spell (localStorage `grimoire.dmg.v1`). Not auto-filled first time. (Could enhance build_spells to capture casting_options damage later.)
 - Class rules are edition-agnostic for v1 (slots/DC same 2014/2024); only spell *lists* differ by edition. Subclass casters (EK/AT) not auto — use slot override.
 - Prepared/known is not hard-enforced; player toggles freely (matches how Spells-5e-style apps work).
+
+## v87 — player side: level-up checklist, house rules, pools, potions, hit dice per size (2026-10-27)
+- **Class features & trackers checklist** (js/classfeat.js): after a level-up, a checklist of what the new level brings — SRD feature text (data/features-2014/2024.json, built by tools/build_class_features.py) and class trackers (RULES.CLASS_TRACKERS, both editions) — pre-ticked, numbers + reset editable, "+ feature / + tracker" for homebrew. Also any time: character menu → "Class features & trackers" or Features → "from class" (nothing pre-ticked).
+- Trackers that differ from the book are never changed unless ticked ("yours differs"); they can be saved as a **house rule** (max = N × class level + add) — later level-ups then suggest the table's number. House rules can also be set in the tracker edit form, and homebrew trackers can grow with level.
+- 2024 "regain one on a short rest" trackers: resetOn long + `regain: 1`.
+- One-time fix (`ch._fx1`): 2014 Channel Divinity trackers set to long rest → short rest.
+- Point pools (pool flag or max ≥ 10) ask "how many?" on Use / +.
+- Healing potions: Drink button on carried potions (asks for the roll, heals, uses one up); other potions/elixirs just get used up.
+- Hit dice tracked per die size (`combat.hitDiceBy`); picker shows "d12 · 1 left", long rest restores biggest first.
+- Gear: the Add Dex dropdown no longer gets cut off.
