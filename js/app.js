@@ -1981,6 +1981,7 @@ function dmComputeAC(p) {
   try { if (!p.abilities || !p.combat) return null; return Calc.armorClass({ combat: p.combat, abilities: p.abilities, inventory: p.inventory || [], features: p.features || [], overrides: p.overrides || {}, cls: p.cls || "", multiclass: p.multiclass || [], level: p.level || 1 }); } catch (e) { return null; }
 }
 function dmApplyLink(cb, p) {
+  cb._snap = JSON.stringify(p); // what the player's sheet said when we last applied it (see dmLivePoll)
   if (p.combat) { cb.hpMax = p.combat.hpMax || cb.hpMax; cb.hps = [p.combat.hpCur != null ? p.combat.hpCur : cb.hps[0]]; cb.hpTemp = p.combat.hpTemp || 0; }
   const ac = dmComputeAC(p); if (ac) cb.ac = ac;
   if (p.name) cb.name = p.name;
@@ -2030,7 +2031,11 @@ async function dmLivePoll() {
   if (!links.length) return;
   let changed = false;
   for (const cb of links) {
-    try { const p = await LINK.fetchSnapshot(cb.linkCode); if (!p) continue; const before = JSON.stringify(cb); dmApplyLink(cb, p); if (JSON.stringify(cb) !== before) changed = true; } catch (e) {}
+    try {
+      const p = await LINK.fetchSnapshot(cb.linkCode); if (!p) continue;
+      if (cb._snap === JSON.stringify(p)) continue; // player's sheet unchanged → keep any HP the DM set by hand
+      const before = JSON.stringify(cb); dmApplyLink(cb, p); if (JSON.stringify(cb) !== before) changed = true;
+    } catch (e) {}
   }
   if (!changed) return;
   DM.save();
