@@ -64,6 +64,7 @@ LINK.mergePayload = function (ch, payload) {
 LINK.push = async function (ch) {
   if (!ch || !ch.link) return;
   LINK._lastPush = Date.now();
+  LINK._dmSent[ch.id] = LINK.dmSig(ch);
   try {
     const r = await fetch(`${LINK.WORKER}/link/${ch.link.code}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -100,6 +101,7 @@ LINK.pull = async function (ch, { announce = false, force = false } = {}) {
       ch.link.lastPulledVersion = data.version;
       ch.link.lastUpdatedBy = data.updatedBy; ch.link.lastUpdatedAt = data.updatedAt;
       if (data.updatedAt && (!ch.updatedAt || data.updatedAt > ch.updatedAt)) ch.updatedAt = data.updatedAt;
+      LINK._dmSent[ch.id] = LINK.dmSig(ch); // the link already has these numbers — don't echo them back
       LINK._merging = false;
       Store.save();
       if (Store.activeId === ch.id) render();
@@ -118,11 +120,25 @@ LINK.pull = async function (ch, { announce = false, force = false } = {}) {
 // sends anything still waiting.
 LINK.PUSH_GAP = 120000;
 LINK._pending = new Set();
+// What the DM (and teammates) see of a character: name, HP, temp HP, conditions, AC.
+// A change to any of these goes out within seconds instead of waiting for the 2-minute batch.
+LINK.FAST_WAIT = 4000;   // let a quick burst of taps (3× damage) settle into one upload
+LINK.FAST_GAP = 15000;   // …but never more than one fast upload per 15 s
+LINK._dmSent = {};       // charId -> dmSig at our last upload
+LINK.dmSig = function (ch) {
+  let ac = null; try { ac = Calc.armorClass(ch); } catch (e) {}
+  const c = ch.combat || {};
+  return JSON.stringify([ch.name, c.hpCur, c.hpMax, c.hpTemp, (ch.conditions || []).map((x) => x.name || x), ac]);
+};
 LINK.schedulePush = function (ch) {
   if (!ch || !ch.link || LINK._merging) return;
   LINK._pending.add(ch.id);
-  if (LINK._pushTimer) return;
-  const wait = Math.max(1500, LINK.PUSH_GAP - (Date.now() - (LINK._lastPush || 0)));
+  const fast = LINK._dmSent[ch.id] !== undefined && LINK._dmSent[ch.id] !== LINK.dmSig(ch);
+  const since = Date.now() - (LINK._lastPush || 0);
+  const wait = fast ? Math.max(LINK.FAST_WAIT, LINK.FAST_GAP - since) : Math.max(1500, LINK.PUSH_GAP - since);
+  if (LINK._pushTimer && !(fast && wait < LINK._pushDue - Date.now())) return; // an upload is already due soon enough
+  clearTimeout(LINK._pushTimer);
+  LINK._pushDue = Date.now() + wait;
   LINK._pushTimer = setTimeout(LINK.flushPush, wait);
 };
 LINK.flushPush = function () {
@@ -137,6 +153,8 @@ LINK.dirty = function (ch) {
 };
 
 LINK.afterBoot = function () {
+  // assume the link already holds what's on this device, so only a real HP/AC/condition change counts as "fast"
+  for (const c of Store.characters) if (c.link) LINK._dmSent[c.id] = LINK.dmSig(c);
   const ch = Store.active && Store.active();
   if (ch && ch.link) LINK.pull(ch);
   document.addEventListener("visibilitychange", () => {

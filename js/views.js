@@ -690,6 +690,40 @@ function summonCard(ch, s) {
     <div class="sm-insts">${insts || '<span class="muted small">all defeated</span>'}<button class="btn small-b sm-addone" data-act="summonAddOne" data-id="${esc(s.id)}">+1</button></div>
   </div>`;
 }
+// the read-only part of a spell's details (level line, casting/range/duration/components, text) —
+// shared by the spell pop-up and the summons screen's "concentrating on" panel
+function spellInfoHtml(s) {
+  const comp = [s.components?.v && "V", s.components?.s && "S", s.components?.m && "M"].filter(Boolean).join(", ") || "—";
+  return `
+      <p class="sp-line">${s.level === 0 ? "Cantrip" : "Level " + s.level} · ${esc(s.school)}${s.ritual ? " · ritual" : ""}${s.concentration ? " · concentration" : ""}</p>
+      <div class="sp-grid">
+        <div><b>Casting</b>${esc(s.casting_time || "—")}</div>
+        <div><b>Range</b>${esc(s.range || "—")}</div>
+        <div><b>Duration</b>${esc(s.duration || "—")}</div>
+        <div><b>Components</b>${comp}${s.material ? " (" + esc(s.material) + ")" : ""}</div>
+      </div>
+      ${s.custom && s.sourceNote ? `<p class="sp-src">Source: ${esc(s.sourceNote)}</p>` : ""}
+      <p class="sp-lookup"><a href="${wikidotSpellUrl(s.name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
+      <div class="sp-desc"><p>${mdToHtml(s.desc)}</p></div>
+      ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}`;
+}
+// spells that bring a creature or a conjured thing onto the field (SRD + Tasha's/2024 "Summon X" + pasted ones)
+const SUMMON_SPELL_RE = /^(summon|conjure)\b|animate (objects|dead)|find (familiar|steed|greater steed)|giant insect|dancing lights|flaming sphere|^gate$|spiritual weapon|spirit guardians|bigby|arcane hand|faithful hound|unseen servant|create undead|planar (ally|binding)|phantom steed|guardian of faith|infernal calling/i;
+// on the summons screen: the summoning spell you're concentrating on, with its full text
+function summonConcPanel(ch) {
+  const id = ch.spells && ch.spells.concentratingOn; if (!id) return "";
+  const s = findSpell(ch, id); if (!s) return "";
+  const concSummon = (ch.summons || []).some((x) => x.conc);
+  if (!SUMMON_SPELL_RE.test(s.name) && !concSummon) return "";
+  const open = !(ui.sumCollapsed && ui.sumCollapsed.has("conc-spell"));
+  return `<div class="summon-conc">
+      <div class="summon-conc-head">
+        <button class="summon-conc-title" data-act="sumConcToggle"><span class="sc-tag">Concentrating on</span><b>${esc(s.name)}</b><span class="sc-chev">${open ? "▾" : "▸"}</span></button>
+        <button class="mini" data-act="dropConc">drop</button>
+      </div>
+      ${open ? `<div class="sp-detail">${spellInfoHtml(s)}</div>` : ""}
+    </div>`;
+}
 function viewSummons(ch) {
   if (!ch) { ui.screen = "home"; return viewHome(); }
   const sums = ch.summons || [];
@@ -705,6 +739,7 @@ function viewSummons(ch) {
         ${sums.length ? `<button class="btn ghost" data-act="summonDismissAll">Dismiss all</button>` : ""}
         <button class="big-stat summon-btn" data-act="summonBack" title="Back to character" aria-label="Back to character"><span class="sb-ic">${creatureIcon("humanoid")}</span></button>
       </div>
+      ${summonConcPanel(ch)}
       <div class="summon-list">${cards}</div>
     </div>`;
 }

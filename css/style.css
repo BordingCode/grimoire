@@ -645,3 +645,13 @@ body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,
 .acct-form input { width: 100%; }
 .acct-ok { font-size: 1.05rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
 .warn-note { color: var(--ink); }
+
+/* summons screen: the summoning spell you're concentrating on */
+.summon-conc { background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 12px; }
+.summon-conc-head { display: flex; align-items: center; gap: 8px; }
+.summon-conc-title { flex: 1; display: flex; align-items: baseline; gap: 8px; background: none; border: 0; color: var(--ink); font: inherit; text-align: left; padding: 4px 0; cursor: pointer; min-width: 0; }
+.summon-conc-title b { font-size: 1.05rem; }
+.sc-tag { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.sc-chev { margin-left: auto; color: var(--muted); }
+.summon-conc .sp-detail { margin-top: 6px; }
+body.has-scene .summon-conc { background: color-mix(in srgb, var(--panel) 72%, transparent); backdrop-filter: blur(10px); }

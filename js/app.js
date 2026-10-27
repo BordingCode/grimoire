@@ -1155,22 +1155,11 @@ function openStub(id) {
 
 function openSpell(ch, id) {
   const s = findSpell(ch, id); if (!s) return;
-  const comp = [s.components?.v && "V", s.components?.s && "S", s.components?.m && "M"].filter(Boolean).join(", ") || "—";
   const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch);
   ui.openSpellId = id;
   modal(s.name, `
     <div class="sp-detail">
-      <p class="sp-line">${s.level === 0 ? "Cantrip" : "Level " + s.level} · ${esc(s.school)}${s.ritual ? " · ritual" : ""}${s.concentration ? " · concentration" : ""}</p>
-      <div class="sp-grid">
-        <div><b>Casting</b>${esc(s.casting_time || "—")}</div>
-        <div><b>Range</b>${esc(s.range || "—")}</div>
-        <div><b>Duration</b>${esc(s.duration || "—")}</div>
-        <div><b>Components</b>${comp}${s.material ? " (" + esc(s.material) + ")" : ""}</div>
-      </div>
-      ${s.custom && s.sourceNote ? `<p class="sp-src">Source: ${esc(s.sourceNote)}</p>` : ""}
-      <p class="sp-lookup"><a href="${wikidotSpellUrl(s.name)}" target="_blank" rel="noopener">Look it up on the D&amp;D 5e Wikidot ↗</a></p>
-      <div class="sp-desc"><p>${mdToHtml(s.desc)}</p></div>
-      ${s.higher_level ? `<div class="sp-higher"><b>At higher levels.</b> ${mdToHtml(s.higher_level)}</div>` : ""}
+      ${spellInfoHtml(s)}
       <div class="cast-box">
         <div class="cast-info">
           ${s.attack && atk != null ? `<span class="cast-pill">Spell attack ${sign(atk)}</span>` : ""}
@@ -1221,6 +1210,7 @@ function maybeConcentration(ch, dmg) {
       <button class="btn danger" data-act="concDrop">Lost it</button>
     </div>`);
 }
+actions.sumConcToggle = () => { const k = "conc-spell"; if (ui.sumCollapsed.has(k)) ui.sumCollapsed.delete(k); else ui.sumCollapsed.add(k); render(); };
 actions.concDrop = () => { const ch = Store.active(); ch.spells.concentratingOn = null; closeModal(); commit(); toast("Concentration lost."); };
 actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
@@ -2031,6 +2021,24 @@ actions.dmSyncAll = async () => {
   for (const cb of links) { try { const p = await LINK.fetchSnapshot(cb.linkCode); if (p) dmApplyLink(cb, p); } catch (e) {} }
   DM.save(); render(); toast("Linked players synced.");
 };
+// While the DM is on the campaign / combat screen, quietly re-read linked players every 10 s
+// (reads are cheap; only players' uploads count against the save budget). Re-draws only when
+// something changed and the DM isn't typing or in a pop-up.
+async function dmLivePoll() {
+  if (document.visibilityState !== "visible" || !["dm", "dmRun"].includes(ui.screen) || typeof LINK === "undefined") return;
+  const a = DM.active; const links = a ? a.combatants.filter((c) => c.kind === "link" && c.linkCode) : [];
+  if (!links.length) return;
+  let changed = false;
+  for (const cb of links) {
+    try { const p = await LINK.fetchSnapshot(cb.linkCode); if (!p) continue; const before = JSON.stringify(cb); dmApplyLink(cb, p); if (JSON.stringify(cb) !== before) changed = true; } catch (e) {}
+  }
+  if (!changed) return;
+  DM.save();
+  const busy = $("#modal") || (document.activeElement && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName));
+  if (!busy) render(); // otherwise the DM's next tap redraws with the fresh numbers
+}
+setInterval(dmLivePoll, 10000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") dmLivePoll(); });
 actions.dmSetAC = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; amountPrompt(`AC — ${cb.name}`, "Armor Class", (n) => { cb.ac = Math.max(0, n | 0); DM.save(); render(); }); };
 /* DM gives loot / handouts to a linked player (lands on their sheet via the gift queue).
    Target resolves from EITHER a saved roster player (data-code) or a live combatant (data-id),
