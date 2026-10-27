@@ -27,14 +27,18 @@ def build14():
         out.setdefault(f["class"]["name"], []).append(e)
     return out
 
+# open5e's SRD 5.2 data slips: Stunning Strike is a level-5 feature, Deflect Attacks (level 3) has no level, a typo
+FIX24 = {"Stunning Strike": {"l": 5}, "Deflect Attacks": {"l": 3}, "Unarmoed Movement": {"n": "Unarmored Movement"}}
+
 def build24():
     res = get("https://api.open5e.com/v2/classes/?document__key=srd-2024&limit=50")["results"]
     out = {}
     for c in res:
         cls = c["subclass_of"]["name"] if c.get("subclass_of") else c["name"]
         for f in c["features"]:
-            if f["feature_type"] != "CLASS_LEVEL_FEATURE" or not f["gained_at"] or SKIP.match(f["name"]): continue
-            e = {"l": min(g["level"] for g in f["gained_at"]), "n": f["name"], "d": f["desc"].strip()}
+            fix = FIX24.get(f["name"], {}) if cls == "Monk" else {}
+            if f["feature_type"] != "CLASS_LEVEL_FEATURE" or not (f["gained_at"] or "l" in fix) or SKIP.match(f["name"]): continue
+            e = {"l": min(g["level"] for g in f["gained_at"]) if f["gained_at"] else 0, "n": f["name"], "d": f["desc"].strip(), **fix}
             if c.get("subclass_of"): e["s"] = c["name"]
             out.setdefault(cls, []).append(e)
     return out

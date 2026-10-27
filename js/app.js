@@ -230,7 +230,7 @@ const actions = {
   hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
-  shortRest() { const ch = Store.active(); ch.combat.reactionUsed = false; ch.combat.shieldSpell = false; const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
+  shortRest() { const ch = Store.active(); ch.combat.reactionUsed = false; ch.combat.shieldSpell = false; const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast(`Short rest — ${p ? "pact slots & " : ""}short-rest trackers restored. Spend hit dice to heal.`); },
   spendHitDie() {
     const ch = Store.active(); const c = ch.combat;
     const left = hitDiceLeft(ch);
@@ -496,7 +496,7 @@ const actions = {
   drinkItem(el) {
     const ch = Store.active(); const it = (ch.inventory || []).find((x) => x.id === el.dataset.id); if (!it) return;
     const dice = healPotionDice(it.name);
-    if (dice) amountPrompt(`Drink ${it.name}`, `Roll ${dice} and enter the total`, (n) => { consumeItem(ch, it); commit(); applyHeal(n); });
+    if (dice) amountPrompt(`Drink ${it.name}`, `Roll ${dice} and enter the total`, (n) => { if (n <= 0) { toast("Type the total you rolled — the potion wasn't used."); return; } consumeItem(ch, it); commit(); applyHeal(n); });
     else modal(`Drink ${it.name}?`, `<p>One will be used up${it.notes ? ` — ${esc(it.notes)}` : ""}.</p><div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="drinkConfirm" data-id="${it.id}">Drink</button></div>`);
   },
   drinkConfirm(el) { const ch = Store.active(); const it = (ch.inventory || []).find((x) => x.id === el.dataset.id); closeModal(); if (!it) return; consumeItem(ch, it); commit(); toast(`Drank ${it.name}.`); },
@@ -1033,10 +1033,10 @@ function openPasteEntry(kind, cb) {
 
 /* two-step delete guard so a single tap never destroys data */
 let _confirmCb = null;
-function confirmDelete(msg, onYes) {
+function confirmDelete(msg, onYes, yes = "Delete") {
   _confirmCb = onYes;
   modal("Please confirm", `<p>${esc(msg)}</p><p class="muted small">This can't be undone.</p>
-    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn danger" data-act="confirmYes">Delete</button></div>`);
+    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn danger" data-act="confirmYes">${esc(yes)}</button></div>`);
 }
 actions.confirmYes = () => { const cb = _confirmCb; _confirmCb = null; closeModal(); if (cb) cb(); };
 
@@ -1261,9 +1261,11 @@ function applyHeal(n) {
   commit(); toast(`Healed ${n}.`);
 }
 function amountPrompt(title, label, cb) {
+  // the title doubles as the button ("Take damage") unless it's a question or a "X — name" heading
+  const btn = /[?—]/.test(title) ? "OK" : title;
   modal(title, `
-    <label class="fld"><span>${esc(label)}</span><input id="amt-in" type="number" inputmode="numeric" min="0" placeholder="0"></label>
-    <div class="modal-btns"><button class="btn primary" data-act="amtApply">${esc(title)}</button></div>`, () => {
+    <label class="fld"><span>${esc(label)}</span><input id="amt-in" type="number" inputmode="numeric" min="0" placeholder="type a number"></label>
+    <div class="modal-btns"><button class="btn primary" data-act="amtApply">${esc(btn)}</button></div>`, () => {
       const i = $("#amt-in"); if (i) { i.focus(); i.addEventListener("keydown", (e) => { if (e.key === "Enter") actions.amtApply(); }); }
     });
   actions._amtCb = cb;
@@ -1292,13 +1294,21 @@ actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
   actions._castId = el.dataset.id;
   const avail = []; for (let i = min; i <= 9; i++) if (slots[i].max - slots[i].used > 0) avail.push(i);
+  // Warlock Pact Magic slots are a separate pool (always cast at the pact level)
+  const pact = Calc.pactMagic(ch);
+  if (pact && pact.level >= min && pact.used < pact.max) avail.unshift("pact");
   if (!avail.length) { toast("No slots of level " + min + "+ left."); return; }
   if (avail.length === 1) { spendSlot(avail[0]); return; }
-  modal("Cast at which level?", `<div class="modal-btns">${avail.map((i) => `<button class="btn" data-act="spend" data-lvl="${i}">Level ${i}</button>`).join("")}</div>`);
+  modal("Cast at which level?", `<div class="modal-btns">${avail.map((i) => i === "pact"
+    ? `<button class="btn" data-act="spend" data-lvl="pact">Pact slot (level ${pact.level}) · ${pact.max - pact.used} left</button>`
+    : `<button class="btn" data-act="spend" data-lvl="${i}">Level ${i} · ${slots[i].max - slots[i].used} left</button>`).join("")}</div>`);
 };
-actions.spend = (el) => spendSlot(+el.dataset.lvl);
+actions.spend = (el) => spendSlot(el.dataset.lvl === "pact" ? "pact" : +el.dataset.lvl);
 function spendSlot(lvl) {
-  const ch = Store.active(); ch.spells.slots[lvl].used++; closeModal();
+  const ch = Store.active(); closeModal();
+  let what;
+  if (lvl === "pact") { ch.spells.pact.used = (ch.spells.pact.used || 0) + 1; what = `a Pact slot (level ${Calc.pactMagic(ch).level})`; }
+  else { ch.spells.slots[lvl].used++; what = `a level ${lvl} slot`; }
   // casting a concentration spell starts concentrating on it (and ends any other)
   const sp = actions._castId ? findSpell(ch, actions._castId) : null; actions._castId = null;
   let extra = "";
@@ -1310,7 +1320,7 @@ function spendSlot(lvl) {
   if (sp && /reaction/i.test(sp.casting_time || "")) ch.combat.reactionUsed = true;
   if (sp && sp.name === "Shield") { ch.combat.shieldSpell = true; extra += " AC +5 until your next turn."; }
   commit();
-  toast(`Cast — spent a level ${lvl} slot.${extra}`);
+  toast(`Cast — spent ${what}.${extra}`);
 }
 // reaction: tap to mark it used; tap again when your turn starts (that also ends the Shield spell)
 actions.reactionToggle = () => { const c = Store.active().combat; if (c.reactionUsed) { c.reactionUsed = false; c.shieldSpell = false; } else c.reactionUsed = true; commit(); };
@@ -2057,7 +2067,7 @@ actions.dmHomebrewEdit = (el) => {
   modal(h.id ? "Edit homebrew monster" : "New homebrew monster", `
     ${f("name", "Name *", h.name, 'placeholder="e.g. Goblin Warlord"')}
     <div class="grid2">
-      <label class="fld"><span>CR</span><select id="hb-cr">${Object.keys(RULES.XP_BY_CR).map((c) => `<option ${String(h.cr) === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+      <label class="fld"><span>CR</span><select id="hb-cr">${Object.keys(RULES.XP_BY_CR).sort((a, b) => crToNum(a) - crToNum(b)).map((c) => `<option ${String(h.cr) === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
       <label class="fld"><span>Type</span><select id="hb-type">${SUMMON_TYPES.map((t) => `<option ${h.type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>
       ${f("ac", "AC", h.ac, 'type="number" inputmode="numeric"')}${f("hp", "HP", h.hp, 'type="number" inputmode="numeric"')}
     </div>
@@ -2124,7 +2134,11 @@ actions.dmNoteSearch = (el) => { ui.dmNoteQ = el.value; const b = $("#dm-notes")
 
 /* --- navigation --- */
 actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); if (DM.cur()) { dmPartyAutoSync(); dmRefreshPartyLevels(); } };
-actions.dmHome = () => { ui.screen = "dm"; render(); };
+actions.dmHome = () => { // leaving the encounter editor any way drops a still-empty "Untitled encounter"
+  const before = DM.encounters.length;
+  DM.encounters = DM.encounters.filter((e) => (e.name || "").trim() || (e.monsters || []).length || e.id !== DM._editId);
+  if (DM.encounters.length !== before) DM.save();
+  ui.screen = "dm"; render(); };
 actions.dmBackHome = () => { ui.screen = "home"; render(); };
 /* ---- Campaigns: one DM can run several games, each with its own players/encounters/combat ---- */
 actions.dmCampaigns = () => { ui.screen = "dmCampaigns"; render(); };
@@ -2220,7 +2234,7 @@ actions.dmRunEncounter = (el) => { const e = DM.encounters.find((x) => x.id === 
 actions.dmQuickFight = () => { DM.active = { name: "Quick fight", round: 0, turnId: null, combatants: [], _undo: null }; DM.save(); ui.screen = "dmRun"; render(); };
 actions.dmResume = () => { ui.screen = "dmRun"; render(); };
 actions.dmRunBack = () => { ui.screen = "dm"; render(); };
-actions.dmEndCombat = () => { confirmDelete("End this combat? The tracker is cleared.", () => { DM.active = null; DM.save(); ui.screen = "dm"; render(); }); };
+actions.dmEndCombat = () => { confirmDelete("End this combat? The tracker is cleared.", () => { DM.active = null; DM.save(); ui.screen = "dm"; render(); }, "End combat"); };
 actions.dmAddMonster = () => { DM._pickInto = "run"; dmOpenMonsterPick(); };
 actions.dmAddChar = () => {
   const list = Store.characters.map((c) => `<button class="btn ghost" data-act="dmAddCharGo" data-id="${esc(c.id)}">${esc(c.name)} <span class="muted small">${esc(classSummary(c))} · AC ${Calc.armorClass(c)} · ${Calc.maxHP(c)} HP</span></button>`).join("") || `<p class="muted small">No saved characters on this device.</p>`;
@@ -2249,6 +2263,8 @@ actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === 
 function dmComputeAC(p) {
   try { if (!p.abilities || !p.combat) return null; return Calc.armorClass({ combat: p.combat, abilities: p.abilities, inventory: p.inventory || [], features: p.features || [], overrides: p.overrides || {}, cls: p.cls || "", multiclass: p.multiclass || [], level: p.level || 1 }); } catch (e) { return null; }
 }
+// "yzd3nrv3" / "YZD3 NRV3" → "YZD3-NRV3"; null if it isn't a link code
+function normLinkCode(s) { const c = String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); return c.length === 8 ? c.slice(0, 4) + "-" + c.slice(4) : null; }
 function dmApplyLink(cb, p) {
   cb._snap = JSON.stringify(p); // what the player's sheet said when we last applied it (see dmLivePoll)
   if (p.combat) { cb.hpMax = p.combat.hpMax || cb.hpMax; cb.hps = [p.combat.hpCur != null ? p.combat.hpCur : cb.hps[0]]; cb.hpTemp = p.combat.hpTemp || 0; }
@@ -2273,7 +2289,7 @@ actions.dmAddLink = () => {
     <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmAddLinkGo">Add</button></div>`, () => { const i = $("#dm-link-code"); if (i) i.focus(); });
 };
 actions.dmAddLinkGo = async () => {
-  const code = ($("#dm-link-code") ? $("#dm-link-code").value : "").trim(); if (!code) return;
+  const code = normLinkCode($("#dm-link-code") ? $("#dm-link-code").value : ""); if (!code) { toast("Enter a code like ABCD-2345."); return; }
   toast("Fetching the player…");
   try {
     const p = await LINK.fetchSnapshot(code);
@@ -2294,8 +2310,11 @@ actions.dmSyncAll = async () => {
   const a = DM.active; if (!a) return; const links = a.combatants.filter((c) => c.kind === "link" && c.linkCode);
   if (!links.length) { toast("No linked players to sync."); return; }
   toast("Syncing linked players…");
-  for (const cb of links) { try { const p = await LINK.fetchSnapshot(cb.linkCode); if (p) dmApplyLink(cb, p); } catch (e) {} }
-  DM.save(); render(); toast("Linked players synced.");
+  // like the live poll: only take a player's numbers when their sheet changed, so HP/conditions
+  // the DM set by hand aren't thrown away (use a player's own ↻ to force their values)
+  let n = 0;
+  for (const cb of links) { try { const p = await LINK.fetchSnapshot(cb.linkCode); if (p && JSON.stringify(p) !== cb._snap) { dmApplyLink(cb, p); n++; } } catch (e) {} }
+  DM.save(); render(); toast(n ? `Updated ${n} player${n === 1 ? "" : "s"} from their sheets.` : "No player sheets changed — your own edits are kept.");
 };
 // While the DM is on the campaign / combat screen, quietly re-read linked players every 10 s
 // (reads are cheap; only players' uploads count against the save budget). Re-draws only when
@@ -2360,11 +2379,15 @@ actions.dmAddPlayer = () => {
     <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmAddPlayerGo">Add</button></div>`, () => { const i = $("#dmp-code"); if (i) i.focus(); });
 };
 actions.dmAddPlayerGo = async () => {
-  const code = ($("#dmp-code") ? $("#dmp-code").value : "").trim(); if (!code) return;
-  if (DM.players.some((p) => p.code.toUpperCase() === code.toUpperCase())) { toast("That player's already on your roster."); closeModal(); return; }
+  const code = normLinkCode($("#dmp-code") ? $("#dmp-code").value : ""); if (!code) { toast("Enter a code like ABCD-2345."); return; }
+  if (DM.players.some((p) => normLinkCode(p.code) === code)) { toast("That player's already on your roster."); closeModal(); return; }
   toast("Looking up the player…");
   let name = "Player";
-  try { const p = await LINK.fetchSnapshot(code); if (p && p.name) name = p.name; else if (p === null) { /* code exists but no name */ } } catch (e) {}
+  try {
+    const p = await LINK.fetchSnapshot(code);
+    if (!p) { toast("No character is shared on that code — check it, or ask the player to link & sync once."); return; }
+    if (p.name) name = p.name;
+  } catch (e) { toast("Couldn't reach the link server — try again."); return; }
   DM.players.push({ id: "pl" + Gx.uid(), name, code }); DM.save(); closeModal(); render();
   dmConnectToPlayer(code); // pull them into the campaign party so they (and other players) all link up
   toast(`${name} added to your roster.`);
@@ -2376,10 +2399,12 @@ function dmGroupCode(camp) { camp = camp || DM.cur(); if (!camp) return null; if
 function dmMergePartyMembers(camp, members) {
   if (!camp || !members) return false; let changed = false;
   members.forEach((mem) => {
-    if (mem.role === "dm" || !mem.code) return;
-    const ex = camp.players.find((p) => p.code && p.code.toUpperCase() === mem.code.toUpperCase());
+    const code = normLinkCode(mem.code);
+    if (mem.role === "dm" || !code) return;
+    // compare normalised codes, so a mistyped "abcd2345" from an older version can't add a ghost twin
+    const ex = camp.players.find((p) => normLinkCode(p.code) === code);
     if (ex) { if (mem.name && ex.name !== mem.name) { ex.name = mem.name; changed = true; } }
-    else { camp.players.push({ id: "pl" + Gx.uid(), name: mem.name || "Player", code: mem.code, fromParty: true }); changed = true; }
+    else { camp.players.push({ id: "pl" + Gx.uid(), name: mem.name || "Player", code, fromParty: true }); changed = true; }
   });
   if (changed) DM.save();
   return changed;

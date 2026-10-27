@@ -268,3 +268,14 @@ Seen but not changed: DM damage stays on the DM's tracker (players apply their o
 - Wild Shape stat block shows your own INT/WIS/CHA (gold, with a note); concentration saves while wild-shaped use the beast's CON (+ your proficiency if any).
 - Combat tab: "Reaction ready / used" chip (tap when your turn starts to reset); casting a reaction spell marks it used. Casting Shield adds +5 AC (on top of any AC override) with a "Shield +5 AC ✕" chip; it ends when you reset your reaction, on a rest, or with ✕.
 - DM tracker: undo is a 30-step stack with a Redo button (older single-step saves still undo).
+
+## v90 — fixes from agent session 2 (Tiefling Warlock, Goliath Monk 2024, Halfling Rogue, DM on 2024) (2026-10-27)
+- Warlocks couldn't "Cast": Pact Magic slots are now offered (and spent) by the cast flow; the level picker shows slots left.
+- 2024 Monk data: Stunning Strike at 5 (was 3), Deflect Attacks at 3 (was missing), "Unarmored Movement" typo (FIX24 in tools/build_class_features.py).
+- Speed adds Monk Unarmored Movement (no armor/shield) and Barbarian Fast Movement (not heavy armor) automatically (Calc.classSpeed).
+- An empty roll box no longer uses up a healing potion.
+- Toasts now appear at the top (they covered bottom-sheet buttons and prompts); links have a readable colour token (--link) in dark and light.
+- Skill/save rows: tap the name to toggle; bigger dots with a larger tap area; proficient = green.
+- Combat: the Summons tile is labelled.
+- `[hidden]` is respected everywhere (the checklist's house-rule row showed while unticked).
+- DM: ↻ Sync all keeps the DM's own HP/condition edits unless a player's sheet actually changed; link codes are normalised (abcd2345 → ABCD-2345) and must exist before a player is added; party merge ignores duplicate/malformed codes; amount prompts say OK instead of repeating a question; "End combat" confirm says End combat; leaving a new empty encounter removes it; homebrew CR list sorted numerically.

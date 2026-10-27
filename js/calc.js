@@ -69,7 +69,17 @@ const Calc = {
 
   passivePerception(ch) { return ov(ch, "passivePerception", 10 + this.skillBonus(ch, "Perception") + this.featBonus(ch, "passivePerception")); },
   initiative(ch) { return ov(ch, "initiative", this.abilityMod(ch, "dex") + this.featBonus(ch, "initiative")); },
-  speed(ch) { return ov(ch, "speed", (ch.combat.speed || 30) + this.featBonus(ch, "speed")); },
+  speed(ch) { return ov(ch, "speed", (ch.combat.speed || 30) + this.classSpeed(ch) + this.featBonus(ch, "speed")); },
+  // Monk Unarmored Movement (no armor or shield) and Barbarian Fast Movement (no heavy armor) — same in 2014 and 2024
+  classSpeed(ch) {
+    const lv = (cls) => (this.classList(ch).find((c) => c.cls === cls) || {}).level || 0;
+    const armored = ch.combat.armorBaseAC != null, heavy = armored && (ch.combat.armorDexMode || "none") === "none";
+    let bonus = 0;
+    const m = lv("Monk");
+    if (m >= 2 && !armored && !ch.combat.shield) bonus += [0, 10, 15, 20, 25, 30][Math.min(5, Math.floor((m + 2) / 4))];
+    if (lv("Barbarian") >= 5 && !heavy) bonus += 10;
+    return bonus;
+  },
   maxHP(ch) { return Math.max(0, (ch.combat.hpMax || 0) + this.featBonus(ch, "hpMax")); },
 
   unarmoredAC(ch) {

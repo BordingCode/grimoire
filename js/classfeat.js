@@ -9,7 +9,7 @@
 
 const CLASSFEAT = {};
 async function loadClassFeatures(ed) {
-  if (!CLASSFEAT[ed]) CLASSFEAT[ed] = await fetch(`data/features-${ed}.json?v=87`).then((r) => r.json()).catch(() => null);
+  if (!CLASSFEAT[ed]) CLASSFEAT[ed] = await fetch(`data/features-${ed}.json?v=90`).then((r) => r.json()).catch(() => null);
   return CLASSFEAT[ed] || {};
 }
 

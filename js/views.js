@@ -284,7 +284,7 @@ function tabStats(ch) {
     return `<div class="line">
       <span class="line-v" data-act="override" data-key="save.${a}" data-label="${RULES.ABILITY_NAMES[a]} save" data-auto="${Calc.saveBonus(ch, a)}">${sign(Calc.saveBonus(ch, a))}</span>
       <button class="dot ${ch.saveProf[a] ? "on" : ""}" data-act="toggleSave" data-ab="${a}" title="proficient"></button>
-      <span class="line-l">${RULES.ABILITY_NAMES[a]}${adv ? ' <em class="adv-mark" title="advantage from a feature">ADV</em>' : ""}</span>
+      <span class="line-l" data-act="toggleSave" data-ab="${a}">${RULES.ABILITY_NAMES[a]}${adv ? ' <em class="adv-mark" title="advantage from a feature">ADV</em>' : ""}</span>
     </div>`;
   }).join("");
   const skills = Object.keys(RULES.SKILLS).map((s) => {
@@ -293,7 +293,7 @@ function tabStats(ch) {
     return `<div class="line">
       <span class="line-v">${sign(Calc.skillBonus(ch, s))}</span>
       <button class="dot ${p === 1 ? "on" : ""} ${p === 2 ? "exp" : ""}" data-act="cycleSkill" data-skill="${esc(s)}" title="none → proficient → expertise"></button>
-      <span class="line-l">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em>${adv ? ' <em class="adv-mark">ADV</em>' : ""}</span>
+      <span class="line-l" data-act="cycleSkill" data-skill="${esc(s)}">${s} <em>${RULES.SKILLS[s].toUpperCase()}</em>${adv ? ' <em class="adv-mark">ADV</em>' : ""}</span>
     </div>`;
   }).join("");
   return `
@@ -355,7 +355,7 @@ function tabCombat(ch) {
       <div class="big-stat"><b>${sign(Calc.initiative(ch))}</b><span>Init</span></div>
       <div class="big-stat" data-act="override" data-key="speed" data-label="Speed" data-auto="${Calc.speed(ch)}"><b>${Calc.speed(ch)}</b><span>Speed</span></div>
       <button class="big-stat summon-btn" data-act="openSummons" title="Summons" aria-label="Summons">
-        <span class="sb-ic">${creatureIcon("beast")}</span>
+        <span class="sb-ic">${creatureIcon("beast")}</span><span class="sb-lbl">Summons</span>
         ${(() => { const n = (ch.summons || []).reduce((t, s) => t + (s.hps ? s.hps.length : 0), 0); return n ? `<span class="sb-badge">${n}</span>` : ""; })()}
       </button>
     </div>
