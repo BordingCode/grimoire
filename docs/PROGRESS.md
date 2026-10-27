@@ -254,3 +254,12 @@ Phase 1 + polish is COMPLETE, verified locally & live, all pushed. Live boots cl
 - Healing potions: Drink button on carried potions (asks for the roll, heals, uses one up); other potions/elixirs just get used up.
 - Hit dice tracked per die size (`combat.hitDiceBy`); picker shows "d12 · 1 left", long rest restores biggest first.
 - Gear: the Add Dex dropdown no longer gets cut off.
+
+## v88 — fixes from an agent-played test session (2026-10-27)
+Three player agents (2014 Paladin, 2024 Wizard, 2014 Druid) + a DM agent played a short fight through the app (local copy + in-memory sync mock). Fixed:
+- First tap on a search result did nothing (spellbook, Wild Shape, summon and DM monster pickers): the blur "change" event redrew the list under the finger. Text/search inputs no longer re-run on change.
+- Prepared counter counted cantrips.
+- Linked character edits made just before closing the app could stay unsent until the next open: uploads now use fetch keepalive (<60 KB) and also flush on pagehide.
+- Casting a concentration spell now starts concentration (ends the previous one).
+- Wild Shape: damage to the beast form asks for the concentration save; the Wild Shape screen shows what you concentrate on; Eligible list respects no-fly (< Druid 8) and no-swim (2014, < Druid 4).
+Seen but not changed: DM damage stays on the DM's tracker (players apply their own — by design); beast form still shows the beast's INT/WIS/CHA and uses the druid's CON save; no Shield AC toggle; no reaction tracker; DM undo is one step without redo; hit dice can be spent at full HP.

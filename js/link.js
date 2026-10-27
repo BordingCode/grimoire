@@ -66,9 +66,11 @@ LINK.push = async function (ch) {
   LINK._lastPush = Date.now();
   LINK._dmSent[ch.id] = LINK.dmSig(ch);
   try {
+    const body = JSON.stringify({ updatedBy: ch.name, payload: LINK.buildPayload(ch) });
+    // keepalive lets the upload finish even if the app is closed right after a change
+    // (browsers only allow it for bodies under 64 KB — a big portrait makes it a normal upload)
     const r = await fetch(`${LINK.WORKER}/link/${ch.link.code}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ updatedBy: ch.name, payload: LINK.buildPayload(ch) }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: body.length < 60000,
     });
     const data = await r.json();
     if (data.version) { ch.link.lastPulledVersion = data.version; ch.link.lastPushedAt = data.updatedAt; Store.save(); }
@@ -161,6 +163,7 @@ LINK.afterBoot = function () {
     if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.link) LINK.pull(c); }
     else if (LINK._pending.size) LINK.flushPush();
   });
+  window.addEventListener("pagehide", () => { if (LINK._pending.size) LINK.flushPush(); });
 };
 
 function relTime(iso) {

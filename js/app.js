@@ -1288,6 +1288,7 @@ actions.sumConcToggle = () => { const k = "conc-spell"; if (ui.sumCollapsed.has(
 actions.concDrop = () => { const ch = Store.active(); ch.spells.concentratingOn = null; closeModal(); commit(); toast("Concentration lost."); };
 actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
+  actions._castId = el.dataset.id;
   const avail = []; for (let i = min; i <= 9; i++) if (slots[i].max - slots[i].used > 0) avail.push(i);
   if (!avail.length) { toast("No slots of level " + min + "+ left."); return; }
   if (avail.length === 1) { spendSlot(avail[0]); return; }
@@ -1295,8 +1296,17 @@ actions.castSpell = (el) => {
 };
 actions.spend = (el) => spendSlot(+el.dataset.lvl);
 function spendSlot(lvl) {
-  const ch = Store.active(); ch.spells.slots[lvl].used++; closeModal(); commit();
-  toast(`Cast — spent a level ${lvl} slot.`);
+  const ch = Store.active(); ch.spells.slots[lvl].used++; closeModal();
+  // casting a concentration spell starts concentrating on it (and ends any other)
+  const sp = actions._castId ? findSpell(ch, actions._castId) : null; actions._castId = null;
+  let extra = "";
+  if (sp && sp.concentration) {
+    const prev = ch.spells.concentratingOn && ch.spells.concentratingOn !== sp.id ? findSpell(ch, ch.spells.concentratingOn) : null;
+    ch.spells.concentratingOn = sp.id;
+    extra = ` Concentrating on ${sp.name}${prev ? ` (${prev.name} ended)` : ""}.`;
+  }
+  commit();
+  toast(`Cast — spent a level ${lvl} slot.${extra}`);
 }
 actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage you'll be prompted to keep or drop it."); };
 
@@ -1784,7 +1794,13 @@ const SHAPE_SOURCES = {
     label: "Wild Shape", banner: "Wild-shaped", conc: false,
     eligible(ch, d) {
       const t = (d.type || "").toLowerCase(), cr = crToNum(d.cr);
-      if (t === "beast") return cr <= wildShapeMaxCR(ch) + 1e-9;
+      if (t === "beast") {
+        // no flying speed before Druid 8 (both editions); no swimming before 4 (2014 only)
+        const lvl = druidLevel(ch), sp = String(d.speed || "");
+        if (lvl < 8 && /\bfly\b/i.test(sp)) return false;
+        if (ch.edition !== "2024" && lvl < 4 && /\bswim\b/i.test(sp)) return false;
+        return cr <= wildShapeMaxCR(ch) + 1e-9;
+      }
       if (t === "elemental" && canElemental(ch)) return /(air|earth|fire|water) elemental/i.test(d.name);
       return false;
     },
@@ -1897,6 +1913,7 @@ actions.shapeDmg = () => {
   amountPrompt("Damage to your form", "How much damage?", (n) => {
     n = Math.max(0, n | 0); const after = f.hps[0] - n; f.hps[0] = Math.max(0, after);
     if (after <= 0) revertShape(ch, -after); else commit();
+    maybeConcentration(ch, n); // damage to the beast form still forces a concentration save
   });
 };
 actions.shapeRevert = () => { revertShape(Store.active(), 0); };
@@ -2671,6 +2688,9 @@ document.addEventListener("search", (e) => {
 document.addEventListener("change", (e) => {
   // data-act selects (e.g. spell level filter) — fire on change
   const a = e.target.closest("[data-act]");
+  // text/search boxes already ran on "input"; re-running on blur redraws the list under the
+  // finger and swallows the tap on a result
+  if (a && a === e.target && a.tagName === "INPUT" && /^(text|search)$/.test(a.type)) return;
   if (a && actions[a.dataset.act]) { actions[a.dataset.act](a); return; }
   const cl = e.target.closest('[data-act="clsLevel"]');
   if (cl) {

@@ -434,7 +434,7 @@ function tabSpells(ch) {
     headHtml = `<div class="cast-head">
       <div class="big-stat"><b>${dc ?? "—"}</b><span>Save DC</span></div>
       <div class="big-stat"><b>${atk != null ? sign(atk) : "—"}</b><span>Spell atk</span></div>
-      ${prep != null ? `<div class="big-stat" data-act="override" data-key="preparedCount" data-label="Prepared count" data-auto="${prep}"><b>${ch.spells.prepared.length}/${prep}</b><span>Prepared</span></div>` : ""}
+      ${prep != null ? `<div class="big-stat" data-act="override" data-key="preparedCount" data-label="Prepared count" data-auto="${prep}"><b>${ch.spells.prepared.filter((id) => { const sp = findSpell(ch, id); return !sp || sp.level > 0; }).length}/${prep}</b><span>Prepared</span></div>` : ""}
     </div>`;
   } else {
     headHtml = `<div class="cast-multi">${casters.map((cc) => `
@@ -778,6 +778,7 @@ function viewShape(ch) {
             : `<button class="btn primary" data-act="shapePicker">Transform — pick a form</button>`}
         <button class="big-stat summon-btn" data-act="shapeBack" title="Back to character" aria-label="Back to character"><span class="sb-ic">${creatureIcon("humanoid")}</span></button>
       </div>
+      ${(() => { const id = ch.spells.concentratingOn; return id ? `<div class="conc-banner">Concentrating on <b>${esc((findSpell(ch, id) || {}).name || "a spell")}</b> <button data-act="dropConc">drop</button></div>` : ""; })()}
       ${src === "wildshape" && res ? `<p class="muted small">Wild Shape uses left: <b>${res.max - res.used}/${res.max}</b> (tracked in Resources).</p>` : ""}
       ${f ? shapeCard(ch, f) : `<p class="muted small">${esc(S.note ? S.note(ch) : "")}</p><p class="muted pad">Not transformed. Tap “Transform” to choose a form.</p>`}
     </div>`;
