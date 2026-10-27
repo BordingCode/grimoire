@@ -23,10 +23,12 @@ const DM = {
   KEY: "grimoire.dm.v1",
   campaigns: [],     // [{id, name, encounters:[], players:[], active, settings}]
   currentId: null,   // id of the campaign currently open
+  homebrew: [],      // the DM's own monsters (shared by all campaigns), merged into the creature library
   newCampaign(name) { return { id: "cmp" + Gx.uid(), name: name || "My campaign", encounters: [], players: [], active: null, settings: {} }; },
   cur() { return this.campaigns.find((c) => c.id === this.currentId) || null; },
   load() {
     let d = {}; try { d = JSON.parse(localStorage.getItem(this.KEY)) || {}; } catch { d = {}; }
+    this.homebrew = Array.isArray(d.homebrew) ? d.homebrew : [];
     if (Array.isArray(d.campaigns)) {
       this.campaigns = d.campaigns;
       this.currentId = this.cur() ? d.currentId : (this.campaigns[0] && this.campaigns[0].id) || null;
@@ -37,7 +39,12 @@ const DM = {
       this.campaigns = [c]; this.currentId = c.id; this.save();
     } else { this.campaigns = []; this.currentId = null; }
   },
-  save() { localStorage.setItem(this.KEY, JSON.stringify({ campaigns: this.campaigns, currentId: this.currentId })); if (window.BACKUP) BACKUP.schedule(); },
+  save() { localStorage.setItem(this.KEY, JSON.stringify({ campaigns: this.campaigns, currentId: this.currentId, homebrew: this.homebrew })); if (window.BACKUP) BACKUP.schedule(); },
+  // put the DM's homebrew monsters into the shared creature library (picker, encounters, stat blocks)
+  syncHomebrew() {
+    if (!Grimoire.summonLib) return;
+    Grimoire.summonLib = Grimoire.summonLib.filter((d) => !d.homebrew).concat(this.homebrew.map((h) => ({ ...h, homebrew: true, source: "Homebrew", icon: h.type })));
+  },
 };
 // proxy the working fields to the current campaign so all DM features stay campaign-scoped
 [["encounters", []], ["players", []], ["active", null], ["settings", {}]].forEach(([k, empty]) => {
@@ -63,7 +70,7 @@ async function loadSpells() {
     fetch("data/spells-2014.json?v=33").then((r) => r.json()),
     fetch("data/spells-2024.json?v=33").then((r) => r.json()),
     fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
-    fetch("data/summons.json?v=47").then((r) => r.json()).catch(() => []),
+    fetch("data/summons.json?v=86").then((r) => r.json()).catch(() => []),
     fetch("data/creature-index.json?v=44").then((r) => r.json()).catch(() => []),
   ]);
   Grimoire.summonLib = sl || [];        // bundled SRD creature stat library (full stats)
@@ -639,11 +646,11 @@ const BACKUP = {
   saveMeta(m) { localStorage.setItem(this.KEY, JSON.stringify(m)); },
   ensureCode() { const m = this.load(); if (!m.code) { m.code = genCode(); this.saveMeta(m); } return m.code; },
   account() { try { return JSON.parse(localStorage.getItem(this.ACCT_KEY)) || null; } catch { return null; } },
-  hasData() { return Store.characters.length > 0 || DM.campaigns.length > 0 || Party.members.length > 0; },
+  hasData() { return Store.characters.length > 0 || DM.campaigns.length > 0 || DM.homebrew.length > 0 || Party.members.length > 0; },
   async buildPayload() {
     const chars = JSON.parse(JSON.stringify(Store.characters));
     if (window.Media) { for (const ch of chars) { try { ch._media = await Media.forChar(ch.id); } catch (e) { ch._media = []; } } }
-    const extra = { dm: { campaigns: DM.campaigns, currentId: DM.currentId }, party: Party.members };
+    const extra = { dm: { campaigns: DM.campaigns, currentId: DM.currentId, homebrew: DM.homebrew }, party: Party.members };
     let payload = { v: 2, chars, ...extra };
     if (JSON.stringify(payload).length > 20 * 1024 * 1024) { chars.forEach((c) => delete c._media); payload = { v: 2, chars, ...extra, mediaSkipped: true }; }
     return payload;
@@ -669,7 +676,7 @@ const BACKUP = {
     } catch (e) { return { ok: false }; }
   },
   // cheap signature of everything backed up, to skip redundant auto-backups (navigation, switching active char)
-  _sig() { try { const s = JSON.stringify([Store.characters, DM.campaigns, Party.members, !!this.account()]); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
+  _sig() { try { const s = JSON.stringify([Store.characters, DM.campaigns, DM.homebrew, Party.members, !!this.account()]); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
   enabled() { return this.load().auto !== false; }, // default ON
   // auto-backup, called whenever characters / DM / kill count are saved. At most once every
   // 5 minutes (free-tier save budget is shared by everyone) — and right away when you leave the app.
@@ -705,7 +712,10 @@ const BACKUP = {
     const dm = payload.dm && Array.isArray(payload.dm.campaigns) ? payload.dm.campaigns : [];
     let camps = 0;
     for (const c of dm) if (!DM.campaigns.some((x) => x.id === c.id)) { DM.campaigns.push(c); camps++; }
-    if (camps) { if (!DM.cur()) DM.currentId = payload.dm.currentId || DM.campaigns[0].id; DM.save(); }
+    let brews = 0;
+    for (const h of (payload.dm && payload.dm.homebrew) || []) if (!DM.homebrew.some((x) => x.id === h.id)) { DM.homebrew.push(h); brews++; }
+    if (brews) DM.syncHomebrew();
+    if (camps || brews) { if (camps && !DM.cur()) DM.currentId = payload.dm.currentId || DM.campaigns[0].id; DM.save(); }
     let kills = 0;
     for (const p of payload.party || []) if (!Party.members.some((x) => x.id === p.id)) { Party.members.push(p); kills++; }
     if (kills) Party.save();
@@ -1487,7 +1497,7 @@ function summonLibRows(ch) {
     return `<div class="sum-row">
       <button class="sum-pick ${stub ? "stub" : ""}" data-act="summonPreview" data-name="${esc(d.name)}">
         <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
-        <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">${meta}</span></span></button>
+        <span class="sp-col"><span class="sp-n">${esc(d.name)}${d.homebrew ? ` <span class="hb-badge">homebrew</span>` : ""}</span><span class="muted small">${meta}</span></span></button>
       <button class="sum-mark ${isKnown ? "on" : ""}" data-act="summonKnownToggle" data-name="${esc(d.name)}" title="Known / available to you">✓</button>
       <button class="sum-mark star ${isFav ? "on" : ""}" data-act="summonFavToggle" data-name="${esc(d.name)}" title="Favorite">★</button>
     </div>`;
@@ -1763,7 +1773,7 @@ function shapePickRows(ch) {
     return `<div class="sum-row">
       <button class="sum-pick ${elig ? "" : "stub"}" data-act="shapePreview" data-name="${esc(d.name)}">
         <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
-        <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP${elig ? "" : " · beyond limit"}</span></span></button>
+        <span class="sp-col"><span class="sp-n">${esc(d.name)}${d.homebrew ? ` <span class="hb-badge">homebrew</span>` : ""}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP${elig ? "" : " · beyond limit"}</span></span></button>
       <button class="sum-mark ${isKnown ? "on" : ""}" data-act="shapeKnownToggle" data-name="${esc(d.name)}" title="Known">✓</button>
       <button class="sum-mark star ${isFav ? "on" : ""}" data-act="shapeFavToggle" data-name="${esc(d.name)}" title="Favorite">★</button>
     </div>`;
@@ -1837,7 +1847,17 @@ function revertShape(ch, carry) {
 /*  DM MODE — saved encounters + live initiative/combat tracker          */
 /* ===================================================================== */
 function dmCreatureCombatant(def, count) {
-  return { id: "cb" + Gx.uid(), name: def.name, kind: "monster", ref: def.name, ac: def.ac, hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), hpTemp: 0, init: null, conditions: [], conc: false, icon: def.type || def.icon || "" };
+  return dmLegendInit({ id: "cb" + Gx.uid(), name: def.name, kind: "monster", ref: def.name, ac: def.ac, hpMax: def.hp, hps: Array(Math.max(1, count | 0)).fill(def.hp), hpTemp: 0, init: null, conditions: [], conc: false, icon: def.type || def.icon || "" });
+}
+// legendary actions (3 per round, back at the start of its turn) and Legendary Resistance (n/day)
+function dmLegendInit(cb) {
+  if (cb.kind !== "monster" || cb.la !== undefined) return cb;
+  const def = creatureFind(cb.ref || cb.name) || {};
+  cb.la = def.legendary && def.legendary.length ? { max: 3, left: 3 } : null;
+  const lrT = (def.traits || []).find((t) => /legendary resistance/i.test(t.name || ""));
+  const lrN = lrT && /\((\d+)\s*\/\s*day\)/i.exec((lrT.name || "") + " " + (lrT.desc || "")); // "(3/Day)" sits in the name or at the end of the text
+  cb.lr = lrT ? { max: lrN ? +lrN[1] : 3, left: lrN ? +lrN[1] : 3 } : null;
+  return cb;
 }
 function dmCharCombatant(ch) {
   const max = Calc.maxHP(ch);
@@ -1845,21 +1865,168 @@ function dmCharCombatant(ch) {
 }
 function dmCustomCombatant(name, hp, ac) { hp = Math.max(1, hp | 0); return { id: "cb" + Gx.uid(), name: name || "Combatant", kind: "custom", ref: null, ac: (ac | 0) || 10, hpMax: hp, hps: [hp], hpTemp: 0, init: null, conditions: [], conc: false, icon: "" }; }
 function dmInstantiate(enc) { const cbs = []; (enc.monsters || []).forEach((m) => { const def = creatureFind(m.name); if (def && (Grimoire.summonLib || []).some((d) => d.name === def.name)) cbs.push(dmCreatureCombatant(def, m.count || 1)); }); return cbs; }
-function dmSorted(a) { return (a.combatants || []).slice().sort((x, y) => (y.init ?? -999) - (x.init ?? -999) || x.name.localeCompare(y.name)); }
+// initiative order; the lair loses ties (it acts on 20 after anyone who rolled 20)
+function dmSorted(a) { return (a.combatants || []).slice().sort((x, y) => (y.init ?? -999) - (x.init ?? -999) || (x.kind === "lair") - (y.kind === "lair") || x.name.localeCompare(y.name)); }
 function dmCbDown(cb) { return cb.hps.every((h) => h <= 0); }
 function dmCbHpNow(cb) { return cb.hps.reduce((t, h) => t + Math.max(0, h), 0); }
 function dmCbBloodied(cb) { return !dmCbDown(cb) && dmCbHpNow(cb) <= (cb.hpMax * cb.hps.length) / 2; }
 function dmActiveEnc() { return DM.active; }
 function dmFindCb(id) { return DM.active && DM.active.combatants.find((c) => c.id === id); }
-function dmPushUndo(cb) { DM.active._undo = { id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp, label: cb.name }; }
+function dmPushUndo(cbs) { DM.active._undo = { list: [].concat(cbs).map((cb) => ({ id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp })) }; }
+
+/* --- encounter difficulty --- */
+// party used for difficulty: set by hand, or the levels of the campaign's linked players
+function dmPartyInfo(camp) {
+  camp = camp || DM.cur(); if (!camp) return { levels: [], edition: "2014", source: "none" };
+  const linked = (camp.players || []).filter((p) => p.level > 0);
+  const edVotes = linked.map((p) => p.edition).filter(Boolean);
+  const edition = camp.edition || (edVotes.filter((e) => e === "2024").length > edVotes.length / 2 ? "2024" : "2014");
+  if (camp.partyManual) return { levels: Array(camp.partyManual.count).fill(camp.partyManual.level), edition, source: "manual" };
+  return { levels: linked.map((p) => Math.min(20, p.level)), names: linked.map((p) => p.name), edition, source: linked.length ? "linked" : "none" };
+}
+// refresh each linked player's level/edition from their shared sheet (reads only)
+async function dmRefreshPartyLevels() {
+  const camp = DM.cur(); if (!camp || typeof LINK === "undefined") return;
+  let changed = false;
+  for (const p of camp.players || []) {
+    try {
+      const s = await LINK.fetchSnapshot(p.code); if (!s) continue;
+      const lvl = (s.level || 0) + (s.multiclass || []).reduce((t, m) => t + (m.level || 0), 0);
+      if (lvl && lvl !== p.level) { p.level = lvl; changed = true; }
+      if (s.edition && s.edition !== p.edition) { p.edition = s.edition; changed = true; }
+    } catch (e) {}
+  }
+  if (changed) { DM.save(); if (["dm", "dmEdit"].includes(ui.screen) && !$("#modal")) render(); }
+}
+function crXP(cr) { return RULES.XP_BY_CR[String(cr)] || 0; }
+// monsters = [{name, count}] → rating for the party (null if no party is known)
+function dmDifficulty(monsters, party) {
+  party = party || dmPartyInfo();
+  let xp = 0, n = 0;
+  for (const m of monsters || []) { const d = creatureFind(m.name); if (!d) continue; xp += crXP(d.cr) * (m.count || 1); n += m.count || 1; }
+  if (!party.levels.length || !n) return { xp, n, party, rating: null };
+  if (party.edition === "2024") {
+    const b = [0, 1, 2].map((k) => party.levels.reduce((t, l) => t + RULES.XP_BUDGET_2024[l][k], 0));
+    const rating = xp <= b[0] ? "Low" : xp <= b[1] ? "Moderate" : xp <= b[2] ? "High" : "Beyond High";
+    return { xp, n, party, rating, edition: "2024", tiers: [["Low", b[0]], ["Moderate", b[1]], ["High", b[2]]], level: rating === "Beyond High" ? 4 : rating === "High" ? 3 : rating === "Moderate" ? 2 : 1 };
+  }
+  let mi = RULES.xpMultIndex(n);
+  if (party.levels.length < 3) mi += 1; else if (party.levels.length >= 6) mi -= 1;
+  const mult = RULES.XP_MULT_STEPS[mi], adj = Math.round(xp * mult);
+  const t = [0, 1, 2, 3].map((k) => party.levels.reduce((s, l) => s + RULES.XP_THRESH_2014[l][k], 0));
+  const level = adj >= t[3] ? 4 : adj >= t[2] ? 3 : adj >= t[1] ? 2 : adj >= t[0] ? 1 : 0;
+  return { xp, n, party, mult, adj, edition: "2014", rating: ["Trivial", "Easy", "Medium", "Hard", "Deadly"][level], level, tiers: [["Easy", t[0]], ["Medium", t[1]], ["Hard", t[2]], ["Deadly", t[3]]] };
+}
+actions.dmPartySetup = () => {
+  const camp = DM.cur(); if (!camp) return;
+  const linked = (camp.players || []).filter((p) => p.level > 0);
+  const man = camp.partyManual || { count: Math.max(1, linked.length || 4), level: (linked[0] && linked[0].level) || 1 };
+  const info = dmPartyInfo(camp);
+  modal("Party for difficulty", `
+    <p class="muted small">Difficulty compares the monsters' XP against your party's levels.</p>
+    <div class="seg"><button class="${!camp.partyManual ? "on" : ""}" data-act="dmPartyMode" data-m="linked">Linked players</button><button class="${camp.partyManual ? "on" : ""}" data-act="dmPartyMode" data-m="manual">Set by hand</button></div>
+    ${!camp.partyManual ? `<p class="small">${linked.length ? linked.map((p) => `${esc(p.name)} <b>lvl ${p.level}</b>`).join(" · ") : "No linked players with a level yet — add players by link code, or set the party by hand."}</p>`
+      : `<div class="grid2"><label class="fld"><span>Players</span><input id="dmp-count" type="number" min="1" max="12" value="${man.count}"></label><label class="fld"><span>Level</span><input id="dmp-level" type="number" min="1" max="20" value="${man.level}"></label></div>`}
+    <h3 class="sec">Rules</h3>
+    <div class="seg"><button class="${info.edition === "2014" ? "on" : ""}" data-act="dmPartyEd" data-e="2014">2014 (Easy → Deadly)</button><button class="${info.edition === "2024" ? "on" : ""}" data-act="dmPartyEd" data-e="2024">2024 (Low → High)</button></div>
+    <div class="modal-btns"><button class="btn primary" data-act="dmPartySave">Done</button></div>`);
+};
+actions.dmPartyMode = (el) => { const camp = DM.cur(); if (el.dataset.m === "manual") { const l = (camp.players || []).filter((p) => p.level > 0); camp.partyManual = camp.partyManual || { count: Math.max(1, l.length || 4), level: (l[0] && l[0].level) || 1 }; } else camp.partyManual = null; DM.save(); actions.dmPartySetup(); };
+actions.dmPartyEd = (el) => { const camp = DM.cur(); dmPartyReadForm(camp); camp.edition = el.dataset.e; DM.save(); actions.dmPartySetup(); };
+function dmPartyReadForm(camp) { if (camp.partyManual && $("#dmp-count")) camp.partyManual = { count: Math.max(1, Math.min(12, +$("#dmp-count").value || 1)), level: Math.max(1, Math.min(20, +$("#dmp-level").value || 1)) }; }
+actions.dmPartySave = () => { const camp = DM.cur(); dmPartyReadForm(camp); DM.save(); closeModal(); render(); };
+
+/* --- homebrew monsters: the DM's own stat blocks, kept across campaigns --- */
+// trait/action text: one per paragraph, "Name. What it does" (blank line between them)
+function hbParseBlocks(txt) {
+  return String(txt || "").split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean).map((b) => {
+    const m = /^([^.\n]{1,80})\.\s*([\s\S]*)$/.exec(b);
+    return m ? { name: m[1].trim(), desc: m[2].trim() } : { name: "", desc: b };
+  });
+}
+function hbBlocksText(arr) { return (arr || []).map((a) => (a.name ? a.name + ". " : "") + a.desc).join("\n\n"); }
+actions.dmHomebrewEdit = (el) => {
+  const id = el && el.dataset && el.dataset.id;
+  const h = (id && DM.homebrew.find((x) => x.id === id)) || (DM._hbDraft) || { id: "", name: "", cr: "1", type: "monstrosity", ac: 12, hp: 20, speed: "30 ft.", abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 } };
+  DM._hbDraft = null; DM._hbEditId = h.id || "";
+  const ab = h.abilities || {};
+  const f = (k, label, v, attrs = "") => `<label class="fld"><span>${label}</span><input id="hb-${k}" value="${esc(v == null ? "" : String(v))}" ${attrs}></label>`;
+  const ta = (k, label, arr, ph) => `<label class="fld"><span>${label}</span><textarea id="hb-${k}" rows="4" placeholder="${esc(ph)}">${esc(hbBlocksText(arr))}</textarea></label>`;
+  modal(h.id ? "Edit homebrew monster" : "New homebrew monster", `
+    ${f("name", "Name *", h.name, 'placeholder="e.g. Goblin Warlord"')}
+    <div class="grid2">
+      <label class="fld"><span>CR</span><select id="hb-cr">${Object.keys(RULES.XP_BY_CR).map((c) => `<option ${String(h.cr) === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+      <label class="fld"><span>Type</span><select id="hb-type">${SUMMON_TYPES.map((t) => `<option ${h.type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+      ${f("ac", "AC", h.ac, 'type="number" inputmode="numeric"')}${f("hp", "HP", h.hp, 'type="number" inputmode="numeric"')}
+    </div>
+    ${f("speed", "Speed", h.speed)}
+    <div class="hb-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<label class="fld"><span>${k.toUpperCase()}</span><input id="hb-${k}" type="number" inputmode="numeric" value="${ab[k] ?? 10}"></label>`).join("")}</div>
+    ${f("saves", "Saving throws", h.saves, 'placeholder="DEX +5, WIS +3"')}${f("skills", "Skills", h.skills, 'placeholder="Perception +4, Stealth +6"')}
+    ${f("resist", "Damage resistances", h.resist)}${f("immune", "Damage immunities", h.immune)}${f("condImmune", "Condition immunities", h.condImmune)}
+    ${f("senses", "Senses", h.senses, 'placeholder="darkvision 60 ft., passive Perception 14"')}${f("languages", "Languages", h.languages)}
+    <p class="muted small">Traits &amp; actions: write each as <b>Name. What it does</b>, with an empty line between them.</p>
+    ${ta("traits", "Traits", h.traits, "Pack Tactics. Advantage on attacks if an ally is within 5 ft. of the target.")}
+    ${ta("actions", "Actions", h.actions, "Scimitar. Melee Weapon Attack: +5 to hit, reach 5 ft. Hit: 6 (1d6 + 3) slashing damage.")}
+    ${ta("reactions", "Reactions", h.reactions, "Parry. Adds 2 to its AC against one melee attack that would hit it.")}
+    ${ta("legendary", "Legendary actions (3 per round)", h.legendary, "Tail Attack. Makes one tail attack.")}
+    <div class="modal-btns">${h.id ? `<button class="btn danger" data-act="dmHomebrewDelete">Delete</button>` : ""}<button class="btn primary" data-act="dmHomebrewSave">Save</button></div>`);
+};
+actions.dmHomebrewSave = () => {
+  const v = (k) => ($("#hb-" + k) ? $("#hb-" + k).value.trim() : "");
+  const name = v("name"); if (!name) { toast("Give it a name."); return; }
+  const clash = (Grimoire.summonLib || []).find((d) => d.name.toLowerCase() === name.toLowerCase() && d.id !== DM._hbEditId);
+  if (clash) { toast(clash.homebrew ? "You already have a homebrew monster with that name." : "That's an SRD monster's name — pick a different one (e.g. add a title)."); return; }
+  const h = {
+    id: DM._hbEditId || "hb" + Gx.uid(), name, cr: v("cr"), type: v("type"), ac: Math.max(0, +v("ac") | 0), hp: Math.max(1, +v("hp") | 0), speed: v("speed"),
+    abilities: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map((k) => [k, Math.max(1, Math.min(30, +v(k) || 10))])),
+    saves: v("saves"), skills: v("skills"), resist: v("resist"), immune: v("immune"), vuln: "", condImmune: v("condImmune"), senses: v("senses"), languages: v("languages"),
+    traits: hbParseBlocks(v("traits")), actions: hbParseBlocks(v("actions")), reactions: hbParseBlocks(v("reactions")), legendary: hbParseBlocks(v("legendary")), attacks: [],
+  };
+  const i = DM.homebrew.findIndex((x) => x.id === h.id);
+  if (i >= 0) DM.homebrew[i] = h; else DM.homebrew.push(h);
+  DM.syncHomebrew(); DM.save(); closeModal(); render(); toast(`${name} saved.`);
+};
+actions.dmHomebrewDelete = () => {
+  const id = DM._hbEditId; const h = DM.homebrew.find((x) => x.id === id); if (!h) return;
+  confirmDelete(`Delete ${h.name}? Saved encounters that use it will skip it.`, () => { DM.homebrew = DM.homebrew.filter((x) => x.id !== id); DM.syncHomebrew(); DM.save(); render(); });
+};
+// start a homebrew monster from an SRD one (reskins, tougher variants)
+actions.dmHomebrewCopy = (el) => {
+  const def = creatureFind(el.dataset.name); if (!def) return;
+  DM._hbDraft = { ...JSON.parse(JSON.stringify(def)), id: "", name: def.name + " (variant)", homebrew: undefined, source: undefined };
+  actions.dmHomebrewEdit();
+};
+
+/* --- campaign notes: NPCs, plot hooks, what happened last session --- */
+actions.dmNoteEdit = (el) => {
+  const camp = DM.cur(); if (!camp) return;
+  const n = (el && el.dataset && el.dataset.id && (camp.notes || []).find((x) => x.id === el.dataset.id)) || { id: "", title: "", text: "" };
+  DM._noteId = n.id;
+  modal(n.id ? "Edit note" : "New note", `
+    <label class="fld"><span>Title</span><input id="dmn-title" value="${esc(n.title)}" placeholder="e.g. Sildar Hallwinter (NPC)"></label>
+    <label class="fld"><span>Note</span><textarea id="dmn-text" rows="10" placeholder="Who they are, what the party knows, loose threads…">${esc(n.text)}</textarea></label>
+    <div class="modal-btns">${n.id ? `<button class="btn danger" data-act="dmNoteDelete">Delete</button>` : ""}<button class="btn primary" data-act="dmNoteSave">Save</button></div>`,
+    () => { if (!n.id) $("#dmn-title").focus(); });
+};
+actions.dmNoteSave = () => {
+  const camp = DM.cur(); if (!camp) return;
+  const title = $("#dmn-title").value.trim(), text = $("#dmn-text").value;
+  if (!title && !text.trim()) { closeModal(); return; }
+  camp.notes = camp.notes || [];
+  const n = camp.notes.find((x) => x.id === DM._noteId);
+  if (n) Object.assign(n, { title, text, updated: nowStamp() }); else camp.notes.push({ id: "n" + Gx.uid(), title, text, updated: nowStamp() });
+  DM.save(); closeModal(); render();
+};
+actions.dmNoteDelete = () => { const camp = DM.cur(); const id = DM._noteId; confirmDelete("Delete this note?", () => { camp.notes = (camp.notes || []).filter((x) => x.id !== id); DM.save(); render(); }); };
+actions.dmNoteSearch = (el) => { ui.dmNoteQ = el.value; const b = $("#dm-notes"); if (b) b.innerHTML = dmNotesList(); };
 
 /* --- navigation --- */
-actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); if (DM.cur()) dmPartyAutoSync(); };
+actions.openDM = () => { ui.screen = DM.cur() ? "dm" : "dmCampaigns"; render(); if (DM.cur()) { dmPartyAutoSync(); dmRefreshPartyLevels(); } };
 actions.dmHome = () => { ui.screen = "dm"; render(); };
 actions.dmBackHome = () => { ui.screen = "home"; render(); };
 /* ---- Campaigns: one DM can run several games, each with its own players/encounters/combat ---- */
 actions.dmCampaigns = () => { ui.screen = "dmCampaigns"; render(); };
-actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.screen = "dm"; render(); dmPartyAutoSync(); };
+actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.screen = "dm"; render(); dmPartyAutoSync(); dmRefreshPartyLevels(); };
 actions.dmNewCampaign = () => {
   modal("New campaign", `
     <label class="fld"><span>Campaign name</span><input id="dmc-cname" placeholder="e.g. Curse of Strahd" autocomplete="off"></label>
@@ -1932,7 +2099,7 @@ function dmPickRows() {
   if (!items.length) return `<p class="muted small pad">No match.</p>`;
   return items.map((d) => `<div class="sum-row"><button class="sum-pick" data-act="dmPickAdd" data-name="${esc(d.name)}">
     <span class="sp-ic">${creatureIcon(d.type || d.icon)}</span>
-    <span class="sp-col"><span class="sp-n">${esc(d.name)}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP</span></span></button></div>`).join("");
+    <span class="sp-col"><span class="sp-n">${esc(d.name)}${d.homebrew ? ` <span class="hb-badge">homebrew</span>` : ""}</span><span class="muted small">CR ${esc(d.cr)} · ${esc(d.type || "")} · AC ${d.ac} · ${d.hp} HP</span></span></button></div>`).join("");
 }
 actions.dmPickSearch = (el) => { ui.dmPick.q = el.value; const b = $("#dm-lib"); if (b) b.innerHTML = dmPickRows(); };
 actions.dmPickType = (el) => { ui.dmPick.type = el.value; const b = $("#dm-lib"); if (b) b.innerHTML = dmPickRows(); };
@@ -1986,6 +2153,12 @@ function dmApplyLink(cb, p) {
   const ac = dmComputeAC(p); if (ac) cb.ac = ac;
   if (p.name) cb.name = p.name;
   if (p.conditions) cb.conditions = p.conditions.map((c) => ({ name: c.name, rounds: c.rounds || null }));
+  if ("spells.concentratingOn" in p) { const id = p["spells.concentratingOn"]; cb.conc = !!id; cb.concSpell = id ? dmSpellName(id, p) : ""; }
+  cb.death = p.combat && p.combat.death ? { succ: p.combat.death.succ || 0, fail: p.combat.death.fail || 0 } : null;
+}
+function dmSpellName(id, p) {
+  const all = [].concat(Grimoire.spells["2014"] || [], Grimoire.spells["2024"] || [], (p && p.customSpells) || []);
+  const s = all.find((x) => x.id === id); return s ? s.name : "a spell";
 }
 function dmLinkCombatant(p, code) {
   const cb = { id: "cb" + Gx.uid(), name: p.name || "Player", kind: "link", ref: null, linkCode: code, ac: 10, hpMax: (p.combat && p.combat.hpMax) || 10, hps: [(p.combat && p.combat.hpCur != null) ? p.combat.hpCur : ((p.combat && p.combat.hpMax) || 10)], hpTemp: 0, init: null, conditions: [], conc: false, icon: "" };
@@ -2178,9 +2351,13 @@ actions.dmDmg = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.data
 actions.dmHeal = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; amountPrompt(`Heal — ${cb.name}`, "How much healing?", (n) => { dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (n | 0))); DM.save(); render(); }); };
 actions.dmHpStep = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (+el.dataset.d || 0))); DM.save(); render(); };
 actions.dmInstKill = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.hps.length <= 1) return; cb.hps.splice(+el.dataset.i, 1); DM.save(); render(); };
-actions.dmUndo = () => { const a = DM.active; if (!a || !a._undo) return; const cb = a.combatants.find((c) => c.id === a._undo.id); if (cb) { cb.hps = a._undo.hps.slice(); cb.hpTemp = a._undo.hpTemp; } a._undo = null; DM.save(); render(); };
+actions.dmUndo = () => {
+  const a = DM.active; if (!a || !a._undo) return;
+  for (const u of a._undo.list || [a._undo]) { const cb = a.combatants.find((c) => c.id === u.id); if (cb) { cb.hps = u.hps.slice(); cb.hpTemp = u.hpTemp; } }
+  a._undo = null; DM.save(); render();
+};
 actions.dmConc = (el) => { const cb = dmFindCb(el.dataset.id); if (cb) { cb.conc = !cb.conc; DM.save(); render(); } };
-actions.dmStat = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.kind !== "monster") return; const def = creatureDef({ ref: cb.ref }); modal(def.name, `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p><div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp}</b></span><span>${esc(def.speed || "")}</span></div>${statBlockBody(def, null)}<div class="modal-btns"><button class="btn" data-act="closeModal">Close</button></div>`); };
+actions.dmStat = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.kind !== "monster") return; const def = creatureDef({ ref: cb.ref }); modal(def.name, `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p><div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp}</b></span><span>${esc(def.speed || "")}</span></div>${statBlockBody(def, null)}<div class="modal-btns"><button class="btn ghost" data-act="dmHomebrewCopy" data-name="${esc(def.name)}">Copy as homebrew</button><button class="btn" data-act="closeModal">Close</button></div>`); };
 /* conditions on a combatant (with optional round timer) */
 actions.dmCondOpen = (el) => {
   const id = el.dataset.id;
@@ -2191,12 +2368,93 @@ actions.dmCondAdd = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) retur
 actions.dmCondRemove = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; cb.conditions = (cb.conditions || []).filter((c) => c.name !== el.dataset.name); DM.save(); render(); };
 actions.dmNext = () => {
   const a = DM.active; if (!a) return; const order = dmSorted(a); if (!order.length) return;
+  if (!a.turnId && a.combatants.some((c) => c.kind !== "lair" && c.init == null)) { actions.dmInitSheet(null, true); return; }
   if (!a.turnId) { a.turnId = order[0].id; a.round = 1; }
   else { const i = order.findIndex((c) => c.id === a.turnId); if (i < 0 || i + 1 >= order.length) { a.round = (a.round || 1) + 1; a.turnId = order[0].id; } else a.turnId = order[i + 1].id; }
   const cur = a.combatants.find((c) => c.id === a.turnId); // tick this combatant's conditions (until your next turn)
   if (cur) cur.conditions = (cur.conditions || []).filter((cd) => { if (cd.rounds == null) return true; cd.rounds -= 1; return cd.rounds > 0; });
+  if (cur && cur.la) cur.la.left = cur.la.max;
   DM.save(); render();
 };
+// step back one turn (to fix a mis-tap); condition timers that already ticked are not restored
+actions.dmPrev = () => {
+  const a = DM.active; if (!a || !a.turnId) return; const order = dmSorted(a);
+  const i = order.findIndex((c) => c.id === a.turnId);
+  if (i > 0) a.turnId = order[i - 1].id;
+  else if ((a.round || 1) > 1) { a.round -= 1; a.turnId = order[order.length - 1].id; }
+  else return;
+  DM.save(); render();
+};
+/* one sheet to type everyone's initiative (players roll their own dice; monsters show their Dex bonus) */
+actions.dmInitSheet = (el, thenStart) => {
+  const a = DM.active; if (!a) return;
+  const rows = a.combatants.filter((c) => c.kind !== "lair").map((cb) => {
+    const def = cb.kind === "monster" ? creatureFind(cb.ref || cb.name) : null;
+    const dex = def && def.abilities ? Calc.mod(def.abilities.dex) : null;
+    return `<label class="ini-row"><span>${esc(cb.name)}${cb.hps.length > 1 ? ` ×${cb.hps.length}` : ""}${dex != null ? ` <span class="muted small">Dex ${sign(dex)}</span>` : ""}</span><input type="number" inputmode="numeric" data-ini="${esc(cb.id)}" value="${cb.init == null ? "" : cb.init}" placeholder="—"></label>`;
+  }).join("");
+  modal("Initiative", `${thenStart ? `<p class="muted small">Type everyone's initiative, then start.</p>` : ""}<div class="ini-list">${rows}</div>
+    <div class="modal-btns"><button class="btn" data-act="dmInitSave">Save</button>${!a.turnId ? `<button class="btn primary" data-act="dmInitSave" data-start="1">Save &amp; start</button>` : ""}</div>`,
+    () => { const f = document.querySelector("[data-ini]"); if (f && thenStart) f.focus(); });
+};
+actions.dmInitSave = (el) => {
+  const a = DM.active; if (!a) return;
+  document.querySelectorAll("[data-ini]").forEach((inp) => { const cb = a.combatants.find((c) => c.id === inp.dataset.ini); if (cb) cb.init = inp.value === "" ? null : (+inp.value | 0); });
+  DM.save(); closeModal();
+  if (el && el.dataset.start) { a.turnId = null; const order = dmSorted(a); if (order.length) { a.turnId = order[0].id; a.round = 1; if (order[0].la) order[0].la.left = order[0].la.max; } DM.save(); }
+  render();
+};
+/* area damage: one number, many targets, each can be halved for a successful save */
+actions.dmArea = () => {
+  const a = DM.active; if (!a) return;
+  ui.dmArea = { sel: {}, half: {} };
+  const rows = dmSorted(a).filter((c) => c.kind !== "lair" && !dmCbDown(c)).map((cb) => cb.hps.map((h, i) => h > 0 ? `<div class="area-row">
+      <button class="area-pick" data-act="dmAreaPick" data-k="${esc(cb.id)}:${i}" data-kind="${cb.kind === "monster" || cb.kind === "custom" ? "foe" : "pc"}">${esc(cb.name)}${cb.hps.length > 1 ? ` #${i + 1}` : ""} <span class="muted small">${h} HP</span></button>
+      <button class="area-half" data-act="dmAreaHalf" data-k="${esc(cb.id)}:${i}" title="saved — half damage">½</button></div>` : "").join("")).join("");
+  modal("Area damage", `<label class="fld"><span>Damage</span><input id="dm-area-amt" type="number" inputmode="numeric" min="0" placeholder="e.g. 28"></label>
+    <div class="area-quick"><button class="mini" data-act="dmAreaAll" data-kind="foe">All monsters</button><button class="mini" data-act="dmAreaAll" data-kind="pc">All players</button><button class="mini" data-act="dmAreaAll" data-kind="none">None</button></div>
+    <p class="muted small">Tap who's hit. Tap ½ for anyone who made their save.</p>
+    <div class="area-list">${rows || `<p class="muted small">No one standing.</p>`}</div>
+    <div class="modal-btns"><button class="btn primary" data-act="dmAreaApply">Deal damage</button></div>`);
+};
+actions.dmAreaPick = (el) => { const k = el.dataset.k; ui.dmArea.sel[k] = !ui.dmArea.sel[k]; el.classList.toggle("on", ui.dmArea.sel[k]); };
+actions.dmAreaHalf = (el) => { const k = el.dataset.k; ui.dmArea.half[k] = !ui.dmArea.half[k]; el.classList.toggle("on", ui.dmArea.half[k]); if (ui.dmArea.half[k] && !ui.dmArea.sel[k]) { const p = el.previousElementSibling; ui.dmArea.sel[k] = true; p.classList.add("on"); } };
+actions.dmAreaAll = (el) => { document.querySelectorAll(".area-pick").forEach((b) => { const on = el.dataset.kind !== "none" && b.dataset.kind === el.dataset.kind; ui.dmArea.sel[b.dataset.k] = on; b.classList.toggle("on", on); }); };
+actions.dmAreaApply = () => {
+  const a = DM.active; const n = Math.max(0, +($("#dm-area-amt") || {}).value | 0);
+  const keys = Object.keys(ui.dmArea.sel).filter((k) => ui.dmArea.sel[k]);
+  if (!n) { toast("Type the damage first."); return; }
+  if (!keys.length) { toast("Tap who's hit."); return; }
+  const hit = [...new Set(keys.map((k) => k.split(":")[0]))].map((id) => a.combatants.find((c) => c.id === id)).filter(Boolean);
+  dmPushUndo(hit);
+  const checks = [];
+  for (const k of keys) {
+    const [id, si] = k.split(":"); const i = +si; const cb = a.combatants.find((c) => c.id === id); if (!cb) continue;
+    let dmg = ui.dmArea.half[k] ? Math.floor(n / 2) : n, rem = dmg;
+    if (i === 0 && cb.hpTemp) { const ft = Math.min(cb.hpTemp, rem); cb.hpTemp -= ft; rem -= ft; }
+    cb.hps[i] = Math.max(0, cb.hps[i] - rem);
+    if (cb.conc && dmg) checks.push(`${cb.name} DC ${Math.max(10, Math.floor(dmg / 2))}`);
+  }
+  DM.save(); closeModal(); render();
+  toast(`Hit ${keys.length} target${keys.length === 1 ? "" : "s"}.${checks.length ? ` Concentration: ${checks.join(", ")}.` : ""}`, checks.length ? 5000 : 2600);
+};
+/* the "+ Add" menu, lair actions and legendary pips */
+actions.dmAddMenu = () => {
+  const a = DM.active; const lair = a && a.combatants.some((c) => c.kind === "lair");
+  modal("Add to combat", `<div class="menu-list">
+    <button class="btn ghost" data-act="dmAddMonster">Monster</button>
+    <button class="btn ghost" data-act="dmAddChar">Player character</button>
+    <button class="btn ghost" data-act="dmAddCustom">Custom (NPC / quick stats)</button>
+    <button class="btn ghost" data-act="dmLairToggle">${lair ? "Remove lair actions" : "Lair actions (initiative 20)"}</button>
+  </div>`);
+};
+actions.dmLairToggle = () => {
+  const a = DM.active; if (!a) return;
+  if (a.combatants.some((c) => c.kind === "lair")) { a.combatants = a.combatants.filter((c) => c.kind !== "lair"); if (!a.combatants.some((c) => c.id === a.turnId)) a.turnId = null; }
+  else a.combatants.push({ id: "cb" + Gx.uid(), name: "Lair action", kind: "lair", ref: null, ac: 0, hpMax: 1, hps: [1], hpTemp: 0, init: 20, conditions: [], conc: false, icon: "" });
+  DM.save(); closeModal(); render();
+};
+actions.dmPip = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) return; const pool = cb[el.dataset.pool]; if (!pool) return; const i = +el.dataset.i; pool.left = i < pool.left ? i : i + 1; DM.save(); render(); };
 
 /* ---------- appearance (dark/light + accent) ---------- */
 actions.appearance = () => {
@@ -2399,6 +2657,7 @@ if ("serviceWorker" in navigator) {
   Party.load();
   DM.load();
   try { await loadSpells(); } catch (e) { toast("Spell data offline — connect once to install."); }
+  DM.syncHomebrew();
   if (Store.active()) {
     // resume where the user left off (screen + tab) instead of always resetting to Stats
     let nav = null; try { nav = JSON.parse(localStorage.getItem("grimoire.nav.v1") || "null"); } catch (e) {}

@@ -654,6 +654,7 @@ function statBlockBody(def, s) {
     ${blocks("Traits", def.traits)}
     ${blocks("Actions", def.actions)}
     ${blocks("Reactions", def.reactions)}
+    ${def.legendary && def.legendary.length ? `<h4 class="stat-sec">Legendary Actions</h4><p class="muted small">Can take 3 legendary actions, choosing from the options below. Only one option at a time, at the end of another creature's turn. Spent actions come back at the start of its turn.</p>${def.legendary.map((a) => `<p class="stat-block-item"><b>${esc(a.name)}.</b> ${esc(a.desc)}</p>`).join("")}` : ""}
     ${s && s.attacksMagical ? `<p class="muted small">Attacks count as magical (Mighty Summoner).</p>` : ""}`;
 }
 function summonCard(ch, s) {
@@ -833,7 +834,7 @@ function viewDM() {
   const encs = DM.encounters.map((e) => `<div class="dm-enc">
     <button class="dm-enc-main" data-act="dmRunEncounter" data-id="${esc(e.id)}">
       <span class="dm-enc-name">${esc(e.name || "Untitled encounter")}</span>
-      <span class="muted small">${(e.monsters || []).reduce((t, m) => t + (m.count || 0), 0)} monsters · tap to run</span></button>
+      <span class="muted small">${(e.monsters || []).reduce((t, m) => t + (m.count || 0), 0)} monsters${(() => { const d = dmDifficulty(e.monsters); return d.rating ? ` · <span class="diff-tag d${d.level}">${d.rating}</span>` : ""; })()} · tap to run</span></button>
     <button class="opt-btn" data-act="dmEditEncounter" data-id="${esc(e.id)}">⋯</button>
   </div>`).join("") || `<p class="muted pad">No saved encounters yet. Build one to launch fast at the table.</p>`;
   const players = (DM.players || []).map((p) => `<div class="dm-enc">
@@ -860,13 +861,25 @@ function viewDM() {
       <div class="dm-enc-list">${players}</div>
       <h3 class="sec">Saved encounters</h3>
       <div class="dm-enc-list">${encs}</div>
+      <h3 class="sec">Notes <button class="mini" data-act="dmNoteEdit">+ add</button></h3>
+      ${(camp.notes || []).length > 4 ? `<input class="search" data-act="dmNoteSearch" placeholder="Search notes…" value="${esc(ui.dmNoteQ || "")}">` : ""}
+      <div class="dm-enc-list" id="dm-notes">${dmNotesList()}</div>
+      <h3 class="sec">Homebrew monsters <button class="mini" data-act="dmHomebrewEdit">+ new</button></h3>
+      <div class="dm-enc-list">${DM.homebrew.map((h) => `<div class="dm-enc"><button class="dm-enc-main" data-act="dmHomebrewEdit" data-id="${esc(h.id)}"><span class="dm-enc-name">${esc(h.name)}</span><span class="muted small">CR ${esc(h.cr)} · ${esc(h.type)} · AC ${h.ac} · ${h.hp} HP · tap to edit</span></button></div>`).join("") || `<p class="muted pad">Your own monsters, in every campaign. Make one from scratch, or open any monster's stat block in combat and tap “Copy as homebrew”.</p>`}</div>
     </div>`;
+}
+// campaign notes, newest first, filtered by the search box
+function dmNotesList() {
+  const camp = DM.cur(); const q = (ui.dmNoteQ || "").toLowerCase();
+  const notes = (camp.notes || []).filter((n) => !q || (n.title + " " + n.text).toLowerCase().includes(q)).sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+  return notes.map((n) => `<div class="dm-enc"><button class="dm-enc-main" data-act="dmNoteEdit" data-id="${esc(n.id)}"><span class="dm-enc-name">${esc(n.title || "Untitled")}</span><span class="muted small dm-note-peek">${esc((n.text || "").split("\n").find((l) => l.trim()) || "")}</span></button></div>`).join("")
+    || `<p class="muted pad">${q ? "No notes match." : "NPCs, plot hooks, what happened last session — kept with this campaign."}</p>`;
 }
 function viewDMEdit() {
   const e = DM.encounters.find((x) => x.id === DM._editId);
   if (!e) { ui.screen = "dm"; return viewDM(); }
   const mons = (e.monsters || []).map((m) => `<div class="dm-mon-row">
-    <span class="dm-mon-name">${esc(m.name)}</span>
+    <span class="dm-mon-name">${esc(m.name)} <span class="muted small">CR ${esc((creatureFind(m.name) || {}).cr || "?")} · ${crXP((creatureFind(m.name) || {}).cr).toLocaleString()} XP</span></span>
     <div class="dm-mon-ct"><button data-act="dmEncMonStep" data-name="${esc(m.name)}" data-d="-1">−</button><span>${m.count}</span><button data-act="dmEncMonStep" data-name="${esc(m.name)}" data-d="1">+</button></div>
   </div>`).join("") || `<p class="muted small">No monsters yet — tap “+ add”.</p>`;
   return `
@@ -875,8 +888,23 @@ function viewDMEdit() {
       <label class="fld"><span>Name</span><input data-act="dmEncName" value="${esc(e.name)}" placeholder="e.g. Goblin Ambush"></label>
       <h3 class="sec">Monsters <button class="mini" data-act="dmEncAddMonster">+ add</button></h3>
       <div class="dm-mon-list">${mons}</div>
+      ${dmDifficultyCard(e.monsters)}
       <div class="summon-actions"><button class="btn primary" data-act="dmEncDone">Done</button><button class="btn danger" data-act="dmEncDelete" data-id="${esc(e.id)}">Delete</button></div>
     </div>`;
+}
+// encounter difficulty panel: rating, XP and the party's thresholds
+function dmDifficultyCard(monsters) {
+  const d = dmDifficulty(monsters);
+  const partyTxt = d.party.source === "none" ? "No party set" : d.party.source === "manual" ? `${d.party.levels.length} × level ${d.party.levels[0]}` : d.party.names.map((n, i) => `${esc(n)} ${d.party.levels[i]}`).join(", ");
+  if (!d.n) return `<div class="diff-card"><div class="diff-head"><b>Difficulty</b><button class="mini" data-act="dmPartySetup">party: ${partyTxt}</button></div><p class="muted small">Add monsters to see how hard the fight is.</p></div>`;
+  if (!d.rating) return `<div class="diff-card"><div class="diff-head"><b>Difficulty</b><button class="mini" data-act="dmPartySetup">set party</button></div><p class="muted small">${d.xp.toLocaleString()} XP. Tell the app your party (linked players or by hand) to rate it.</p></div>`;
+  const xpLine = d.edition === "2014" ? `${d.xp.toLocaleString()} XP × ${d.mult} for ${d.n} monster${d.n === 1 ? "" : "s"} = <b>${d.adj.toLocaleString()}</b> adjusted XP` : `<b>${d.xp.toLocaleString()}</b> XP`;
+  const val = d.edition === "2014" ? d.adj : d.xp;
+  return `<div class="diff-card">
+    <div class="diff-head"><b>Difficulty</b> <span class="diff-tag d${d.level}">${d.rating}</span><button class="mini" data-act="dmPartySetup">party: ${partyTxt} · ${d.edition}</button></div>
+    <p class="small">${xpLine}</p>
+    <div class="diff-tiers">${d.tiers.map(([n, v]) => `<span class="${val >= v && d.edition === "2014" || (d.edition === "2024" && n === d.rating) ? "hit" : ""}">${n} ${v.toLocaleString()}</span>`).join("")}</div>
+  </div>`;
 }
 function viewDMRun() {
   const a = DM.active;
@@ -889,20 +917,27 @@ function viewDMRun() {
       <button class="kebab" data-act="dmSettings" title="Features">≡</button>
     </header>
     <div class="dm-run-bar">
+      ${a.turnId ? `<button class="btn ghost" data-act="dmPrev" title="previous turn" aria-label="Previous turn">◂</button>` : ""}
       <button class="btn primary" data-act="dmNext">${a.turnId ? "Next ▸" : "Start ▸"}</button>
       ${dmOn("undo") && a._undo ? `<button class="btn ghost" data-act="dmUndo">Undo</button>` : ""}
-      <button class="btn ghost" data-act="dmAddMonster">+ Monster</button>
-      <button class="btn ghost" data-act="dmAddChar">+ PC</button>
-      <button class="btn ghost" data-act="dmAddCustom">+ Custom</button>
-      ${a.combatants.some((c) => c.kind === "link") ? `<button class="btn ghost" data-act="dmSyncAll">↻ Sync PCs</button>` : ""}
+      <button class="btn ghost" data-act="dmInitSheet">Initiative</button>
+      <button class="btn ghost" data-act="dmArea">Area dmg</button>
+      <button class="btn ghost" data-act="dmAddMenu">+ Add</button>
+      ${a.combatants.some((c) => c.kind === "link") ? `<button class="btn ghost" data-act="dmSyncAll" title="Sync players" aria-label="Sync players">↻</button>` : ""}
     </div>
     <div class="screen">
       <div class="dm-cb-list">${rows}</div>
       ${a.combatants.length ? `<button class="btn danger dm-end" data-act="dmEndCombat">End combat</button>` : ""}
     </div>`;
 }
+function dmPips(cb, pool, label) {
+  const p = cb[pool]; if (!p) return "";
+  return `<span class="dm-pips"><span class="muted small">${label}</span>${Array.from({ length: p.max }, (_, i) => `<button class="dm-pip ${i < p.left ? "on" : ""}" data-act="dmPip" data-id="${esc(cb.id)}" data-pool="${pool}" data-i="${i}" aria-label="${label} ${i + 1}"></button>`).join("")}</span>`;
+}
 function dmCombatantRow(a, cb) {
   const isTurn = a.turnId === cb.id;
+  if (cb.kind === "lair") return `<div class="dm-cb dm-lair ${isTurn ? "on" : ""}"><div class="dm-cb-head"><span class="dm-init">20</span><span class="dm-cb-name">Lair action <span class="muted small">— loses ties</span></span><button class="opt-btn" data-act="dmLairToggle" title="remove lair actions">✕</button></div></div>`;
+  dmLegendInit(cb);
   const down = dmCbDown(cb);
   const group = cb.hps.length > 1;
   const bloodied = dmOn("bloodied") && dmCbBloodied(cb);
@@ -917,7 +952,9 @@ function dmCombatantRow(a, cb) {
       <button class="dm-step heal" data-act="dmHeal" data-id="${esc(cb.id)}" data-i="0" title="heal">♥</button>`;
   }
   const canStat = cb.kind === "monster" && dmOn("statblock");
-  return `<div class="dm-cb ${isTurn ? "on" : ""} ${down ? "dead" : ""}">
+  // a player at 0 HP is dying, not dead — only fade them once they've failed 3 death saves
+  const gone = down && (!["link", "char"].includes(cb.kind) || (cb.death && cb.death.fail >= 3));
+  return `<div class="dm-cb ${isTurn ? "on" : ""} ${gone ? "dead" : ""} ${down && !gone ? "dying" : ""}">
     <div class="dm-cb-head">
       <button class="dm-init" data-act="dmSetInit" data-id="${esc(cb.id)}" title="set initiative">${cb.init == null ? "—" : cb.init}</button>
       <button class="dm-cb-name" ${canStat ? `data-act="dmStat" data-id="${esc(cb.id)}"` : "disabled"}>${esc(cb.name)}${group ? ` ×${cb.hps.filter((h) => h > 0).length}` : ""}${cb.kind === "link" ? ` <em class="dm-live">live</em>` : ""}${bloodied ? ` <em class="dm-bloodied">bloodied</em>` : ""}</button>
@@ -926,6 +963,8 @@ function dmCombatantRow(a, cb) {
       <button class="opt-btn" data-act="dmCbMenu" data-id="${esc(cb.id)}">⋯</button>
     </div>
     <div class="dm-cb-hp">${hpHtml}</div>
-    ${dmOn("conditions") ? `<div class="dm-conds">${conds.map((c) => `<button class="dm-cond" data-act="dmCondRemove" data-id="${esc(cb.id)}" data-name="${esc(c.name)}">${esc(c.name)}${dmOn("durations") && c.rounds ? ` ${c.rounds}r` : ""} ✕</button>`).join("")}<button class="dm-cond-add" data-act="dmCondOpen" data-id="${esc(cb.id)}">+ cond</button>${dmOn("conc") ? `<button class="dm-conc ${cb.conc ? "on" : ""}" data-act="dmConc" data-id="${esc(cb.id)}" title="concentrating">conc</button>` : ""}</div>` : ""}
+    ${cb.kind === "link" && cb.hps[0] <= 0 && cb.death ? `<div class="dm-death">${cb.death.succ >= 3 ? "<b>Stable</b>" : cb.death.fail >= 3 ? "<b>Dead</b>" : "Death saves"} <span class="ds-s">${"●".repeat(Math.min(3, cb.death.succ))}${"○".repeat(3 - Math.min(3, cb.death.succ))}</span> <span class="ds-f">${"●".repeat(Math.min(3, cb.death.fail))}${"○".repeat(3 - Math.min(3, cb.death.fail))}</span></div>` : ""}
+    ${cb.la || cb.lr ? `<div class="dm-legend">${dmPips(cb, "la", "Legendary")}${dmPips(cb, "lr", "Resist")}</div>` : ""}
+    ${dmOn("conditions") ? `<div class="dm-conds">${conds.map((c) => `<button class="dm-cond" data-act="dmCondRemove" data-id="${esc(cb.id)}" data-name="${esc(c.name)}">${esc(c.name)}${dmOn("durations") && c.rounds ? ` ${c.rounds}r` : ""} ✕</button>`).join("")}<button class="dm-cond-add" data-act="dmCondOpen" data-id="${esc(cb.id)}">+ cond</button>${dmOn("conc") ? `<button class="dm-conc ${cb.conc ? "on" : ""}" data-act="dmConc" data-id="${esc(cb.id)}" title="concentrating">conc${cb.conc && cb.concSpell ? ` · ${esc(cb.concSpell)}` : ""}</button>` : ""}</div>` : ""}
   </div>`;
 }

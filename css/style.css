@@ -13,10 +13,12 @@
   --line: #3a2d5c;
   --radius: 14px;
   --on-accent: #fff;
+  --warn: #ff9a4d;
 }
 :root[data-theme="light"] {
   --bg: #f3f0fa; --bg-2: #eae4f6; --panel: #ffffff; --panel-2: #f1edf8;
   --ink: #241a36; --muted: #6c6385; --line: #e0d8ef; --gold: #b5871a;
+  --warn: #b35400;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -604,7 +606,7 @@ body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,
 .dm-mon-ct { display: flex; align-items: center; gap: 10px; }
 .dm-mon-ct button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; font-size: 1.1rem; }
 .dm-mon-ct span { min-width: 18px; text-align: center; font-weight: 700; }
-.dm-run-bar { display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px; position: sticky; top: 0; z-index: 4; background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.dm-run-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; position: sticky; top: 0; z-index: 4; background: color-mix(in srgb, var(--bg) 80%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .dm-run-bar .btn { flex: none; padding: 8px 12px; white-space: nowrap; }
 .dm-cb-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .dm-cb { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; background: var(--panel); }
@@ -655,3 +657,43 @@ body.has-scene .ab-name, body.has-scene .ab-mod { text-shadow: 0 1px 5px rgba(0,
 .sc-chev { margin-left: auto; color: var(--muted); }
 .summon-conc .sp-detail { margin-top: 6px; }
 body.has-scene .summon-conc { background: color-mix(in srgb, var(--panel) 72%, transparent); backdrop-filter: blur(10px); }
+
+/* DM: encounter difficulty */
+.diff-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 12px 0; }
+.diff-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.diff-head .mini { margin-left: auto; }
+.diff-tiers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.diff-tiers span { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+.diff-tiers span.hit { color: var(--ink); border-color: var(--accent); }
+.diff-tag { display: inline-block; font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; border: 1px solid currentColor; }
+.diff-tag.d0, .diff-tag.d1 { color: var(--good); }
+.diff-tag.d2 { color: var(--gold); }
+.diff-tag.d3 { color: var(--warn); }
+.diff-tag.d4 { color: var(--bad); }
+
+/* DM tracker: initiative sheet, area damage, legendary pips, death saves, lair */
+.ini-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ini-row { display: flex; align-items: center; gap: 10px; }
+.ini-row > span { flex: 1; min-width: 0; }
+.ini-row input { width: 76px; flex: none; text-align: center; font-size: 1.05rem; }
+.area-quick { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.area-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.area-row { display: flex; gap: 6px; }
+.area-pick { flex: 1; text-align: left; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.area-pick.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
+.area-half { flex: none; width: 44px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 700; cursor: pointer; }
+.area-half.on { background: var(--gold); color: #1a1206; border-color: transparent; }
+.dm-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.dm-pips { display: inline-flex; align-items: center; gap: 5px; }
+.dm-pip { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; cursor: pointer; padding: 0; }
+.dm-pip.on { background: var(--accent); }
+.dm-death { margin-top: 6px; font-size: .85rem; color: var(--muted); }
+.dm-death .ds-s { color: var(--good); letter-spacing: 2px; }
+.dm-death .ds-f { color: var(--bad); letter-spacing: 2px; }
+.dm-lair { border-style: dashed; }
+.dm-lair .dm-init { display: inline-flex; align-items: center; justify-content: center; }
+.hb-badge { font-size: .66rem; font-weight: 600; color: var(--gold); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; vertical-align: middle; }
+.hb-abis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.hb-abis input { width: 100%; min-width: 0; }
+.dm-note-peek { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.dm-cb.dying { border-color: var(--bad); }
