@@ -215,4 +215,82 @@ const CLASS_TRACKERS = {
 // 2014 app subclass names → the 2024 SRD's names, so SRD subclass features match either way
 const SUBCLASS_2024 = { "Way of the Open Hand": "Warrior of the Open Hand", "School of Evocation": "Evoker", "The Fiend": "Fiend Patron", "Draconic Bloodline": "Draconic Sorcery" };
 
-window.RULES = { CLASS_TRACKERS, SUBCLASS_2024, XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };
+/* Armor (SRD, same in 2014 and 2024): base AC + how Dex counts. dex: full | med (max +2) | none */
+const ARMOR = [
+  { n: "Padded", ac: 11, dex: "full", kind: "Light", stealth: true },
+  { n: "Leather", ac: 11, dex: "full", kind: "Light" },
+  { n: "Studded leather", ac: 12, dex: "full", kind: "Light" },
+  { n: "Hide", ac: 12, dex: "med", kind: "Medium" },
+  { n: "Chain shirt", ac: 13, dex: "med", kind: "Medium" },
+  { n: "Scale mail", ac: 14, dex: "med", kind: "Medium", stealth: true },
+  { n: "Breastplate", ac: 14, dex: "med", kind: "Medium" },
+  { n: "Half plate", ac: 15, dex: "med", kind: "Medium", stealth: true },
+  { n: "Ring mail", ac: 14, dex: "none", kind: "Heavy", stealth: true },
+  { n: "Chain mail", ac: 16, dex: "none", kind: "Heavy", stealth: true, str: 13 },
+  { n: "Splint", ac: 17, dex: "none", kind: "Heavy", stealth: true, str: 15 },
+  { n: "Plate", ac: 18, dex: "none", kind: "Heavy", stealth: true, str: 15 },
+];
+/* Weapons (SRD). p = properties: f finesse, l light, t thrown, v versatile die, h heavy, 2 two-handed,
+   r reach, a ammunition/ranged, ld loading. 2024 changes noted per edition in e24. */
+const WEAPONS = [
+  { n: "Unarmed strike", d: "1", t: "bludgeoning", cat: "Simple" },
+  { n: "Club", d: "1d4", t: "bludgeoning", p: "l", cat: "Simple" },
+  { n: "Dagger", d: "1d4", t: "piercing", p: "f l t", range: "20/60", cat: "Simple" },
+  { n: "Greatclub", d: "1d8", t: "bludgeoning", p: "2", cat: "Simple" },
+  { n: "Handaxe", d: "1d6", t: "slashing", p: "l t", range: "20/60", cat: "Simple" },
+  { n: "Javelin", d: "1d6", t: "piercing", p: "t", range: "30/120", cat: "Simple" },
+  { n: "Light hammer", d: "1d4", t: "bludgeoning", p: "l t", range: "20/60", cat: "Simple" },
+  { n: "Mace", d: "1d6", t: "bludgeoning", cat: "Simple" },
+  { n: "Quarterstaff", d: "1d6", t: "bludgeoning", v: "1d8", cat: "Simple" },
+  { n: "Sickle", d: "1d4", t: "slashing", p: "l", cat: "Simple" },
+  { n: "Spear", d: "1d6", t: "piercing", p: "t", v: "1d8", range: "20/60", cat: "Simple" },
+  { n: "Light crossbow", d: "1d8", t: "piercing", p: "a ld 2", range: "80/320", cat: "Simple" },
+  { n: "Dart", d: "1d4", t: "piercing", p: "f t", range: "20/60", cat: "Simple" },
+  { n: "Shortbow", d: "1d6", t: "piercing", p: "a 2", range: "80/320", cat: "Simple" },
+  { n: "Sling", d: "1d4", t: "bludgeoning", p: "a", range: "30/120", cat: "Simple" },
+  { n: "Battleaxe", d: "1d8", t: "slashing", v: "1d10", cat: "Martial" },
+  { n: "Flail", d: "1d8", t: "bludgeoning", cat: "Martial" },
+  { n: "Glaive", d: "1d10", t: "slashing", p: "h r 2", cat: "Martial" },
+  { n: "Greataxe", d: "1d12", t: "slashing", p: "h 2", cat: "Martial" },
+  { n: "Greatsword", d: "2d6", t: "slashing", p: "h 2", cat: "Martial" },
+  { n: "Halberd", d: "1d10", t: "slashing", p: "h r 2", cat: "Martial" },
+  { n: "Lance", d: "1d12", t: "piercing", p: "r", cat: "Martial", e24: { d: "1d10", p: "h r 2" } },
+  { n: "Longsword", d: "1d8", t: "slashing", v: "1d10", cat: "Martial" },
+  { n: "Maul", d: "2d6", t: "bludgeoning", p: "h 2", cat: "Martial" },
+  { n: "Morningstar", d: "1d8", t: "piercing", cat: "Martial" },
+  { n: "Pike", d: "1d10", t: "piercing", p: "h r 2", cat: "Martial" },
+  { n: "Rapier", d: "1d8", t: "piercing", p: "f", cat: "Martial" },
+  { n: "Scimitar", d: "1d6", t: "slashing", p: "f l", cat: "Martial" },
+  { n: "Shortsword", d: "1d6", t: "piercing", p: "f l", cat: "Martial" },
+  { n: "Trident", d: "1d6", t: "piercing", p: "t", v: "1d8", range: "20/60", cat: "Martial", e24: { d: "1d8", v: "1d10" } },
+  { n: "War pick", d: "1d8", t: "piercing", cat: "Martial", e24: { v: "1d10" } },
+  { n: "Warhammer", d: "1d8", t: "bludgeoning", v: "1d10", cat: "Martial" },
+  { n: "Whip", d: "1d4", t: "slashing", p: "f r", cat: "Martial" },
+  { n: "Blowgun", d: "1", t: "piercing", p: "a ld", range: "25/100", cat: "Martial" },
+  { n: "Hand crossbow", d: "1d6", t: "piercing", p: "a l ld", range: "30/120", cat: "Martial" },
+  { n: "Heavy crossbow", d: "1d10", t: "piercing", p: "a h ld 2", range: "100/400", cat: "Martial" },
+  { n: "Longbow", d: "1d8", t: "piercing", p: "a h 2", range: "150/600", cat: "Martial" },
+];
+const WEAPON_PROPS = { f: "finesse", l: "light", t: "thrown", h: "heavy", 2: "two-handed", r: "reach", a: "ammunition", ld: "loading" };
+// edition-aware weapon (2024 changed a few dice)
+function weaponFor(name, ed) { const w = WEAPONS.find((x) => x.n === name); return w ? (ed === "2024" && w.e24 ? { ...w, ...w.e24 } : w) : null; }
+
+/* Limited-use species traits that make sense as trackers. max: a number, or "prof" = proficiency bonus.
+   from = character level it starts at. */
+const SPECIES_TRACKERS = {
+  "2014": {
+    "Dragonborn": [{ n: "Breath Weapon", max: 1, reset: "short" }],
+    "Half-Orc": [{ n: "Relentless Endurance", max: 1, reset: "long" }],
+    "Tiefling": [{ n: "Hellish Rebuke (Infernal Legacy)", max: 1, reset: "long", from: 3 }],
+  },
+  "2024": {
+    "Dragonborn": [{ n: "Breath Weapon", max: "prof", reset: "long" }, { n: "Draconic Flight", max: 1, reset: "long", from: 5 }],
+    "Dwarf": [{ n: "Stonecunning (Tremorsense)", max: "prof", reset: "long" }],
+    "Goliath": [{ n: "Giant Ancestry", max: "prof", reset: "long" }, { n: "Large Form", max: 1, reset: "long", from: 5 }],
+    "Orc": [{ n: "Adrenaline Rush", max: "prof", reset: "short" }, { n: "Relentless Endurance", max: 1, reset: "long" }],
+  },
+};
+// Non-SRD races/species: names only (their rules text is WotC-owned) — pick one and add the traits yourself
+const EXTRA_SPECIES = ["Aarakocra", "Aasimar", "Bugbear", "Centaur", "Changeling", "Fairy", "Firbolg", "Genasi", "Githyanki", "Githzerai", "Goblin", "Goliath", "Harengon", "Hobgoblin", "Kalashtar", "Kenku", "Kobold", "Leonin", "Lizardfolk", "Loxodon", "Minotaur", "Orc", "Owlin", "Satyr", "Shifter", "Tabaxi", "Tortle", "Triton", "Warforged", "Yuan-ti"];
+
+window.RULES = { ARMOR, WEAPONS, WEAPON_PROPS, weaponFor, SPECIES_TRACKERS, EXTRA_SPECIES, CLASS_TRACKERS, SUBCLASS_2024, XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };

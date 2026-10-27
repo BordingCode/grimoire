@@ -91,7 +91,7 @@ async function loadSpells() {
 }
 
 /* persist + (optionally) re-render; schedules a link push if linked */
-function commit(rerender = true) { Store.touch(); if (window.LINK) LINK.schedulePush(Store.active()); if (rerender) render(); }
+function commit(rerender = true) { syncDerived(Store.active()); Store.touch(); if (window.LINK) LINK.schedulePush(Store.active()); if (rerender) render(); }
 
 /* apply dark/light mode + the active character's per-class theme (tints the whole palette).
    Off a character (home/party), inline overrides are cleared so the CSS defaults apply. */
@@ -171,9 +171,13 @@ const actions = {
     const con = Calc.abilityMod(ch, "con");
     ch.combat.hpMax = die + con + (ch.level - 1) * (Math.floor(die / 2) + 1 + con);
     ch.combat.hpCur = ch.combat.hpMax;
+    ch.subclass = get("f-sub").value || "";
+    const race = get("f-race") ? get("f-race").value : ""; // read before render() swaps the form away
     Store.add(ch);
     ui.screen = "sheet"; ui.tab = "stats"; ui.spellFilter.list = defaultSpellList(Store.active()); render();
+    if (race) actions.speciesOpen({ dataset: { pre: race } }); // straight on to its traits (all optional)
   },
+  newClsChange(el) { const sub = $("#f-sub"); if (sub) sub.innerHTML = newSubOptions(el.value); },
 
   override(el) {
     const ch = Store.active(); const key = el.dataset.key;
@@ -307,8 +311,11 @@ const actions = {
     const ch = Store.active(); const name = $("#res-name").value.trim(); if (!name) { toast("Name required."); return; }
     const rk = $("#res-reset").value;
     const fields = { name, max: Math.max(1, +$("#res-max").value || 1), resetOn: rk === "short" ? "short" : "long", regain: rk === "long1" ? 1 : 0, note: $("#res-note").value.trim() };
-    if ($("#res-grow").checked) { fields.rule = { mult: +$("#res-mult").value || 0, cls: $("#res-cls").value, add: +$("#res-add").value || 0 }; fields.max = ruleMax(ch, fields.rule); }
-    else fields.rule = null;
+    const kind = $("#res-kind").value, add = +$("#res-add").value || 0;
+    fields.rule = kind === "level" ? { kind, mult: +$("#res-mult").value || 0, cls: $("#res-cls").value, add }
+      : kind === "prof" ? { kind, mult: +$("#res-pmult").value || 1, add }
+      : kind === "mod" ? { kind, ab: $("#res-ab").value, add } : null;
+    if (fields.rule) fields.max = ruleMax(ch, fields.rule);
     const editing = actions._resEditId ? ch.resources.find((x) => x.id === actions._resEditId) : null;
     if (editing) { Object.assign(editing, fields); editing.used = Math.min(editing.used, editing.max); }
     else ch.resources.push({ id: Gx.uid(), used: 0, ...fields });
@@ -486,10 +493,21 @@ const actions = {
   weaponDel(el) { const ch = Store.active(); ch.weapons.splice(+el.dataset.i, 1); closeModal(); commit(); toast("Weapon deleted."); },
   weaponSave() {
     const ch = Store.active(); const name = $("#wp-name").value.trim(); if (!name) { toast("Name required."); return; }
-    const data = { name, atk: $("#wp-atk").value.trim(), damage: $("#wp-dmg").value.trim(), damageType: $("#wp-type").value.trim(), notes: $("#wp-notes").value.trim() };
+    const data = { name, damageType: $("#wp-type").value.trim(), notes: $("#wp-notes").value.trim() };
+    if (actions._wpnMode === "auto") { data.auto = wpnAutoRead(); const n = weaponNumbers(ch, data.auto); data.atk = n.atk; data.damage = n.damage; }
+    else { data.auto = null; data.atk = $("#wp-atk").value.trim(); data.damage = $("#wp-dmg").value.trim(); }
     if (actions._wpnEditIdx != null && ch.weapons[actions._wpnEditIdx]) Object.assign(ch.weapons[actions._wpnEditIdx], data);
     else { if (!ch.weapons) ch.weapons = []; ch.weapons.push({ id: Gx.uid(), ...data }); }
     actions._wpnEditIdx = null; closeModal(); commit();
+  },
+
+  /* armor picker: fills the base AC + Dex rule; the fields below stay editable for magic/homebrew armor */
+  armorPick(el) {
+    const ch = Store.active(); const c = ch.combat; const v = el.value;
+    if (v === "custom") { if (c.armorBaseAC == null) c.armorBaseAC = 10; c.armorName = "custom"; }
+    else if (!v) { c.armorBaseAC = null; c.armorDexMode = "none"; c.armorName = ""; }
+    else { const a = RULES.ARMOR.find((x) => x.n === v); if (a) { c.armorBaseAC = a.ac; c.armorDexMode = a.dex; c.armorName = a.n; } }
+    commit(); toast(`AC is now ${Calc.armorClass(ch)}.`);
   },
 
   /* potions: drink one from the carried inventory */
@@ -513,6 +531,7 @@ const actions = {
         <h4 class="menu-h">Build</h4>
         <button class="btn ghost" data-act="levelUp">Level up</button>
         <button class="btn ghost" data-act="manageClasses">Classes &amp; levels</button>
+        <button class="btn ghost" data-act="speciesOpen">Race / species${ch.race && ch.race.name ? ` — ${esc(ch.race.name)}` : ""}</button>
         <button class="btn ghost" data-act="classChecklist">Class features &amp; trackers</button>
         <button class="btn ghost" data-act="renameChar">Rename</button>
       </div>
@@ -1054,8 +1073,16 @@ function resForm(r) {
     <label class="fld"><span>Name</span><input id="res-name" placeholder="e.g. Rage, Ki, Channel Divinity" value="${r ? esc(r.name) : ""}"></label>
     <label class="fld"><span>Max uses</span><input id="res-max" type="number" min="1" value="${r ? r.max : 3}"></label>
     <label class="fld"><span>Resets on</span>${resetSelect("", r ? resetKey(r.resetOn, r.regain) : "long").replace("<select", '<select id="res-reset"')}</label>
-    <label class="chk"><input type="checkbox" id="res-grow" ${r && r.rule ? "checked" : ""} onchange="document.getElementById('res-rule').hidden=!this.checked"> Grows with level (house rule)</label>
-    <div id="res-rule" class="cl-rule" ${r && r.rule ? "" : "hidden"}>Max = <input id="res-mult" type="number" min="0" value="${r && r.rule ? r.rule.mult : 1}"> × <select id="res-cls">${Calc.classList(Store.active()).map((c) => `<option ${r && r.rule && r.rule.cls === c.cls ? "selected" : ""}>${esc(c.cls)}</option>`).join("")}</select> level + <input id="res-add" type="number" value="${r && r.rule ? r.rule.add || 0 : 0}"></div>
+    <label class="fld"><span>Max follows</span><select id="res-kind" onchange="document.querySelectorAll('.res-k').forEach((e) => (e.hidden = !e.classList.contains('k-' + this.value)))">
+      ${[["", "My number (fixed)"], ["level", "Class level (× a number)"], ["prof", "Proficiency bonus"], ["mod", "An ability modifier"]].map(([v, l]) => `<option value="${v}" ${(r && r.rule ? (r.rule.kind || "level") : "") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+    ${(() => { const k = r && r.rule ? (r.rule.kind || "level") : ""; const R = (r && r.rule) || {};
+      return `<div id="res-rule" class="cl-rule">
+        <span class="res-k k-level" ${k === "level" ? "" : "hidden"}>Max = <input id="res-mult" type="number" min="0" value="${k === "level" ? R.mult : 1}"> × <select id="res-cls">${Calc.classList(Store.active()).map((c) => `<option ${R.cls === c.cls ? "selected" : ""}>${esc(c.cls)}</option>`).join("")}</select> level</span>
+        <span class="res-k k-prof" ${k === "prof" ? "" : "hidden"}>Max = <input id="res-pmult" type="number" min="1" value="${k === "prof" ? R.mult || 1 : 1}"> × proficiency bonus</span>
+        <span class="res-k k-mod" ${k === "mod" ? "" : "hidden"}>Max = <select id="res-ab">${RULES.ABILITIES.map((a) => `<option value="${a}" ${R.ab === a ? "selected" : ""}>${a.toUpperCase()}</option>`).join("")}</select> modifier</span>
+        <span class="res-k k-level k-prof k-mod" ${k ? "" : "hidden"}>+ <input id="res-add" type="number" value="${R.add || 0}"></span>
+      </div>`; })()}
+    <p class="muted small">A rule keeps the max up to date by itself as you level up — use it for your table's homebrew too.</p>
     <label class="fld"><span>Note (optional)</span><textarea id="res-note" rows="2" placeholder="what it does, reminders…">${r && r.note ? esc(r.note) : ""}</textarea></label>
     <div class="modal-btns"><button class="btn primary" data-act="resSave">${r ? "Save" : "Add"}</button></div>`, () => $("#res-name").focus());
 }
@@ -1193,16 +1220,57 @@ actions.profRemove = (el) => {
 
 function weaponForm(w, idx) {
   actions._wpnEditIdx = (idx != null) ? idx : null;
+  const ch = Store.active();
+  const a = w && w.auto ? w.auto : null;
+  const mode = w && !w.auto ? "manual" : "auto"; // new weapons start on auto; old hand-typed ones stay hand-typed
+  const A = a || { ab: "auto", prof: true, dice: "1d8", magic: 0, props: "" };
+  const abOpts = [["auto", "Automatic (finesse = best, ranged = DEX)"], ["str", "Strength"], ["dex", "Dexterity"], ["spell", "Spellcasting ability"], ["con", "Constitution"], ["int", "Intelligence"], ["wis", "Wisdom"], ["cha", "Charisma"]];
+  const groups = ["Simple", "Martial"].map((c) => `<optgroup label="${c} weapons">${RULES.WEAPONS.filter((x) => x.cat === c).map((x) => `<option>${x.n}</option>`).join("")}</optgroup>`).join("");
   modal(w ? "Edit weapon" : "Add weapon / attack", `
+    <label class="fld"><span>Pick a weapon (fills in the details)</span><select id="wp-pick" data-act="weaponPick"><option value="">— custom / homebrew —</option>${groups}</select></label>
     <label class="fld"><span>Name *</span><input id="wp-name" placeholder="Longsword, Dagger, Fire Bolt…" value="${w ? esc(w.name) : ""}"></label>
-    <div class="grid2">
-      <label class="fld"><span>To hit (+)</span><input id="wp-atk" type="number" placeholder="e.g. 5" value="${w && w.atk != null ? esc(w.atk) : ""}"></label>
-      <label class="fld"><span>Damage</span><input id="wp-dmg" placeholder="1d8+3" value="${w ? esc(w.damage) : ""}"></label>
+    <div class="seg wp-mode"><button class="${mode === "auto" ? "on" : ""}" data-act="weaponMode" data-m="auto">Work it out for me</button><button class="${mode === "manual" ? "on" : ""}" data-act="weaponMode" data-m="manual">I'll type the numbers</button></div>
+    <div id="wp-auto" ${mode === "auto" ? "" : "hidden"}>
+      <label class="fld"><span>Uses which ability</span><select id="wp-ab">${abOpts.map(([v, l]) => `<option value="${v}" ${A.ab === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div class="grid2">
+        <label class="fld"><span>Damage dice</span><input id="wp-dice" placeholder="1d8" value="${esc(A.dice || "")}"></label>
+        <label class="fld"><span>Magic bonus (+1, +2…)</span><input id="wp-magic" type="number" value="${+A.magic || 0}"></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="wp-prof" ${A.prof ? "checked" : ""}> Proficient (adds your proficiency bonus to hit)</label>
+      <p class="wp-preview" id="wp-preview"></p>
     </div>
+    <div id="wp-manual" ${mode === "manual" ? "" : "hidden"}>
+      <div class="grid2">
+        <label class="fld"><span>To hit (+)</span><input id="wp-atk" type="number" placeholder="e.g. 5" value="${w && w.atk != null ? esc(w.atk) : ""}"></label>
+        <label class="fld"><span>Damage</span><input id="wp-dmg" placeholder="1d8+3" value="${w ? esc(w.damage) : ""}"></label>
+      </div>
+    </div>
+    <input type="hidden" id="wp-props" value="${esc(A.props || "")}">
     <label class="fld"><span>Damage type</span><input id="wp-type" placeholder="slashing, fire…" value="${w ? esc(w.damageType) : ""}"></label>
     <label class="fld"><span>Notes (properties, range)</span><input id="wp-notes" placeholder="versatile, finesse, 20/60 ft…" value="${w ? esc(w.notes) : ""}"></label>
-    <div class="modal-btns"><button class="btn primary" data-act="weaponSave">${w ? "Save" : "Add"}</button></div>`, () => $("#wp-name").focus());
+    <div class="modal-btns"><button class="btn primary" data-act="weaponSave">${w ? "Save" : "Add"}</button></div>`, (wrap) => {
+      actions._wpnMode = mode;
+      const upd = () => { const p = $("#wp-preview"); if (!p) return; const n = weaponNumbers(ch, wpnAutoRead()); p.innerHTML = `→ <b>${sign(n.atk)}</b> to hit · <b>${esc(n.damage)}</b> damage`; };
+      wrap.addEventListener("input", upd); wrap.addEventListener("change", upd); upd();
+      if (!w) $("#wp-pick").focus();
+    });
 }
+function wpnAutoRead() { return { ab: $("#wp-ab").value, prof: $("#wp-prof").checked, dice: $("#wp-dice").value.trim() || "1", magic: +$("#wp-magic").value || 0, props: $("#wp-props").value }; }
+actions.weaponMode = (el) => {
+  actions._wpnMode = el.dataset.m;
+  $("#wp-auto").hidden = el.dataset.m !== "auto"; $("#wp-manual").hidden = el.dataset.m !== "manual";
+  document.querySelectorAll(".wp-mode button").forEach((b) => b.classList.toggle("on", b === el));
+};
+// picking a weapon fills name/dice/type/notes; everything stays editable (homebrew welcome)
+actions.weaponPick = (el) => {
+  const x = RULES.weaponFor(el.value, Store.active().edition); if (!x) return;
+  const props = (x.p || "").split(" ").filter(Boolean);
+  $("#wp-name").value = x.n; $("#wp-dice").value = x.d; $("#wp-type").value = x.t; $("#wp-props").value = " " + props.join(" ") + " ";
+  $("#wp-ab").value = "auto";
+  $("#wp-notes").value = [...props.map((k) => RULES.WEAPON_PROPS[k]), x.v ? `versatile (${x.v})` : "", x.range ? `${x.range} ft` : ""].filter(Boolean).join(", ");
+  if (actions._wpnMode !== "auto") actions.weaponMode(document.querySelector('.wp-mode [data-m="auto"]'));
+  $("#wp-dice").dispatchEvent(new Event("input", { bubbles: true }));
+};
 
 /* spell detail + cast */
 /* a non-bundled spell from the look-up index: name/level/school only, no rules text */
@@ -2006,6 +2074,9 @@ async function dmRefreshPartyLevels() {
       const lvl = (s.level || 0) + (s.multiclass || []).reduce((t, m) => t + (m.level || 0), 0);
       if (lvl && lvl !== p.level) { p.level = lvl; changed = true; }
       if (s.edition && s.edition !== p.edition) { p.edition = s.edition; changed = true; }
+      // a quick look at who they are, for the roster (class, race, HP, AC)
+      const look = { cls: (s.multiclass || []).length ? [s.cls, ...s.multiclass.map((m) => m.cls)].join("/") : s.cls, race: s.race && s.race.name || "", hp: s.combat ? s.combat.hpCur : null, hpMax: s.combat ? s.combat.hpMax : null, ac: dmComputeAC(s) || null };
+      for (const k in look) if (look[k] != null && look[k] !== p[k]) { p[k] = look[k]; changed = true; }
     } catch (e) {}
   }
   if (changed) { DM.save(); if (["dm", "dmEdit"].includes(ui.screen) && !$("#modal")) render(); }
@@ -2146,11 +2217,13 @@ actions.dmOpenCampaign = (el) => { DM.currentId = el.dataset.id; DM.save(); ui.s
 actions.dmNewCampaign = () => {
   modal("New campaign", `
     <label class="fld"><span>Campaign name</span><input id="dmc-cname" placeholder="e.g. Curse of Strahd" autocomplete="off"></label>
+    <label class="fld"><span>Rules</span><select id="dmc-ed"><option value="2014">2014 rules (difficulty: Easy → Deadly)</option><option value="2024">2024 rules (difficulty: Low → High)</option></select></label>
+    <p class="muted small">Used for the encounter difficulty. You can change it later in the campaign's DM features.</p>
     <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="dmNewCampaignGo">Create</button></div>`, () => { const i = $("#dmc-cname"); if (i) i.focus(); });
 };
 actions.dmNewCampaignGo = () => {
   const name = ($("#dmc-cname") ? $("#dmc-cname").value : "").trim() || "My campaign";
-  const c = DM.newCampaign(name); DM.campaigns.push(c); DM.currentId = c.id; DM.save(); closeModal(); ui.screen = "dm"; render();
+  const c = DM.newCampaign(name); c.edition = $("#dmc-ed") ? $("#dmc-ed").value : "2014"; DM.campaigns.push(c); DM.currentId = c.id; DM.save(); closeModal(); ui.screen = "dm"; render();
 };
 actions.dmCampaignMenu = (el) => {
   const c = DM.campaigns.find((x) => x.id === el.dataset.id); if (!c) return;
@@ -2179,10 +2252,15 @@ actions.dmDeleteCampaign = (el) => {
   });
 };
 actions.dmSettings = () => {
+  const camp = DM.cur(); const ed = (camp && camp.edition) || "2014";
   modal("DM features", `
+    <h3 class="sec">Rules for this campaign</h3>
+    <div class="seg"><button class="${ed === "2014" ? "on" : ""}" data-act="dmSetEd" data-e="2014">2014 rules</button><button class="${ed === "2024" ? "on" : ""}" data-act="dmSetEd" data-e="2024">2024 rules</button></div>
+    <h3 class="sec">Features</h3>
     <p class="muted small">Switch features on or off — keep it lean or turn everything on.</p>
     <div class="menu-list">${DM_FEATURES.map((f) => `<button class="btn ${dmOn(f.key) ? "primary" : "ghost"}" data-act="dmToggle" data-key="${f.key}">${dmOn(f.key) ? "✓ " : ""}${esc(f.label)} <span class="muted small">${esc(f.note)}</span></button>`).join("")}</div>`);
 };
+actions.dmSetEd = (el) => { const camp = DM.cur(); if (!camp) return; camp.edition = el.dataset.e; DM.save(); actions.dmSettings(); render(); };
 actions.dmToggle = (el) => { const k = el.dataset.key; DM.settings[k] = !dmOn(k); DM.save(); actions.dmSettings(); render(); };
 
 /* --- encounters (prep) --- */
@@ -2241,6 +2319,7 @@ actions.dmAddChar = () => {
   const saved = (DM.players || []).map((p) => `<button class="btn ghost" data-act="dmAddSavedPlayer" data-id="${esc(p.id)}">${esc(p.name)} <span class="muted small">live HP/AC</span></button>`).join("");
   modal("Add a character", `<div class="menu-list">${list}</div>
     <h3 class="sec">Players who use the app</h3>
+    ${(DM.players || []).length > 1 ? `<button class="btn primary" data-act="dmAddParty">Add the whole party (${DM.players.length})</button>` : ""}
     ${saved ? `<div class="menu-list">${saved}</div>` : ""}
     <button class="btn ghost" data-act="dmAddLink">+ Add by link code (live HP/AC)</button>
     <p class="muted small">For players who don't use the app, use “Add custom”.</p>`);
@@ -2256,6 +2335,21 @@ actions.dmAddSavedPlayer = async (el) => {
     dmConnectToPlayer(p.code);
     toast(`Added ${snap.name || p.name} — live.`);
   } catch (e) { toast("Couldn't reach the link server (offline?)."); }
+};
+// every roster player not already in the fight, with live HP/AC
+actions.dmAddParty = async () => {
+  const a = DM.active; if (!a) return;
+  const inFight = new Set(a.combatants.filter((c) => c.kind === "link" && c.linkCode).map((c) => normLinkCode(c.linkCode)));
+  const todo = (DM.players || []).filter((p) => !inFight.has(normLinkCode(p.code)));
+  if (!todo.length) { closeModal(); toast("The whole party is already in this fight."); return; }
+  closeModal(); toast("Fetching the party…");
+  let added = 0, missed = [];
+  for (const p of todo) {
+    try { const snap = await LINK.fetchSnapshot(p.code); if (snap) { a.combatants.push(dmLinkCombatant(snap, p.code)); added++; } else missed.push(p.name); }
+    catch (e) { missed.push(p.name); }
+  }
+  DM.save(); render();
+  toast(`Added ${added} player${added === 1 ? "" : "s"}${missed.length ? ` — couldn't reach ${missed.join(", ")}` : ""}.`);
 };
 actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === el.dataset.id); if (!c) return; DM.active.combatants.push(dmCharCombatant(c)); DM.save(); closeModal(); render(); };
 /* live link-pull: a player who uses the app shares their link code; the tracker pulls
@@ -2728,7 +2822,7 @@ document.addEventListener("input", (e) => {
   const ch = Store.active(); if (!ch) return;
   let v = t.type === "checkbox" ? t.checked : t.value;
   if (t.type === "number") v = (t.value === "" ? (t.dataset.bind === "combat.armorBaseAC" ? null : 0) : Number(t.value));
-  setPath(ch, t.dataset.bind, v); Store.touch(); if (window.LINK) LINK.schedulePush(ch);
+  setPath(ch, t.dataset.bind, v); syncDerived(ch); Store.touch(); if (window.LINK) LINK.schedulePush(ch);
   // live-update small computed readouts without rebuilding inputs
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
 });

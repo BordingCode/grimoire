@@ -279,3 +279,13 @@ Seen but not changed: DM damage stays on the DM's tracker (players apply their o
 - Combat: the Summons tile is labelled.
 - `[hidden]` is respected everywhere (the checklist's house-rule row showed while unticked).
 - DM: ↻ Sync all keeps the DM's own HP/condition edits unless a player's sheet actually changed; link codes are normalised (abcd2345 → ABCD-2345) and must exist before a player is added; party merge ignores duplicate/malformed codes; amount prompts say OK instead of repeating a question; "End combat" confirm says End combat; leaving a new empty encounter removes it; homebrew CR list sorted numerically.
+
+## v91 — race/species, armor & weapon pickers, rule trackers, DM party tools (2026-10-27)
+Everything is a suggestion, never locked — every picker has a "custom / homebrew" option and all numbers stay editable.
+- **Race / species** (js/species.js, data/species-2014/2024.json via tools/build_species.py): picker on the new-character form, the Stats tab ("+ Set race / species") and the character menu. SRD races fill a checklist — base speed, ability bonuses (unticked by default), traits as features (src `race:…`), limited-use trackers (RULES.SPECIES_TRACKERS, e.g. Goliath Giant Ancestry = proficiency bonus). Other-book races are name-only; "Custom" takes any name; "+ trait / + tracker" homebrew rows; switching race can remove the old race's traits. `ch.race` syncs over the link (identity group) and shows in headers and the DM roster.
+- New-character form also asks for subclass (optional).
+- **Armor picker** (RULES.ARMOR) on Gear sets base AC + Dex rule; Custom keeps the fields for magic/natural/homebrew; stealth/STR notes.
+- **Weapons**: pick an SRD weapon (RULES.WEAPONS, 2024 dice tweaks) and "Work it out for me" (ability auto/STR/DEX/spell…, proficient, dice, magic bonus) — to-hit/damage follow your stats & level (syncDerived on every commit). "I'll type the numbers" keeps the old manual mode; old weapons stay manual.
+- **Tracker rules**: "Max follows" my number / class level × N / proficiency bonus × N / ability modifier (+ add); rule trackers update themselves. Homebrew tracker rows in checklists can follow class level or proficiency bonus.
+- Combat shows Pact slots; known-spell casters open the Spells tab on "Known"; Warlock patron spells are a "patron list" (not auto-prepared); hand-added book spells say "added by you" instead of "homebrew".
+- DM: new campaign asks 2014/2024 (also switchable in ≡ DM features); "Add the whole party" in the tracker's add menu; difficulty card explains each rating in plain words + what the numbers mean; roster shows class, level, HP and AC (and race).

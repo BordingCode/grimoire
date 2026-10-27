@@ -57,7 +57,7 @@ function spellPoolForList(ch) {
   if (f.list === "available") pool = classSpells(ch);
   else if (f.list === "all") pool = [...spellPool(ch), ...indexStubs(ch, false)];  // every spell in the game (SRD in full + the rest as look-up stubs)
   else if (f.list === "subclass") pool = subclassSpells(ch);
-  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...subclassSpells(ch)].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
+  else if (f.list === "prepared") { const seen = new Set(); pool = [...ch.spells.prepared.map((id) => findSpell(ch, id)), ...(subclassSpellsOptional(ch) ? [] : subclassSpells(ch))].filter((s) => s && !seen.has(s.id) && seen.add(s.id)); }
   else pool = (ch.spells[f.list === "favorites" ? "favorites" : f.list] || []).map((id) => findSpell(ch, id)).filter(Boolean);
   if (f.q) pool = pool.filter((s) => s.name.toLowerCase().includes(f.q.toLowerCase()));
   if (f.level !== "all") pool = pool.filter((s) => String(s.level) === String(f.level));
@@ -76,6 +76,9 @@ function spellRowsWithHeaders(ch, pool) {
 // (Prepared for preparers / Known for the rest), else the class list to pick from.
 function defaultSpellList(ch) {
   if (!ch) return "available";
+  // known-spells casters (Warlock, Sorcerer, Bard, Ranger…) live in "Known"; preparers in "Prepared"
+  const preps = (RULES.CLASSES[ch.cls] || {}).prepares;
+  if (preps === false && (ch.spells.known || []).length) return "known";
   if ((ch.spells.prepared || []).length || subclassSpells(ch).length) return "prepared";
   if ((ch.spells.known || []).length) return "known";
   return "available";
@@ -100,6 +103,10 @@ function subclassSpells(ch) {
   Object.keys(table).forEach((t) => { if (+t <= lvl) names.push(...table[t]); });
   const pool = spellPool(ch);
   return names.map((n) => pool.find((s) => s.name.toLowerCase() === n.toLowerCase())).filter(Boolean);
+}
+// a Warlock patron's list only adds spells you MAY learn (they aren't free/always prepared)
+function subclassSpellsOptional(ch) {
+  return !!ch.subclass && Calc.classList(ch).some((c) => c.cls === "Warlock" && RULES.SUBCLASSES.Warlock && ch.subclass in RULES.SUBCLASSES.Warlock);
 }
 function subclassSpellIdSet(ch) { return new Set(subclassSpells(ch).map((s) => s.id)); }
 
@@ -163,7 +170,7 @@ function viewHome() {
     <button class="char-card" data-act="open" data-id="${c.id}">
       ${c.portrait ? `<img class="avatar" src="${c.portrait}" alt="">` : `<span class="avatar avatar-blank">${esc((c.name || "?").trim().charAt(0).toUpperCase())}</span>`}
       <div class="cc-main"><span class="cc-name">${esc(c.name)}</span>
-        <span class="cc-sub">${esc(classSummary(c))} · level ${Calc.totalLevel(c)} · ${c.edition}</span></div>
+        <span class="cc-sub">${c.race && c.race.name ? esc(c.race.name) + " " : ""}${esc(classSummary(c))} · level ${Calc.totalLevel(c)} · ${c.edition}</span></div>
       <span class="cc-go">›</span>
     </button>`).join("");
   return `
@@ -219,6 +226,9 @@ function viewParty() {
 }
 
 /* ---- New character ---- */
+function newSubOptions(cls) {
+  return `<option value="">— none yet —</option>` + Object.keys(RULES.SUBCLASSES[cls] || {}).map((n) => `<option>${esc(n)}</option>`).join("");
+}
 function viewNew() {
   const classes = Object.keys(RULES.CLASSES).map((c) => `<option>${c}</option>`).join("");
   return `
@@ -231,7 +241,14 @@ function viewNew() {
           <option value="2024">2024 (SRD 5.2)</option>
         </select>
       </label>
-      <label class="fld"><span>Class</span><select id="f-cls">${classes}</select></label>
+      <label class="fld"><span>Race / species <em class="muted small">(optional — you can change it later)</em></span><select id="f-race">
+        <option value="">— choose later —</option>
+        <optgroup label="Free rules (traits filled in)">${[...new Set(["Dragonborn", "Dwarf", "Elf", "Gnome", "Goliath", "Half-Elf", "Half-Orc", "Halfling", "Human", "Orc", "Tiefling"])].map((n) => `<option>${n}</option>`).join("")}</optgroup>
+        <optgroup label="Other books (add traits yourself)">${RULES.EXTRA_SPECIES.filter((n) => !["Goliath", "Orc"].includes(n)).map((n) => `<option>${n}</option>`).join("")}</optgroup>
+        <option value="__custom">Custom / homebrew…</option>
+      </select></label>
+      <label class="fld"><span>Class</span><select id="f-cls" data-act="newClsChange">${classes}</select></label>
+      <label class="fld"><span>Subclass <em class="muted small">(optional)</em></span><select id="f-sub">${newSubOptions(Object.keys(RULES.CLASSES)[0])}</select></label>
       <label class="fld"><span>Level</span><input id="f-lvl" type="number" min="1" max="20" value="1"></label>
       <fieldset class="abilities-new">
         <legend>Ability scores</legend>
@@ -255,7 +272,7 @@ function viewSheet(ch) {
     <header class="topbar sheet">
       <button class="back" data-act="goHome">‹</button>
       ${ch.portrait ? `<img class="avatar avatar-sm" src="${ch.portrait}" data-act="charPhoto" alt="">` : `<span class="avatar avatar-sm avatar-blank" data-act="charPhoto">${esc((ch.name || "?").trim().charAt(0).toUpperCase())}</span>`}
-      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
+      <div class="sheet-id"><span class="s-name">${esc(ch.name)}</span><span class="s-sub">${ch.race && ch.race.name ? esc(ch.race.name) + " " : ""}${esc(classSummary(ch))}${ch.subclass ? " · " + esc(ch.subclass) : ""} · lvl ${Calc.totalLevel(ch)} · ${ch.edition}</span></div>
       <button class="kebab reorder-toggle ${ui.reorder ? "on" : ""}" data-act="toggleReorder" title="Arrange (drag to reorder)">⠿</button>
       <button class="kebab" data-act="charMenu">⋯</button>
     </header>
@@ -302,10 +319,11 @@ function tabStats(ch) {
       ${statChip(ch, "passivePerception", "Passive Perc.", Calc.passivePerception(ch))}
       ${statChip(ch, "initiative", "Initiative", sign(Calc.initiative(ch)))}
     </div>
+    <button class="race-chip" data-act="speciesOpen">${ch.race && ch.race.name ? `Race: <b>${esc(ch.race.name)}</b> ✎` : "+ Set race / species"}</button>
     <div class="abilities">${ab}</div>
-    <h3 class="sec">Saving throws <small>tap dot = proficient</small></h3>
+    <h3 class="sec">Saving throws <small>tap to mark proficient</small></h3>
     <div class="lines">${saves}</div>
-    <h3 class="sec">Skills <small>tap dot: none → proficient → expertise</small></h3>
+    <h3 class="sec">Skills <small>tap: none → proficient → expertise</small></h3>
     <div class="lines">${skills}</div>
     <h3 class="sec">Features &amp; traits <span class="hdr-btns"><button class="mini" data-act="classChecklist">from class</button><button class="mini" data-act="addFeature">+ add</button></span></h3>
     <div class="features" ${ui.reorder ? 'data-sortlist="features"' : ""}>${(ch.features || []).map((f) => `
@@ -328,7 +346,7 @@ function tabCombat(ch) {
   const res = (ch.resources || []).map((r) => `
     <div class="res" ${ui.reorder ? `data-sortid="${esc(r.id)}"` : ""}>
       <div class="res-top">${handle()}<span>${esc(r.name)}</span>
-        <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn === "short" ? "short rest" : r.regain ? "long rest, +" + r.regain + " on short" : "long rest"}${r.rule ? ` · <span title="house rule">${r.rule.mult}×${esc(r.rule.cls)}</span>` : ""}</span>
+        <span class="res-meta"><span class="muted">${r.max - r.used}/${r.max} · ${r.resetOn === "short" ? "short rest" : r.regain ? "long rest, +" + r.regain + " on short" : "long rest"}${r.rule ? ` · <span title="follows a rule">${esc(ruleLabel(r.rule))}</span>` : ""}</span>
           <button class="opt-btn" data-act="resOptions" data-id="${r.id}">⋯</button></span></div>
       ${r.note ? `<div class="res-note">${esc(r.note)}</div>` : ""}
       <div class="res-btns">
@@ -391,6 +409,8 @@ function tabCombat(ch) {
       <button class="btn" data-act="shortRest">Short rest</button>
       <button class="btn primary" data-act="longRest">Long rest</button>
     </div>
+    ${(() => { const pact = Calc.pactMagic(ch); if (!pact || !pact.max) return "";
+      return `<div class="pact-combat"><span>Pact slots <b>${pact.max - pact.used}/${pact.max}</b> · level ${pact.level}</span><span class="slots">${Array.from({ length: pact.max }, (_, k) => `<button class="slot pact ${k < pact.used ? "used" : ""}" data-act="pactSlot" data-k="${k}" aria-label="pact slot ${k + 1}"></button>`).join("")}</span></div>`; })()}
     ${conc ? `<div class="conc-banner">Concentrating on <b>${esc(conc)}</b> <button data-act="dropConc">drop</button></div>` : ""}
     <h3 class="sec">Conditions <button class="mini" data-act="addCond">+ add</button></h3>
     <div class="conds">${cond}</div>
@@ -459,6 +479,7 @@ function spellListSection(ch) {
   const f = ui.spellFilter;
   const subSpells = subclassSpells(ch);
   Grimoire._subSet = new Set(subSpells.map((s) => s.id));
+  Grimoire._subOptional = subclassSpellsOptional(ch);
   const lists = [["available", "Class list"], ["all", "All spells"], ["prepared", "Prepared"], ["known", "Known"], ["favorites", "★ Favorites"]];
   if (ch.subclass) lists.splice(2, 0, ["subclass", "Subclass"]);
   const pool = spellPoolForList(ch);
@@ -495,14 +516,14 @@ function spellRow(ch, s) {
   }
   const isSub = Grimoire._subSet && Grimoire._subSet.has(s.id);
   const isFav = ch.spells.favorites.includes(s.id);
-  const isPrep = ch.spells.prepared.includes(s.id) || isSub;
+  const isPrep = ch.spells.prepared.includes(s.id) || (isSub && !Grimoire._subOptional);
   const isKnown = ch.spells.known.includes(s.id);
   const lvl = s.level === 0 ? "Cantrip" : "L" + s.level;
   const tags = [s.concentration ? "C" : "", s.ritual ? "R" : ""].filter(Boolean).join(" ");
   return `<div class="spell">
 
     <button class="spell-main" data-act="spellDetail" data-id="${esc(s.id)}">
-      <span class="sp-name">${esc(s.name)} ${s.custom ? '<em class="hb">homebrew</em>' : ""}${isSub ? '<em class="sub-badge">subclass</em>' : ""}</span>
+      <span class="sp-name">${esc(s.name)} ${s.custom ? `<em class="hb">${(Grimoire.spellIndex || []).some((x) => x.name.toLowerCase() === s.name.toLowerCase()) ? "added by you" : "homebrew"}</em>` : ""}${isSub ? `<em class="sub-badge">${Grimoire._subOptional ? "patron list" : "subclass"}</em>` : ""}</span>
       <span class="sp-meta">${lvl} · ${esc(s.school)}${tags ? " · " + tags : ""}</span>
     </button>
     <div class="spell-acts">
@@ -540,6 +561,14 @@ function tabGear(ch) {
   const cur = ch.currency || { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
   const coin = (k, l) => `<label class="coin"><span>${l}</span><input type="number" min="0" inputmode="numeric" data-bind="currency.${k}" value="${cur[k] || 0}"></label>`;
   return `
+    ${(() => { const c = ch.combat; const cur = RULES.ARMOR.find((x) => x.n === c.armorName && x.ac === c.armorBaseAC && x.dex === (c.armorDexMode || "none"));
+      const val = c.armorBaseAC == null ? "" : cur ? cur.n : "custom";
+      return `<label class="fld armor-pick"><span>Armor</span><select data-act="armorPick">
+        <option value="" ${val === "" ? "selected" : ""}>None — unarmored (10 + Dex${ch.cls === "Monk" ? " + Wis" : ch.cls === "Barbarian" ? " + Con" : ""})</option>
+        ${["Light", "Medium", "Heavy"].map((k) => `<optgroup label="${k} armor">${RULES.ARMOR.filter((x) => x.kind === k).map((x) => `<option value="${x.n}" ${val === x.n ? "selected" : ""}>${x.n} — AC ${x.ac}${x.dex === "full" ? " + Dex" : x.dex === "med" ? " + Dex (max 2)" : ""}</option>`).join("")}</optgroup>`).join("")}
+        <option value="custom" ${val === "custom" ? "selected" : ""}>Custom / magic / homebrew (type below)</option>
+      </select></label>
+      ${cur && (cur.stealth || cur.str) ? `<p class="muted small">${cur.stealth ? "Disadvantage on Stealth checks. " : ""}${cur.str ? `Needs STR ${cur.str}, or speed −10 ft.` : ""}</p>` : ""}`; })()}
     <div class="armor-row">
       <label>Armor base AC <input type="number" placeholder="(unarmored)" data-bind="combat.armorBaseAC" value="${ch.combat.armorBaseAC ?? ""}"></label>
       <label>Add Dex?
@@ -551,7 +580,7 @@ function tabGear(ch) {
         </select></label>
       <label class="chk"><input type="checkbox" data-bind="combat.shield" ${ch.combat.shield ? "checked" : ""}> Shield (+2)</label>
     </div>
-    <p class="muted small">Leave the base empty for unarmored (10 + Dex). For <b>natural armor</b>, type the base (e.g. 13 for Lizardfolk) and pick “+ Dex”. Tick an item's box to <b>equip</b> it — its bonuses apply automatically (AC now ${Calc.armorClass(ch)}).</p>
+    <p class="muted small">Pick your armor above. For <b>magic, natural or homebrew armor</b> choose “Custom” and type the base (e.g. 13 for Lizardfolk) and how Dex counts. Tick an item's box to <b>equip</b> it — its bonuses apply automatically (AC now ${Calc.armorClass(ch)}).</p>
     <h3 class="sec">Coins</h3>
     <div class="coins">${coin("pp", "PP")}${coin("gp", "GP")}${coin("ep", "EP")}${coin("sp", "SP")}${coin("cp", "CP")}</div>
     <h3 class="sec">Inventory <span class="hdr-btns"><button class="mini" data-act="partyOpen">transfer</button><button class="mini" data-act="addItem">+ add</button></span></h3>
@@ -847,7 +876,7 @@ function viewDM() {
   const players = (DM.players || []).map((p) => `<div class="dm-enc">
     <div class="dm-enc-main" style="display:flex;flex-direction:column;align-items:flex-start">
       <span class="dm-enc-name">${esc(p.name)}</span>
-      <span class="muted small">linked · tap ⋯ to give items, pictures &amp; drawings</span></div>
+      <span class="muted small">${p.cls ? `${esc(p.race ? p.race + " " : "")}${esc(p.cls)} ${p.level || ""} · HP ${p.hp ?? "?"}/${p.hpMax ?? "?"} · AC ${p.ac ?? "?"}` : "linked"} · ⋯ to give items &amp; handouts</span></div>
     <button class="opt-btn" data-act="dmPlayerMenu" data-id="${esc(p.id)}">⋯</button>
   </div>`).join("") || `<p class="muted pad">No players saved yet. Add a player by their link code to hand them loot &amp; handouts any time — even outside combat.</p>`;
   return `
@@ -900,6 +929,18 @@ function viewDMEdit() {
     </div>`;
 }
 // encounter difficulty panel: rating, XP and the party's thresholds
+// what each rating means at the table, in plain words
+const DIFF_SAY = {
+  Trivial: "Barely a threat — over in a round or two.",
+  Easy: "Shouldn't cost much: a few hit points, no real danger.",
+  Medium: "A real fight. Expect some damage and a spell or two used.",
+  Hard: "Dangerous. Expect heavy damage — someone could drop.",
+  Deadly: "Could kill a character. Make sure there's a way out.",
+  Low: "A few tough moments, but nobody should be in real danger.",
+  Moderate: "A serious fight — it can go badly without teamwork or healing.",
+  High: "Could be deadly for one or more characters.",
+  "Beyond High": "Over the High budget — very risky. Consider fewer monsters.",
+};
 function dmDifficultyCard(monsters) {
   const d = dmDifficulty(monsters);
   const partyTxt = d.party.source === "none" ? "No party set" : d.party.source === "manual" ? `${d.party.levels.length} × level ${d.party.levels[0]}` : d.party.names.map((n, i) => `${esc(n)} ${d.party.levels[i]}`).join(", ");
@@ -909,8 +950,10 @@ function dmDifficultyCard(monsters) {
   const val = d.edition === "2014" ? d.adj : d.xp;
   return `<div class="diff-card">
     <div class="diff-head"><b>Difficulty</b> <span class="diff-tag d${d.level}">${d.rating}</span><button class="mini" data-act="dmPartySetup">party: ${partyTxt} · ${d.edition}</button></div>
+    <p class="diff-say">${esc(DIFF_SAY[d.rating] || "")}</p>
     <p class="small">${xpLine}</p>
     <div class="diff-tiers">${d.tiers.map(([n, v]) => `<span class="${val >= v && d.edition === "2014" || (d.edition === "2024" && n === d.rating) ? "hit" : ""}">${n} ${v.toLocaleString()}</span>`).join("")}</div>
+    <p class="muted small">${d.edition === "2014" ? "The numbers are the XP where each difficulty starts for your whole party. More monsters count as harder, so their XP is multiplied first." : "Your party's XP budget for each difficulty. Add up the monsters' XP and see which budget it fits under."}</p>
   </div>`;
 }
 function viewDMRun() {

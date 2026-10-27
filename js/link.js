@@ -13,14 +13,14 @@ const LINK = {
     physical: ["combat", "conditions"],
     resources: ["spells.slots", "spells.pact", "spells.concentratingOn", "resources"],
     mental: ["abilities", "saveProf", "skillProf", "proficiencies", "overrides", "features", "subSpells", "spells.known", "spells.prepared", "spells.favorites", "spells.abilityOverride", "customSpells", "summonKnown", "summonFav"],
-    identity: ["name", "cls", "level", "multiclass", "subclass", "portrait", "accent", "theme", "scene", "edition", "notes"],
+    identity: ["name", "cls", "level", "multiclass", "subclass", "race", "portrait", "accent", "theme", "scene", "edition", "notes"],
     gear: ["inventory", "weapons", "bag"], // NOT currency — coins are personal; syncing them let a linked partner's (often zero) coins overwrite yours on every pull
   },
   LABELS: {
     physical: "Physical — HP, hit dice, death saves, conditions, AC/armor, speed",
     resources: "Resources — spell slots, pact, trackers, concentration",
     mental: "Mental — abilities, saves, skills, known/prepared/favorite spells",
-    identity: "Identity — name, class, level, edition, notes",
+    identity: "Identity — name, race, class, level, edition, notes",
     gear: "Gear — inventory",
   },
   PRESETS: {

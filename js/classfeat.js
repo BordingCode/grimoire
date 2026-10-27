@@ -20,7 +20,44 @@ function trackerBook(t, lvl, mods) {
   return { max: t.max(lvl, mods), reset: typeof t.reset === "function" ? t.reset(lvl) : t.reset, regain: t.regain || 0, note: t.note ? t.note(lvl) : "" };
 }
 // a house rule: max = mult × (class level) + add
-function ruleMax(ch, rule) { return Math.max(1, Math.round((+rule.mult || 0) * classLevelOf(ch, rule.cls) + (+rule.add || 0))); }
+/* A tracker rule (house rules and the book's "uses = proficiency bonus" style) — the tracker's max
+   follows it automatically (syncDerived). kind: "level" (mult × class level + add, the default),
+   "prof" (mult × proficiency bonus + add) or "mod" (ability modifier + add, min 1). */
+function ruleMax(ch, rule) {
+  const add = +rule.add || 0;
+  if (rule.kind === "prof") return Math.max(1, Math.round((+rule.mult || 1) * Calc.prof(ch) + add));
+  if (rule.kind === "mod") return Math.max(1, Calc.abilityMod(ch, rule.ab || "cha") + add);
+  return Math.max(1, Math.round((+rule.mult || 0) * classLevelOf(ch, rule.cls) + add));
+}
+function ruleLabel(rule) {
+  const add = +rule.add ? ` ${sign(+rule.add)}` : "";
+  if (rule.kind === "prof") return `${+rule.mult > 1 ? rule.mult + "× " : ""}prof. bonus${add}`;
+  if (rule.kind === "mod") return `${String(rule.ab || "cha").toUpperCase()} mod${add}`;
+  return `${rule.mult}×${rule.cls} lvl${add}`;
+}
+/* numbers that follow the sheet: rule trackers and weapons set to "work it out for me" */
+function syncDerived(ch) {
+  if (!ch) return;
+  for (const r of ch.resources || []) if (r.rule) { r.max = ruleMax(ch, r.rule); r.used = Math.min(r.used || 0, r.max); }
+  for (const w of ch.weapons || []) if (w.auto) { const n = weaponNumbers(ch, w.auto); w.atk = n.atk; w.damage = n.damage; }
+}
+// to-hit and damage from ability + proficiency + magic bonus
+function weaponNumbers(ch, a) {
+  const mod = weaponAbilityMod(ch, a);
+  const atk = mod + (a.prof ? Calc.prof(ch) : 0) + (+a.magic || 0);
+  const flat = mod + (+a.magic || 0) + (+a.dmgAdd || 0);
+  return { atk, damage: `${a.dice || "1"}${flat ? (flat > 0 ? "+" : "") + flat : ""}`, mod };
+}
+function weaponAbilityMod(ch, a) {
+  const m = (k) => Calc.abilityMod(ch, k);
+  if (a.ab === "str" || a.ab === "dex" || a.ab === "con" || a.ab === "int" || a.ab === "wis" || a.ab === "cha") return m(a.ab);
+  if (a.ab === "spell") { const k = (RULES.CLASSES[ch.cls] || {}).ability || "int"; return m(ch.spells.abilityOverride || k); }
+  // auto: finesse → better of STR/DEX, ranged (not thrown) → DEX, else STR
+  const p = " " + (a.props || "") + " ";
+  if (p.includes(" f ")) return Math.max(m("str"), m("dex"));
+  if (p.includes(" a ")) return m("dex");
+  return m("str");
+}
 function findTracker(ch, t) {
   const rs = ch.resources || [];
   return rs.find((r) => r.auto === t.key) || rs.find((r) => !r.auto && (normTrk(r.name) === normTrk(t.name) || (t.key === "druid.wildshape" && r.wildshape)));
@@ -89,7 +126,7 @@ function checklistHtml(ch, rows, hasData) {
     const tag = { new: "new", update: "update", rule: "house rule", differs: "yours differs" }[r.kind];
     const sub = r.kind === "new" ? `Book: ${bookTxt}${r.book.note ? ` — ${esc(r.book.note)}` : ""}`
       : r.kind === "update" ? `${yours} → ${bookTxt}`
-      : r.kind === "rule" ? `Your rule: ${r.ex.rule.mult} × ${esc(r.ex.rule.cls)} level${r.ex.rule.add ? ` ${sign(+r.ex.rule.add)}` : ""} → <b>${r.max}</b>${r.book ? ` (book: ${r.book.max})` : ""}`
+      : r.kind === "rule" ? `Your rule: ${esc(ruleLabel(r.ex.rule))} → <b>${r.max}</b>${r.book ? ` (book: ${r.book.max})` : ""}`
       : `Book: <b>${bookTxt}</b> — yours: <b>${yours}</b>. Left alone unless you tick it.`;
     const lvl = classLevelOf(ch, r.t.cls);
     const guess = r.ex && lvl ? Math.round(r.ex.max / lvl) : 0;
@@ -125,8 +162,8 @@ function checklistWire(wrap, ch) {
       row.querySelector(".cl-max").value = Math.max(1, (+mult.value || 0) * classLevelOf(ch, r.t.cls));
       row.querySelector(".cl-on").checked = true;
     }
-    const grow = row.querySelector(".own-grow");
-    if (grow) { row.querySelector(".own-rule").hidden = !grow.checked; row.querySelector(".cl-edit label").hidden = grow.checked; }
+    const kind = row.querySelector(".own-kind");
+    if (kind) { row.querySelector(".own-rule").hidden = kind.value !== "level"; row.querySelector(".cl-edit label").hidden = !!kind.value; }
   });
 }
 
@@ -142,7 +179,7 @@ actions.clOwnTrk = () => {
   d.innerHTML = `<div class="own-head"><b>Tracker</b><button class="del" data-act="clOwnDel">✕</button></div>
     <input class="own-name" placeholder="Name, e.g. Blood Points">
     <div class="cl-edit"><label>Max <input type="number" class="cl-max" min="1" value="1"></label>${resetSelect("cl-reset", "long")}</div>
-    <label class="cl-rule"><input type="checkbox" class="own-grow"> Grows with level (house rule)</label>
+    <label class="cl-rule">Max follows <select class="own-kind"><option value="">my number</option><option value="level">class level</option><option value="prof">proficiency bonus</option></select></label>
     <div class="own-rule cl-rule" hidden>Max = <input type="number" class="cl-mult" value="1" min="0"> × <select class="own-cls">${Calc.classList(ch).map((c) => `<option>${esc(c.cls)}</option>`).join("")}</select> level</div>`;
   $("#cl-own").appendChild(d); d.querySelector("input").focus();
 };
@@ -170,18 +207,28 @@ function applyChecklist() {
     const r = st.rows.features[+row.dataset.ft];
     ch.features.push({ id: Gx.uid(), name: r.f.n, desc: mdPlain(r.f.d), bonuses: [], adv: [], src: r.src }); n++;
   });
+  n += applyOwnRows(ch);
+  actions._cl = null;
+  commit(); if (window.LINK) LINK.schedulePush(ch);
+  return n;
+}
+// the "+ feature / + tracker" homebrew rows (shared by the class checklist and the species picker)
+function applyOwnRows(ch) {
+  let n = 0;
+  const readReset = (row) => { const k = row.querySelector(".cl-reset").value; return { resetOn: k === "short" ? "short" : "long", regain: k === "long1" ? 1 : 0 }; };
   document.querySelectorAll("#modal .cl-row[data-own]").forEach((row) => {
     const name = row.querySelector(".own-name").value.trim(); if (!name) return;
     if (row.dataset.own === "feat") ch.features.push({ id: Gx.uid(), name, desc: row.querySelector(".own-desc").value.trim(), bonuses: [], adv: [] });
     else {
       const t = { id: Gx.uid(), name, max: Math.max(1, +row.querySelector(".cl-max").value || 1), used: 0, ...readReset(row), note: "" };
-      if (row.querySelector(".own-grow").checked) { t.rule = { mult: +row.querySelector(".cl-mult").value || 0, cls: row.querySelector(".own-cls").value }; t.max = ruleMax(ch, t.rule); }
+      const kind = row.querySelector(".own-kind").value;
+      if (kind === "level") t.rule = { kind, mult: +row.querySelector(".cl-mult").value || 0, cls: row.querySelector(".own-cls").value };
+      if (kind === "prof") t.rule = { kind, mult: 1, add: 0 };
+      if (t.rule) t.max = ruleMax(ch, t.rule);
       ch.resources.push(t);
     }
     n++;
   });
-  actions._cl = null;
-  commit(); if (window.LINK) LINK.schedulePush(ch);
   return n;
 }
 
