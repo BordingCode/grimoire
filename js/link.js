@@ -31,6 +31,7 @@ const LINK = {
   _pushTimer: null,
   _merging: false,
 };
+window.LINK = LINK; // app.js checks window.LINK before every push — without this, linked characters never synced in the background
 
 function genCode() {
   const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous chars
@@ -80,22 +81,32 @@ LINK.fetchSnapshot = async function (code) {
   return (data && data.payload) ? data.payload : null;
 };
 
-LINK.pull = async function (ch, { announce = false } = {}) {
+// force: take the link's copy no matter what (joining, or "Pull now"). Without it (automatic pulls on
+// open/return) newest-wins: if this device was edited after the link's copy was written, our edits are
+// newer — push them instead of letting an older copy overwrite them.
+LINK.pull = async function (ch, { announce = false, force = false } = {}) {
   if (!ch || !ch.link) return;
   try {
     const r = await fetch(`${LINK.WORKER}/link/${ch.link.code}?since=${ch.link.lastPulledVersion || 0}`);
     const data = await r.json();
+    if (data.changed && data.payload && !force && ch.updatedAt && data.updatedAt && ch.updatedAt > data.updatedAt) {
+      await LINK.push(ch);
+      return data;
+    }
     if (data.changed && data.payload) {
       LINK._merging = true;
       LINK.mergePayload(ch, data.payload);
       ch.link.lastPulledVersion = data.version;
       ch.link.lastUpdatedBy = data.updatedBy; ch.link.lastUpdatedAt = data.updatedAt;
+      if (data.updatedAt && (!ch.updatedAt || data.updatedAt > ch.updatedAt)) ch.updatedAt = data.updatedAt;
       LINK._merging = false;
       Store.save();
       if (Store.activeId === ch.id) render();
       if (announce) toast(`Updated from ${esc(data.updatedBy || "the link")}.`);
-    } else if (announce) {
-      toast("Already up to date.");
+    } else {
+      // nothing new on the link, but this device has edits the link hasn't seen yet → send them
+      if (!force && ch.updatedAt && (!ch.link.lastPushedAt || ch.updatedAt > ch.link.lastPushedAt)) LINK.push(ch);
+      if (announce) toast("Already up to date.");
     }
     return data;
   } catch (e) { console.warn("link pull failed", e); if (announce) toast("Couldn't reach the link server."); }
@@ -159,11 +170,11 @@ actions.linkJoinGo = function () {
   const code = ($("#link-join").value || "").trim().toUpperCase();
   if (!/^[A-Z0-9]{4}-?[A-Z0-9]{4}$/.test(code)) { toast("Enter a code like ABCD-2345."); return; }
   ch.link = { code: code.includes("-") ? code : code.slice(0, 4) + "-" + code.slice(4), role: "member", groups: { ...LINK.PRESETS.shared }, lastPulledVersion: 0, lastPushedAt: null };
-  Store.save(); LINK.pull(ch, { announce: true }).then(() => actions.linkOpen());
+  Store.save(); LINK.pull(ch, { announce: true, force: true }).then(() => actions.linkOpen());
 };
 actions.linkToggle = function (el) { const ch = Store.active(); const g = el.dataset.group; ch.link.groups[g] = !ch.link.groups[g]; Store.save(); actions.linkOpen(); LINK.schedulePush(ch); };
 actions.linkPreset = function (el) { const ch = Store.active(); ch.link.groups = { ...LINK.PRESETS[el.dataset.preset] }; Store.save(); actions.linkOpen(); LINK.schedulePush(ch); };
-actions.linkPull = function () { LINK.pull(Store.active(), { announce: true }); };
+actions.linkPull = function () { LINK.pull(Store.active(), { announce: true, force: true }); };
 actions.linkPushNow = function () { LINK.push(Store.active()).then(() => toast("Pushed your version to the link.")); };
 actions.linkCopy = function (el) { const c = el.dataset.code; if (navigator.clipboard) navigator.clipboard.writeText(c).then(() => toast("Code copied.")); else toast(c); };
 actions.linkUnlink = function () { const ch = Store.active(); if (confirm("Unlink this device? Your character stays; it just stops syncing.")) { delete ch.link; Store.save(); closeModal(); render(); toast("Unlinked."); } };
