@@ -95,7 +95,8 @@ const Calc = {
     }
     const shield = ch.combat.shield ? 2 : 0;
     const gear = (ch.inventory || []).filter((i) => i.equipped).reduce((s, i) => s + (+i.acBonus || 0), 0);
-    return ov(ch, "ac", auto + shield + gear + this.featBonus(ch, "ac"));
+    // the Shield spell (+5 until the start of your next turn) sits on top of any override
+    return ov(ch, "ac", auto + shield + gear + this.featBonus(ch, "ac")) + (ch.combat.shieldSpell ? 5 : 0);
   },
 
   isCaster(ch) {

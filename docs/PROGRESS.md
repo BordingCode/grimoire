@@ -263,3 +263,8 @@ Three player agents (2014 Paladin, 2024 Wizard, 2014 Druid) + a DM agent played 
 - Casting a concentration spell now starts concentration (ends the previous one).
 - Wild Shape: damage to the beast form asks for the concentration save; the Wild Shape screen shows what you concentrate on; Eligible list respects no-fly (< Druid 8) and no-swim (2014, < Druid 4).
 Seen but not changed: DM damage stays on the DM's tracker (players apply their own — by design); beast form still shows the beast's INT/WIS/CHA and uses the druid's CON save; no Shield AC toggle; no reaction tracker; DM undo is one step without redo; hit dice can be spent at full HP.
+
+## v89 — Wild Shape mind, reactions + Shield, DM undo/redo (2026-10-27)
+- Wild Shape stat block shows your own INT/WIS/CHA (gold, with a note); concentration saves while wild-shaped use the beast's CON (+ your proficiency if any).
+- Combat tab: "Reaction ready / used" chip (tap when your turn starts to reset); casting a reaction spell marks it used. Casting Shield adds +5 AC (on top of any AC override) with a "Shield +5 AC ✕" chip; it ends when you reset your reaction, on a rest, or with ✕.
+- DM tracker: undo is a 30-step stack with a Redo button (older single-step saves still undo).

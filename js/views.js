@@ -359,6 +359,10 @@ function tabCombat(ch) {
         ${(() => { const n = (ch.summons || []).reduce((t, s) => t + (s.hps ? s.hps.length : 0), 0); return n ? `<span class="sb-badge">${n}</span>` : ""; })()}
       </button>
     </div>
+    <div class="turn-row">
+      <button class="react-chip ${c.reactionUsed ? "used" : ""}" data-act="reactionToggle">${c.reactionUsed ? "Reaction used — tap when your turn starts" : "Reaction ready"}</button>
+      ${c.shieldSpell ? `<button class="shield-chip" data-act="shieldEnd" title="end the Shield spell">Shield +5 AC ✕</button>` : ""}
+    </div>
     <div class="hp-block">
       <div class="hp-row"><span>Hit points</span>
         <span class="hp-now">${c.hpCur}<small>/${Calc.maxHP(ch)}</small>${c.hpTemp ? ` <em class="temp">+${c.hpTemp}</em>` : ""}</span></div>
@@ -638,9 +642,10 @@ function creatureDef(s) { return (Grimoire.summonLib || []).find((d) => d.name =
 function creatureHasDetail(def) { return !!(def && (def.abilities || (def.traits && def.traits.length) || (def.actions && def.actions.length) || (def.reactions && def.reactions.length) || def.senses)); }
 /* the full stat-block body (abilities, defences, traits/actions/reactions) — shared by
    the inline summon-card detail panel and the pop-up stat-block modal */
-function statBlockBody(def, s) {
-  const ab = def.abilities;
-  const abLine = ab ? `<div class="stat-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<div><b>${k.toUpperCase()}</b><span>${ab[k]} (${sign(Calc.mod(ab[k]))})</span></div>`).join("")}</div>` : "";
+// own = the wild-shaped character: Wild Shape keeps your own INT, WIS and CHA (both editions)
+function statBlockBody(def, s, own) {
+  const ab = def.abilities && own ? { ...def.abilities, int: own.abilities.int, wis: own.abilities.wis, cha: own.abilities.cha } : def.abilities;
+  const abLine = ab ? `<div class="stat-abis">${["str", "dex", "con", "int", "wis", "cha"].map((k) => `<div${own && /int|wis|cha/.test(k) ? ' class="own" title="your own score"' : ""}><b>${k.toUpperCase()}</b><span>${ab[k]} (${sign(Calc.mod(ab[k]))})</span></div>`).join("")}</div>${own ? `<p class="muted small">INT, WIS and CHA are your own — Wild Shape keeps your mind.</p>` : ""}` : "";
   const row = (label, val) => val ? `<p class="stat-row"><b>${label}</b> ${esc(val)}</p>` : "";
   const blocks = (title, arr) => (arr && arr.length) ? `<h4 class="stat-sec">${title}</h4>${arr.map((a) => `<p class="stat-block-item"><b>${esc(a.name)}.</b> ${esc(a.desc)}</p>`).join("")}` : "";
   return `${abLine}
@@ -802,7 +807,7 @@ function shapeCard(ch, f) {
     </div>
     ${atks ? `<div class="sm-atks">${atks}</div>` : ""}
     ${f.notes ? `<div class="sm-notes muted">${esc(f.notes)}</div>` : ""}
-    ${creatureHasDetail(def) ? `<div class="sm-detail">${statBlockBody(def, f)}</div>` : ""}
+    ${creatureHasDetail(def) ? `<div class="sm-detail">${statBlockBody(def, f, f.source === "wildshape" ? ch : null)}</div>` : ""}
   </div>`;
 }
 
@@ -921,7 +926,8 @@ function viewDMRun() {
     <div class="dm-run-bar">
       ${a.turnId ? `<button class="btn ghost" data-act="dmPrev" title="previous turn" aria-label="Previous turn">◂</button>` : ""}
       <button class="btn primary" data-act="dmNext">${a.turnId ? "Next ▸" : "Start ▸"}</button>
-      ${dmOn("undo") && a._undo ? `<button class="btn ghost" data-act="dmUndo">Undo</button>` : ""}
+      ${dmOn("undo") && ((a._undos && a._undos.length) || a._undo) ? `<button class="btn ghost" data-act="dmUndo">Undo${a._undos && a._undos.length > 1 ? ` (${a._undos.length})` : ""}</button>` : ""}
+      ${dmOn("undo") && a._redos && a._redos.length ? `<button class="btn ghost" data-act="dmRedo">Redo</button>` : ""}
       <button class="btn ghost" data-act="dmInitSheet">Initiative</button>
       <button class="btn ghost" data-act="dmArea">Area dmg</button>
       <button class="btn ghost" data-act="dmAddMenu">+ Add</button>

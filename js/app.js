@@ -230,7 +230,7 @@ const actions = {
   hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
-  shortRest() { const ch = Store.active(); const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
+  shortRest() { const ch = Store.active(); ch.combat.reactionUsed = false; ch.combat.shieldSpell = false; const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast("Short rest — pact slots & short-rest resources restored. Spend hit dice to heal."); },
   spendHitDie() {
     const ch = Store.active(); const c = ch.combat;
     const left = hitDiceLeft(ch);
@@ -252,7 +252,7 @@ const actions = {
       concentratingOn: ch.spells.concentratingOn,
     };
 
-    c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 };
+    c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 }; c.reactionUsed = false; c.shieldSpell = false;
     const diceRestore = Math.max(1, Math.floor(Calc.totalLevel(ch) / 2));
     const diceRestored = Math.min(before.hitDiceUsed, diceRestore);
     restoreHitDice(ch, diceRestore);
@@ -1274,7 +1274,9 @@ function maybeConcentration(ch, dmg) {
   if (!dmg || !ch.spells.concentratingOn) return;
   const dc = Math.max(10, Math.floor(dmg / 2));
   const sp = findSpell(ch, ch.spells.concentratingOn);
-  const bonus = Calc.saveBonus(ch, "con");
+  // wild-shaped: the beast's Constitution, plus your proficiency if you have it in CON saves
+  const form = ch.shape && ch.shape.active, fdef = form && form.source === "wildshape" ? creatureDef(form) : null;
+  const bonus = fdef && fdef.abilities ? Calc.mod(fdef.abilities.con) + (ch.saveProf.con ? Calc.prof(ch) : 0) : Calc.saveBonus(ch, "con");
   const adv = [...new Set([...Calc.advSources(ch, "save.con"), ...Calc.advSources(ch, "save.concentration")])];
   modal("Concentration", `
     <p>Took <b>${dmg}</b> damage while concentrating on <b>${esc(sp?.name || "a spell")}</b>.</p>
@@ -1305,9 +1307,14 @@ function spendSlot(lvl) {
     ch.spells.concentratingOn = sp.id;
     extra = ` Concentrating on ${sp.name}${prev ? ` (${prev.name} ended)` : ""}.`;
   }
+  if (sp && /reaction/i.test(sp.casting_time || "")) ch.combat.reactionUsed = true;
+  if (sp && sp.name === "Shield") { ch.combat.shieldSpell = true; extra += " AC +5 until your next turn."; }
   commit();
   toast(`Cast — spent a level ${lvl} slot.${extra}`);
 }
+// reaction: tap to mark it used; tap again when your turn starts (that also ends the Shield spell)
+actions.reactionToggle = () => { const c = Store.active().combat; if (c.reactionUsed) { c.reactionUsed = false; c.shieldSpell = false; } else c.reactionUsed = true; commit(); };
+actions.shieldEnd = () => { Store.active().combat.shieldSpell = false; commit(); };
 actions.startConc = (el) => { const ch = Store.active(); const id = el.dataset.id; if (ch.spells.concentratingOn && ch.spells.concentratingOn !== id) { const prev = findSpell(ch, ch.spells.concentratingOn)?.name || "another spell"; if (!confirm(`You're already concentrating on ${prev}. Switch concentration?`)) return; } ch.spells.concentratingOn = id; commit(); closeModal(); toast("Now concentrating. If you take damage you'll be prompted to keep or drop it."); };
 
 /* ---------- subclass spell picker (player enters their own owned content) ---------- */
@@ -1953,7 +1960,21 @@ function dmCbHpNow(cb) { return cb.hps.reduce((t, h) => t + Math.max(0, h), 0); 
 function dmCbBloodied(cb) { return !dmCbDown(cb) && dmCbHpNow(cb) <= (cb.hpMax * cb.hps.length) / 2; }
 function dmActiveEnc() { return DM.active; }
 function dmFindCb(id) { return DM.active && DM.active.combatants.find((c) => c.id === id); }
-function dmPushUndo(cbs) { DM.active._undo = { list: [].concat(cbs).map((cb) => ({ id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp })) }; }
+/* HP undo/redo: a stack of snapshots (last 30 changes). A new change clears the redo stack. */
+const dmSnap = (cbs) => ({ list: [].concat(cbs).map((cb) => ({ id: cb.id, hps: cb.hps.slice(), hpTemp: cb.hpTemp })) });
+function dmUndoStacks(a) {
+  if (!a._undos) a._undos = a._undo ? [a._undo] : []; // older saves kept a single step
+  if (!a._redos) a._redos = [];
+  delete a._undo; return a;
+}
+function dmPushUndo(cbs) { const a = dmUndoStacks(DM.active); a._undos.push(dmSnap(cbs)); if (a._undos.length > 30) a._undos.shift(); a._redos = []; }
+// put a snapshot back, returning a snapshot of what it replaced (for the other stack)
+function dmRestoreSnap(a, snap) {
+  const cbs = (snap.list || []).map((u) => a.combatants.find((c) => c.id === u.id)).filter(Boolean);
+  const back = dmSnap(cbs);
+  for (const u of snap.list || []) { const cb = a.combatants.find((c) => c.id === u.id); if (cb) { cb.hps = u.hps.slice(); cb.hpTemp = u.hpTemp; } }
+  return back;
+}
 
 /* --- encounter difficulty --- */
 // party used for difficulty: set by hand, or the levels of the campaign's linked players
@@ -2432,10 +2453,16 @@ actions.dmDmg = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.data
 actions.dmHeal = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; amountPrompt(`Heal — ${cb.name}`, "How much healing?", (n) => { dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (n | 0))); DM.save(); render(); }); };
 actions.dmHpStep = (el) => { const cb = dmFindCb(el.dataset.id); const i = +el.dataset.i || 0; if (!cb) return; dmPushUndo(cb); cb.hps[i] = Math.max(0, Math.min(cb.hpMax, cb.hps[i] + (+el.dataset.d || 0))); DM.save(); render(); };
 actions.dmInstKill = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.hps.length <= 1) return; cb.hps.splice(+el.dataset.i, 1); DM.save(); render(); };
+actions.dmRedo = () => {
+  const a = DM.active; if (!a) return; dmUndoStacks(a);
+  const snap = a._redos.pop(); if (!snap) return;
+  a._undos.push(dmRestoreSnap(a, snap)); DM.save(); render();
+};
 actions.dmUndo = () => {
-  const a = DM.active; if (!a || !a._undo) return;
-  for (const u of a._undo.list || [a._undo]) { const cb = a.combatants.find((c) => c.id === u.id); if (cb) { cb.hps = u.hps.slice(); cb.hpTemp = u.hpTemp; } }
-  a._undo = null; DM.save(); render();
+  const a = DM.active; if (!a) return; dmUndoStacks(a);
+  const snap = a._undos.pop(); if (!snap) return;
+  a._redos.push(dmRestoreSnap(a, snap.list ? snap : { list: [snap] }));
+  DM.save(); render();
 };
 actions.dmConc = (el) => { const cb = dmFindCb(el.dataset.id); if (cb) { cb.conc = !cb.conc; DM.save(); render(); } };
 actions.dmStat = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb || cb.kind !== "monster") return; const def = creatureDef({ ref: cb.ref }); modal(def.name, `<p class="sp-line">${def.cr && def.cr !== "—" ? "CR " + esc(def.cr) + " · " : ""}${esc(def.type || "")}</p><div class="stat-top"><span>AC <b>${def.ac}</b></span><span>HP <b>${def.hp}</b></span><span>${esc(def.speed || "")}</span></div>${statBlockBody(def, null)}<div class="modal-btns"><button class="btn ghost" data-act="dmHomebrewCopy" data-name="${esc(def.name)}">Copy as homebrew</button><button class="btn" data-act="closeModal">Close</button></div>`); };
