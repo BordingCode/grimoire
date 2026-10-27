@@ -68,7 +68,7 @@ export default {
           if (d.gifts.length > 40) d.gifts = d.gifts.slice(-40);
           await save(d); return json({ ok: true });
         }
-        if (b.op === "pull") { const gifts = d.gifts || []; d.gifts = []; await save(d); return json({ gifts }); }
+        if (b.op === "pull") { const gifts = d.gifts || []; if (gifts.length) { d.gifts = []; await save(d); } return json({ gifts }); } // empty pull = no write (free-tier write budget)
         return json({ error: "bad_op" }, 400);
       }
       return json({ error: "method_not_allowed" }, 405);

@@ -63,6 +63,7 @@ LINK.mergePayload = function (ch, payload) {
 
 LINK.push = async function (ch) {
   if (!ch || !ch.link) return;
+  LINK._lastPush = Date.now();
   try {
     const r = await fetch(`${LINK.WORKER}/link/${ch.link.code}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -105,17 +106,34 @@ LINK.pull = async function (ch, { announce = false, force = false } = {}) {
       if (announce) toast(`Updated from ${esc(data.updatedBy || "the link")}.`);
     } else {
       // nothing new on the link, but this device has edits the link hasn't seen yet → send them
-      if (!force && ch.updatedAt && (!ch.link.lastPushedAt || ch.updatedAt > ch.link.lastPushedAt)) LINK.push(ch);
+      if (!force && LINK.dirty(ch)) LINK.schedulePush(ch);
       if (announce) toast("Already up to date.");
     }
     return data;
   } catch (e) { console.warn("link pull failed", e); if (announce) toast("Couldn't reach the link server."); }
 };
 
+// Cloudflare's free tier allows ~1000 saves a day for EVERYONE together, so a linked character
+// uploads at most once every 2 minutes; edits in between ride along with that upload. Leaving the app
+// sends anything still waiting.
+LINK.PUSH_GAP = 120000;
+LINK._pending = new Set();
 LINK.schedulePush = function (ch) {
   if (!ch || !ch.link || LINK._merging) return;
-  clearTimeout(LINK._pushTimer);
-  LINK._pushTimer = setTimeout(() => LINK.push(ch), 1500);
+  LINK._pending.add(ch.id);
+  if (LINK._pushTimer) return;
+  const wait = Math.max(1500, LINK.PUSH_GAP - (Date.now() - (LINK._lastPush || 0)));
+  LINK._pushTimer = setTimeout(LINK.flushPush, wait);
+};
+LINK.flushPush = function () {
+  clearTimeout(LINK._pushTimer); LINK._pushTimer = null;
+  const ids = [...LINK._pending]; LINK._pending.clear();
+  for (const id of ids) { const ch = Store.characters.find((c) => c.id === id); if (ch && ch.link) LINK.push(ch); }
+};
+// edited on this device since the link last saw it (our last upload or the last copy we pulled)?
+LINK.dirty = function (ch) {
+  const seen = [ch.link.lastPushedAt, ch.link.lastUpdatedAt].filter(Boolean).sort().pop();
+  return !!ch.updatedAt && (!seen || ch.updatedAt > seen);
 };
 
 LINK.afterBoot = function () {
@@ -123,6 +141,7 @@ LINK.afterBoot = function () {
   if (ch && ch.link) LINK.pull(ch);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.link) LINK.pull(c); }
+    else if (LINK._pending.size) LINK.flushPush();
   });
 };
 
@@ -199,7 +218,7 @@ const GROUP = {
   async sync(ch) {
     if (!ch || !ch.party) return null;
     const code = GROUP.ensureLink(ch);
-    LINK.push(ch); // publish a fresh snapshot so teammates see current HP
+    if (LINK.dirty(ch)) LINK.schedulePush(ch); // publish only if something changed (uploads cost free-tier saves)
     const r = await GROUP.req({ op: "sync", code, name: ch.name, role: "player" });
     if (r && r.members) { ch.party.roster = r.members; Store.save(); }
     if (Store.activeId === ch.id && document.querySelector("#modal .party-list")) { await partyRefreshLive(ch); renderParty(); }
@@ -216,7 +235,7 @@ const GROUP = {
   afterBoot() {
     const ch = Store.active && Store.active(); if (ch && ch.party) GROUP.sync(ch);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { const c = Store.active(); if (c && c.party) GROUP.sync(c); } });
-    setInterval(() => { const c = Store.active(); if (c && c.party && document.visibilityState === "visible") GROUP.sync(c); }, 25000);
+    setInterval(() => { const c = Store.active(); if (c && c.party && document.visibilityState === "visible") GROUP.sync(c); }, 45000);
   },
 };
 window.GROUP = GROUP;
@@ -251,6 +270,7 @@ const GIFT = {
   },
   async pull(ch) {
     if (!ch || !ch.link || !ch.link.code) return;
+    try { const c = await (await fetch(`${LINK.WORKER}/gift/${encodeURIComponent(ch.link.code)}`)).json(); if (!c || !c.count) return; } catch (e) { return; }
     const r = await GIFT.req(ch.link.code, { op: "pull" });
     if (!r || !r.gifts || !r.gifts.length) return;
     for (const g of r.gifts) await GIFT.receive(ch, g);

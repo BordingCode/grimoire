@@ -671,14 +671,19 @@ const BACKUP = {
   // cheap signature of everything backed up, to skip redundant auto-backups (navigation, switching active char)
   _sig() { try { const s = JSON.stringify([Store.characters, DM.campaigns, Party.members, !!this.account()]); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ":" + h; } catch (e) { return ""; } },
   enabled() { return this.load().auto !== false; }, // default ON
-  // debounced auto-backup, called whenever characters / DM / kill count are saved
+  // auto-backup, called whenever characters / DM / kill count are saved. At most once every
+  // 5 minutes (free-tier save budget is shared by everyone) — and right away when you leave the app.
+  GAP: 5 * 60000,
   schedule() {
     if (!this.enabled()) return;
     if (!this.hasData()) return; // never overwrite a good cloud backup with an empty one
-    clearTimeout(this._timer);
-    this._timer = setTimeout(() => this._autoRun(), 8000);
+    if (this._timer) return;
+    const wait = Math.max(8000, this.GAP - (Date.now() - (this._lastRun || 0)));
+    this._timer = setTimeout(() => this._autoRun(), wait);
   },
+  flush() { if (this._timer) this._autoRun(); },
   async _autoRun() {
+    clearTimeout(this._timer); this._timer = null; this._lastRun = Date.now();
     if (!this.enabled() || !this.hasData()) return;
     const sig = this._sig();
     if (sig && sig === this.load().lastSig) return; // nothing actually changed
@@ -743,6 +748,7 @@ const BACKUP = {
   signOut() { localStorage.removeItem(this.ACCT_KEY); const m = this.load(); delete m.lastSig; delete m.lastAt; this.saveMeta(m); },
 };
 window.BACKUP = BACKUP;
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") BACKUP.flush(); });
 function renderBackup() {
   const m = BACKUP.load();
   const acct = BACKUP.account();
