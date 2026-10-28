@@ -67,7 +67,7 @@ const CONDITION_INFO = {
   "Blinded": "Can't see; auto-fail sight checks. Attacks against you have advantage; your attacks have disadvantage.",
   "Charmed": "Can't attack the charmer or target them with harmful effects. The charmer has advantage on social checks with you.",
   "Deafened": "Can't hear; auto-fail any check that needs hearing.",
-  "Exhaustion": "Tracked in 6 levels: 1 disadvantage on ability checks · 2 speed halved · 3 disadvantage on attacks & saves · 4 HP max halved · 5 speed 0 · 6 death.",
+  "Exhaustion": "Levels 1–6: 1 disadvantage on ability checks · 2 speed halved · 3 disadvantage on attacks & saves · 4 HP max halved · 5 speed 0 · 6 death. A Long Rest removes 1 level.",
   "Frightened": "Disadvantage on checks & attacks while the source is in sight; can't willingly move closer to it.",
   "Grappled": "Speed becomes 0. Ends if the grappler is incapacitated or you're moved away.",
   "Incapacitated": "Can't take actions or reactions.",
@@ -80,6 +80,15 @@ const CONDITION_INFO = {
   "Stunned": "Incapacitated, can't move, can barely speak. Auto-fail STR & DEX saves. Attacks against you have advantage.",
   "Unconscious": "Incapacitated, unaware, drop what you hold and fall prone. Auto-fail STR & DEX saves. Attacks have advantage; hits from within 5 ft are crits.",
 };
+
+// SRD 5.2 (2024) wording where it differs from 2014
+const CONDITION_INFO_2024 = {
+  "Exhaustion": "Levels 1–6. Each level: −2 to every d20 test (attacks, saves, checks) and −5 ft speed. Level 6 = death. A Long Rest removes 1 level.",
+  "Incapacitated": "Can't take actions, bonus actions or reactions; your Concentration breaks; you can't speak; disadvantage on Initiative.",
+  "Invisible": "Can't be seen; advantage on Initiative. Attacks against you have disadvantage; your attacks have advantage (unless they can see you).",
+  "Grappled": "Speed 0. Disadvantage on attacks against anyone but the grappler. The grappler can drag you (extra movement cost).",
+};
+function conditionInfo(name, ed) { return (ed === "2024" && CONDITION_INFO_2024[name]) || CONDITION_INFO[name] || ""; }
 
 // Subclasses, keyed by class -> subclass name -> spell table OR null.
 // A spell table { classLevel: [spell names] } gives AUTO-SPELLS (SRD subclasses only — the
@@ -147,6 +156,59 @@ for (const cls in EXTRA_SUBCLASSES) {
   for (const name of EXTRA_SUBCLASSES[cls]) if (!(name in SUBCLASSES[cls])) SUBCLASSES[cls][name] = null;
 }
 
+/* 2024 (PHB 2024) subclass roster — 4 per class. Spell tables only for the SRD 5.2 subclasses,
+   copied from the SRD 5.2 feature text in data/features-2024.json. Circle of the Land: you pick a
+   land type on each Long Rest, so each type is its own entry. Artificer isn't in the 2024 PHB. */
+const SUBCLASSES_2024 = {
+  Artificer: { "Alchemist": null, "Armorer": null, "Artillerist": null, "Battle Smith": null },
+  Barbarian: { "Path of the Berserker": null, "Path of the Wild Heart": null, "Path of the World Tree": null, "Path of the Zealot": null },
+  Bard: { "College of Dance": null, "College of Glamour": null, "College of Lore": null, "College of Valor": null },
+  Cleric: {
+    "Knowledge Domain": null,
+    "Life Domain": { 3: ["Aid", "Bless", "Cure Wounds", "Lesser Restoration"], 5: ["Mass Healing Word", "Revivify"], 7: ["Aura of Life", "Death Ward"], 9: ["Greater Restoration", "Mass Cure Wounds"] },
+    "Light Domain": null, "Trickery Domain": null,
+  },
+  Druid: {
+    "Circle of the Land (Arid)": { 3: ["Blur", "Burning Hands", "Fire Bolt"], 5: ["Fireball"], 7: ["Blight"], 9: ["Wall of Stone"] },
+    "Circle of the Land (Polar)": { 3: ["Fog Cloud", "Hold Person", "Ray of Frost"], 5: ["Sleet Storm"], 7: ["Ice Storm"], 9: ["Cone of Cold"] },
+    "Circle of the Land (Temperate)": { 3: ["Misty Step", "Shocking Grasp", "Sleep"], 5: ["Lightning Bolt"], 7: ["Freedom of Movement"], 9: ["Tree Stride"] },
+    "Circle of the Land (Tropical)": { 3: ["Acid Splash", "Ray of Sickness", "Web"], 5: ["Stinking Cloud"], 7: ["Polymorph"], 9: ["Insect Plague"] },
+    "Circle of the Moon": null, "Circle of the Sea": null, "Circle of the Stars": null,
+  },
+  Fighter: { "Battle Master": null, "Champion": null, "Eldritch Knight": null, "Psi Warrior": null },
+  Monk: { "Warrior of Mercy": null, "Warrior of Shadow": null, "Warrior of the Elements": null, "Warrior of the Open Hand": null },
+  Paladin: {
+    "Oath of Devotion": { 3: ["Protection from Evil and Good", "Shield of Faith"], 5: ["Aid", "Zone of Truth"], 9: ["Beacon of Hope", "Dispel Magic"], 13: ["Freedom of Movement", "Guardian of Faith"], 17: ["Commune", "Flame Strike"] },
+    "Oath of Glory": null, "Oath of the Ancients": null, "Oath of Vengeance": null,
+  },
+  Ranger: { "Beast Master": null, "Fey Wanderer": null, "Gloom Stalker": null, "Hunter": null },
+  Rogue: { "Arcane Trickster": null, "Assassin": null, "Soulknife": null, "Thief": null },
+  Sorcerer: {
+    "Aberrant Sorcery": null, "Clockwork Sorcery": null,
+    "Draconic Sorcery": { 3: ["Alter Self", "Chromatic Orb", "Command", "Dragon's Breath"], 5: ["Fear", "Fly"], 7: ["Arcane Eye", "Charm Monster"], 9: ["Legend Lore", "Summon Dragon"] },
+    "Wild Magic Sorcery": null,
+  },
+  Warlock: {
+    "Archfey Patron": null, "Celestial Patron": null,
+    "Fiend Patron": { 3: ["Burning Hands", "Command", "Scorching Ray", "Suggestion"], 5: ["Fireball", "Stinking Cloud"], 7: ["Fire Shield", "Wall of Fire"], 9: ["Geas", "Insect Plague"] },
+    "Great Old One Patron": null,
+  },
+  Wizard: { "Abjurer": null, "Diviner": null, "Evoker": null, "Illusionist": null },
+};
+// the subclass roster for a character's edition
+function subclassesFor(ed, cls) { return (ed === "2024" ? SUBCLASSES_2024 : SUBCLASSES)[cls] || {}; }
+// a subclass's spell table (or null) — old 2024 sheets may still carry a 2014 name ("The Fiend")
+function subclassTable(ed, cls, name) {
+  const m = subclassesFor(ed, cls);
+  if (m[name]) return m[name];
+  if (ed === "2024" && m[SUBCLASS_2024[name]]) return m[SUBCLASS_2024[name]];
+  return null;
+}
+const SPECIES_NAMES = {
+  "2014": ["Dragonborn", "Dwarf", "Elf", "Gnome", "Half-Elf", "Half-Orc", "Halfling", "Human", "Tiefling"],
+  "2024": ["Dragonborn", "Dwarf", "Elf", "Gnome", "Goliath", "Halfling", "Human", "Orc", "Tiefling"],
+};
+
 // accent colour palette [base, lighter] + the default accent key per class
 const ACCENTS = {
   violet: ["#6d4aff", "#8b6dff"], azure: ["#4a8fff", "#74a9ff"], teal: ["#3fb0bf", "#6fcdd9"],
@@ -159,6 +221,31 @@ const CLASS_ACCENT = {
   Sorcerer: "crimson", Warlock: "violet", Wizard: "violet",
 };
 // expose
+/* Spell counts by class level 1–20. 2014: SRD 5.1 (dnd5eapi) — known for Bard/Sorcerer/Warlock/
+   Ranger, prepared casters use ability mod + level (calc.js). 2024: SRD 5.2 class tables (open5e) —
+   every caster prepares from the table. Checked 2026-10-28. */
+const SPELL_TABLES = {
+  "2014": {
+    Bard: { known: [4,5,6,7,8,9,10,11,12,14,15,15,16,18,19,19,20,22,22,22], cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Cleric: { cantrips: [3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5] },
+    Druid: { cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Sorcerer: { known: [2,3,4,5,6,7,8,9,10,11,12,12,13,13,14,14,15,15,15,15], cantrips: [4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6] },
+    Warlock: { known: [2,3,4,5,6,7,8,9,10,10,11,11,12,12,13,13,14,14,15,15], cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Wizard: { cantrips: [3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5] },
+    Ranger: { known: [0,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11] },
+  },
+  "2024": {
+    Bard: { prep: [4,5,6,7,9,10,11,12,14,15,16,16,17,17,18,18,19,20,21,22], cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Cleric: { prep: [4,5,6,7,9,10,11,12,14,15,16,16,17,17,18,18,19,20,21,22], cantrips: [3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5] },
+    Druid: { prep: [4,5,6,7,9,10,11,12,14,15,16,16,17,17,18,18,19,20,21,22], cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Paladin: { prep: [2,3,4,5,6,6,7,7,9,9,10,10,11,11,12,12,14,14,15,15] },
+    Ranger: { prep: [2,3,4,5,6,6,7,7,9,9,10,10,11,11,12,12,14,14,15,15] },
+    Sorcerer: { prep: [2,4,6,7,9,10,11,12,14,15,16,16,17,17,18,18,19,20,21,22], cantrips: [4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6] },
+    Warlock: { prep: [2,3,4,5,6,7,8,9,10,10,11,11,12,12,13,13,14,14,15,15], cantrips: [2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4] },
+    Wizard: { prep: [4,5,6,7,9,10,11,12,14,15,16,16,17,18,19,21,22,23,24,25], cantrips: [3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5] },
+  },
+};
+
 /* Encounter difficulty (verified against the official tables, 2026-10-27).
    2014: Basic Rules "Building Combat Encounters" (XP thresholds + monster-count multipliers).
    2024: DMG 2024 "XP Budget per Character" (no multipliers). XP by CR is the same in both. */
@@ -293,4 +380,4 @@ const SPECIES_TRACKERS = {
 // Non-SRD races/species: names only (their rules text is WotC-owned) — pick one and add the traits yourself
 const EXTRA_SPECIES = ["Aarakocra", "Aasimar", "Bugbear", "Centaur", "Changeling", "Fairy", "Firbolg", "Genasi", "Githyanki", "Githzerai", "Goblin", "Goliath", "Harengon", "Hobgoblin", "Kalashtar", "Kenku", "Kobold", "Leonin", "Lizardfolk", "Loxodon", "Minotaur", "Orc", "Owlin", "Satyr", "Shifter", "Tabaxi", "Tortle", "Triton", "Warforged", "Yuan-ti"];
 
-window.RULES = { ARMOR, WEAPONS, WEAPON_PROPS, weaponFor, SPECIES_TRACKERS, EXTRA_SPECIES, CLASS_TRACKERS, SUBCLASS_2024, XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };
+window.RULES = { conditionInfo, SPELL_TABLES, SUBCLASSES_2024, subclassesFor, subclassTable, SPECIES_NAMES, ARMOR, WEAPONS, WEAPON_PROPS, weaponFor, SPECIES_TRACKERS, EXTRA_SPECIES, CLASS_TRACKERS, SUBCLASS_2024, XP_BY_CR, XP_THRESH_2014, XP_BUDGET_2024, XP_MULT_STEPS, xpMultIndex, ABILITIES, ABILITY_NAMES, SKILLS, CONDITIONS, CONDITION_INFO, CLASSES, SUBCLASSES, FULL_SLOTS, PACT, ACCENTS, CLASS_ACCENT, profBonus, halfSlots };

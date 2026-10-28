@@ -77,8 +77,8 @@ function spellRowsWithHeaders(ch, pool) {
 function defaultSpellList(ch) {
   if (!ch) return "available";
   // known-spells casters (Warlock, Sorcerer, Bard, Ranger…) live in "Known"; preparers in "Prepared"
-  const preps = (RULES.CLASSES[ch.cls] || {}).prepares;
-  if (preps === false && (ch.spells.known || []).length) return "known";
+  const preps = Calc.prepares(ch);
+  if (!preps && (ch.spells.known || []).length) return "known";
   if ((ch.spells.prepared || []).length || subclassSpells(ch).length) return "prepared";
   if ((ch.spells.known || []).length) return "known";
   return "available";
@@ -91,22 +91,23 @@ function classSummary(ch) {
 // does the chosen subclass have a built-in (SRD) spell table?
 function subclassHasBuiltin(ch) {
   if (!ch.subclass) return false;
-  return Calc.classList(ch).some((c) => { const m = RULES.SUBCLASSES[c.cls]; return m && m[ch.subclass]; });
+  return Calc.classList(ch).some((c) => !!RULES.subclassTable(ch.edition, c.cls, ch.subclass));
 }
 // spells granted by the chosen subclass: built-in SRD table, else the player's own list (content they own)
 function subclassSpells(ch) {
   const sub = ch.subclass; if (!sub) return [];
   let table = null, lvl = 0;
-  for (const c of Calc.classList(ch)) { const m = RULES.SUBCLASSES[c.cls]; if (m && m[sub]) { table = m[sub]; lvl = c.level; break; } }
+  for (const c of Calc.classList(ch)) { const tb = RULES.subclassTable(ch.edition, c.cls, sub); if (tb) { table = tb; lvl = c.level; break; } }
   if (!table) return (ch.subSpells || []).map((id) => findSpell(ch, id)).filter(Boolean);
   const names = [];
   Object.keys(table).forEach((t) => { if (+t <= lvl) names.push(...table[t]); });
   const pool = spellPool(ch);
   return names.map((n) => pool.find((s) => s.name.toLowerCase() === n.toLowerCase())).filter(Boolean);
 }
-// a Warlock patron's list only adds spells you MAY learn (they aren't free/always prepared)
+// a 2014 Warlock patron's list only adds spells you MAY learn (not always prepared). In 2024 the
+// patron's spells ARE always prepared, like every other subclass list.
 function subclassSpellsOptional(ch) {
-  return !!ch.subclass && Calc.classList(ch).some((c) => c.cls === "Warlock" && RULES.SUBCLASSES.Warlock && ch.subclass in RULES.SUBCLASSES.Warlock);
+  return ch.edition !== "2024" && !!ch.subclass && Calc.classList(ch).some((c) => c.cls === "Warlock" && ch.subclass in RULES.SUBCLASSES.Warlock);
 }
 function subclassSpellIdSet(ch) { return new Set(subclassSpells(ch).map((s) => s.id)); }
 
@@ -226,8 +227,15 @@ function viewParty() {
 }
 
 /* ---- New character ---- */
-function newSubOptions(cls) {
-  return `<option value="">— none yet —</option>` + Object.keys(RULES.SUBCLASSES[cls] || {}).map((n) => `<option>${esc(n)}</option>`).join("");
+function newSubOptions(cls, ed) {
+  return `<option value="">— none yet —</option>` + Object.keys(RULES.subclassesFor(ed, cls)).map((n) => `<option>${esc(n)}</option>`).join("");
+}
+function newRaceOptions(ed) {
+  const srd = RULES.SPECIES_NAMES[ed] || RULES.SPECIES_NAMES["2014"];
+  return `<option value="">— choose later —</option>
+        <optgroup label="Free rules (traits filled in)">${srd.map((n) => `<option>${n}</option>`).join("")}</optgroup>
+        <optgroup label="Other books (add traits yourself)">${RULES.EXTRA_SPECIES.filter((n) => !srd.includes(n)).map((n) => `<option>${n}</option>`).join("")}</optgroup>
+        <option value="__custom">Custom / homebrew…</option>`;
 }
 function viewNew() {
   const classes = Object.keys(RULES.CLASSES).map((c) => `<option>${c}</option>`).join("");
@@ -236,19 +244,14 @@ function viewNew() {
     <div class="screen form">
       <label class="fld"><span>Name</span><input id="f-name" type="text" placeholder="e.g. Lyra Moonwhisper"></label>
       <label class="fld"><span>Ruleset</span>
-        <select id="f-ed">
+        <select id="f-ed" data-act="newEdChange">
           <option value="2014">2014 (SRD 5.1)</option>
           <option value="2024">2024 (SRD 5.2)</option>
         </select>
       </label>
-      <label class="fld"><span>Race / species <em class="muted small">(optional — you can change it later)</em></span><select id="f-race">
-        <option value="">— choose later —</option>
-        <optgroup label="Free rules (traits filled in)">${[...new Set(["Dragonborn", "Dwarf", "Elf", "Gnome", "Goliath", "Half-Elf", "Half-Orc", "Halfling", "Human", "Orc", "Tiefling"])].map((n) => `<option>${n}</option>`).join("")}</optgroup>
-        <optgroup label="Other books (add traits yourself)">${RULES.EXTRA_SPECIES.filter((n) => !["Goliath", "Orc"].includes(n)).map((n) => `<option>${n}</option>`).join("")}</optgroup>
-        <option value="__custom">Custom / homebrew…</option>
-      </select></label>
+      <label class="fld"><span>Race / species <em class="muted small">(optional — you can change it later)</em></span><select id="f-race">${newRaceOptions("2014")}</select></label>
       <label class="fld"><span>Class</span><select id="f-cls" data-act="newClsChange">${classes}</select></label>
-      <label class="fld"><span>Subclass <em class="muted small">(optional)</em></span><select id="f-sub">${newSubOptions(Object.keys(RULES.CLASSES)[0])}</select></label>
+      <label class="fld"><span>Subclass <em class="muted small">(optional)</em></span><select id="f-sub">${newSubOptions(Object.keys(RULES.CLASSES)[0], "2014")}</select></label>
       <label class="fld"><span>Level</span><input id="f-lvl" type="number" min="1" max="20" value="1"></label>
       <fieldset class="abilities-new">
         <legend>Ability scores</legend>
@@ -339,10 +342,17 @@ function tabStats(ch) {
 
 function tabCombat(ch) {
   const c = ch.combat;
-  const cond = (ch.conditions || []).map((x, i) => `
+  const cond = (ch.conditions || []).map((x, i) => x.name === "Exhaustion" ? `
+    <span class="cond"><button class="cond-name" data-act="condInfo" data-name="Exhaustion">Exhaustion <b>${Calc.exhaustion(ch)}</b></button>
+      <button data-act="exhaustion" data-d="-1" title="one level less" aria-label="exhaustion down">−</button>
+      <button data-act="exhaustion" data-d="1" title="one level more" aria-label="exhaustion up">+</button>
+      <button data-act="condRemove" data-i="${i}" aria-label="remove">✕</button></span>` : `
     <span class="cond"><button class="cond-name" data-act="condInfo" data-name="${esc(x.name)}">${esc(x.name)}</button>${x.rounds != null ? ` <b>${x.rounds}r</b>` : ""}
       <button data-act="condTick" data-i="${i}" title="-1 round">−</button>
       <button data-act="condRemove" data-i="${i}">✕</button></span>`).join("") || `<span class="muted">none</span>`;
+  const exLv = Calc.exhaustion(ch);
+  const exNote = !exLv ? "" : ch.edition === "2024" ? `−${2 * exLv} to every d20 test · −${5 * exLv} ft speed (included)`
+    : ["", "Disadvantage on ability checks", "Disadvantage on checks · speed halved (included)", "Disadvantage on checks, attacks & saves · speed halved", "Disadvantage on checks, attacks & saves · speed halved · HP max halved (included)", "Disadvantage on checks, attacks & saves · speed 0 · HP max halved", "Death"][exLv];
   const res = (ch.resources || []).map((r) => `
     <div class="res" ${ui.reorder ? `data-sortid="${esc(r.id)}"` : ""}>
       <div class="res-top">${handle()}<span>${esc(r.name)}</span>
@@ -360,7 +370,7 @@ function tabCombat(ch) {
     return `<div class="weapon" ${ui.reorder ? `data-sortid="${esc(w.id)}"` : ""}>${handle()}
       <button class="weapon-main" data-act="weaponOpen" data-i="${i}">
         <span class="wpn-info"><span class="wpn-name">${esc(w.name)}</span>
-          <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
+          <span class="wpn-sub">${atk != null ? sign(atk) + " to hit" : "—"}${w.damage ? ` · ${esc(w.damage)}${wDmgBon ? " " + sign(wDmgBon) : ""}${rageWeapon(ch, w) ? ` <b class="rage-dmg">${sign(rageDamage(ch))} rage</b>` : ""}${w.damageType ? " " + esc(w.damageType) : ""}` : ""}${w.notes ? ` · ${esc(w.notes)}` : ""}</span></span>
         <span class="wpn-go">›</span>
       </button>
     </div>`;
@@ -380,6 +390,7 @@ function tabCombat(ch) {
     <div class="turn-row">
       <button class="react-chip ${c.reactionUsed ? "used" : ""}" data-act="reactionToggle">${c.reactionUsed ? "Reaction used — tap when your turn starts" : "Reaction ready"}</button>
       ${c.shieldSpell ? `<button class="shield-chip" data-act="shieldEnd" title="end the Shield spell">Shield +5 AC ✕</button>` : ""}
+      ${c.raging ? `<span class="rage-wrap"><button class="rage-chip" data-act="rageInfo">RAGING ${sign(rageDamage(ch))} · resist B/P/S</button><button class="rage-x" data-act="rageEnd" aria-label="end rage">✕</button></span>` : ""}
     </div>
     <div class="hp-block">
       <div class="hp-row"><span>Hit points</span>
@@ -414,6 +425,7 @@ function tabCombat(ch) {
     ${conc ? `<div class="conc-banner">Concentrating on <b>${esc(conc)}</b> <button data-act="dropConc">drop</button></div>` : ""}
     <h3 class="sec">Conditions <button class="mini" data-act="addCond">+ add</button></h3>
     <div class="conds">${cond}</div>
+    ${exNote ? `<p class="muted small exh-note">Exhaustion ${exLv}: ${exNote}</p>` : ""}
     <h3 class="sec">Resource trackers <button class="mini" data-act="addRes">+ add</button></h3>
     <div class="reslist" ${ui.reorder ? 'data-sortlist="resources"' : ""}>${res || '<span class="muted">none — e.g. Rage, Ki, Channel Divinity</span>'}</div>`;
 }
@@ -454,17 +466,26 @@ function tabSpells(ch) {
   const casters = Calc.castingClasses(ch);
   let headHtml;
   if (casters.length <= 1) {
-    const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch), prep = Calc.preparedCount(ch);
+    const dc = Calc.spellSaveDC(ch), atk = Calc.spellAttack(ch);
+    const n = spellCounts(ch);
+    // limits are a guide, never a lock: over the limit turns the number amber, nothing is refused
+    const chip = (key, label, have, max) => max == null ? "" : `<div class="big-stat${have > max ? " over" : ""}" data-act="override" data-key="${key}" data-label="${label} (how many you may have)" data-auto="${Calc.spellLimits(ch, ch.cls, ch.level)[{ preparedCount: "prep", knownCount: "known", cantripCount: "cantrips" }[key]] ?? max}"><b>${have}/${max}</b><span>${label}</span></div>`;
     headHtml = `<div class="cast-head">
       <div class="big-stat"><b>${dc ?? "—"}</b><span>Save DC</span></div>
       <div class="big-stat"><b>${atk != null ? sign(atk) : "—"}</b><span>Spell atk</span></div>
-      ${prep != null ? `<div class="big-stat" data-act="override" data-key="preparedCount" data-label="Prepared count" data-auto="${prep}"><b>${ch.spells.prepared.filter((id) => { const sp = findSpell(ch, id); return !sp || sp.level > 0; }).length}/${prep}</b><span>Prepared</span></div>` : ""}
-    </div>`;
+      ${chip("cantripCount", "Cantrips", n.cantrips, Calc.cantripCount(ch))}
+      ${chip("preparedCount", "Prepared", n.prepared, Calc.preparedCount(ch))}
+      ${chip("knownCount", "Known", n.known, Calc.knownCount(ch))}
+    </div>
+    ${(() => { const over = []; const P = Calc.preparedCount(ch), K = Calc.knownCount(ch), C = Calc.cantripCount(ch);
+      if (P != null && n.prepared > P) over.push(`${n.prepared - P} more prepared`); if (K != null && n.known > K) over.push(`${n.known - K} more known`); if (C != null && n.cantrips > C) over.push(`${n.cantrips - C} more cantrip${n.cantrips - C === 1 ? "" : "s"}`);
+      const tooHigh = n.tooHigh.length ? `${n.tooHigh.map((s) => esc(s.name)).join(", ")} ${n.tooHigh.length === 1 ? "is" : "are"} above your highest spell slot` : "";
+      return over.length || tooHigh ? `<p class="spell-warn">${over.length ? `You have ${over.join(", ")} than the rules give at this level` : ""}${over.length && tooHigh ? " · " : ""}${tooHigh}. Fine if your table allows it — tap a number to change the limit.</p>` : ""; })()}`;
   } else {
     headHtml = `<div class="cast-multi">${casters.map((cc) => `
       <div class="cast-cls">
         <span class="cc-cls">${esc(cc.cls)} <em>${cc.ability.toUpperCase()}</em></span>
-        <span class="cc-stats">DC <b>${cc.dc}</b> · atk <b>${sign(cc.attack)}</b>${cc.prepares ? ` · prep ${cc.prepared}` : ""}</span>
+        <span class="cc-stats">DC <b>${cc.dc}</b> · atk <b>${sign(cc.attack)}</b>${cc.prepares ? ` · prep ${cc.prepared}` : cc.known != null ? ` · known ${cc.known}` : ""}</span>
       </div>`).join("")}</div>`;
   }
   return `
@@ -473,6 +494,25 @@ function tabSpells(ch) {
     ${editingSlots ? '<p class="muted small">Tap − / + to set how many slots you have at each level (for items, feats or homebrew). “auto” reverts to the rules default.</p>' : ""}
     <div class="slots">${slotHtml || (editingSlots ? "" : '<p class="muted">No spell slots at this level.</p>')}</div>
     ${spellListSection(ch)}`;
+}
+
+/* what's on the sheet now (subclass always-prepared spells don't count). In 2024 every caster
+   prepares, so old "known" marks count as prepared too. */
+function spellCounts(ch) {
+  const sub = subclassSpellIdSet(ch);
+  const lv = (id) => { const sp = findSpell(ch, id); return sp ? sp.level : 1; };
+  const P = (ch.spells.prepared || []).filter((id) => !sub.has(id)), K = (ch.spells.known || []).filter((id) => !sub.has(id));
+  const knownCaster = Calc.knownCount(ch) != null;
+  const both = [...new Set([...P, ...K])];
+  const slots = Calc.spellSlots(ch), pact = Calc.pactMagic(ch);
+  const top = Math.max(pact && pact.max ? pact.level : 0, ...[1, 2, 3, 4, 5, 6, 7, 8, 9].filter((i) => slots[i].max > 0), 0);
+  const tooHigh = both.map((id) => findSpell(ch, id)).filter((sp) => sp && sp.level > 0 && top > 0 && sp.level > top);
+  return {
+    cantrips: both.filter((id) => lv(id) === 0).length,
+    prepared: (knownCaster ? P : both).filter((id) => lv(id) > 0).length,
+    known: K.filter((id) => lv(id) > 0).length,
+    tooHigh: Calc.isMulti(ch) ? [] : tooHigh,
+  };
 }
 
 function spellListSection(ch) {

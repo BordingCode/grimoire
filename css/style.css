@@ -232,7 +232,7 @@ input[type=checkbox] { width: auto; }
 
 /* spells */
 .cast-head, .combat-top { gap: 10px; }
-.cast-head { display: flex; gap: 10px; margin-bottom: 14px; }
+.cast-head { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 .slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .slot-row { display: flex; align-items: center; gap: 10px; }
 .slvl { min-width: 52px; font-weight: 700; color: var(--accent-2); cursor: pointer; }
@@ -739,6 +739,11 @@ body.has-scene .summon-conc { background: color-mix(in srgb, var(--panel) 72%, t
 .react-chip { color: var(--good); border-color: var(--good); }
 .react-chip.used { color: var(--muted); border-color: var(--line); text-decoration: none; }
 .shield-chip { color: var(--gold); border-color: var(--gold); font-weight: 600; }
+.rage-wrap { display: inline-flex; align-items: stretch; white-space: nowrap; }
+.rage-chip { border: 1px solid var(--bad); border-right: 0; background: color-mix(in srgb, var(--bad) 16%, var(--panel)); color: var(--bad); border-radius: 999px 0 0 999px; padding: 8px 10px 8px 14px; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.rage-x { border: 1px solid var(--bad); background: color-mix(in srgb, var(--bad) 16%, var(--panel)); color: var(--bad); border-radius: 0 999px 999px 0; padding: 0 12px 0 8px; min-width: 36px; font-size: .9rem; cursor: pointer; }
+.rage-dmg { color: var(--bad); }
+.exh-note { margin: 6px 0 0; }
 [hidden] { display: none !important; }
 .summon-btn { flex-direction: column; gap: 2px; width: 72px; }
 .summon-btn .sb-ic { width: 26px; height: 26px; }
@@ -748,3 +753,8 @@ body.has-scene .summon-conc { background: color-mix(in srgb, var(--panel) 72%, t
 .pact-combat { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0; font-size: .9rem; }
 .pact-combat .slots { display: flex; gap: 6px; }
 .diff-say { margin: 6px 0; font-size: .92rem; }
+
+/* spell limits are a guide: over the limit = amber, never blocked */
+.big-stat.over b { color: var(--gold); }
+.spell-warn { margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--gold); color: var(--ink); font-size: .85rem; background: color-mix(in srgb, var(--gold) 12%, var(--panel)); }
+.cl-all { display: flex; gap: 8px; margin: 4px 0 8px; }

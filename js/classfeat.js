@@ -189,6 +189,7 @@ function applyChecklist() {
   const ch = Store.active(); const st = actions._cl; if (!ch || !st) return 0;
   if (!ch.resources) ch.resources = [];
   if (!ch.features) ch.features = [];
+  const hb = hpBase(ch);
   let n = 0;
   const readReset = (row) => { const k = row.querySelector(".cl-reset").value; return { resetOn: k === "short" ? "short" : "long", regain: k === "long1" ? 1 : 0 }; };
   document.querySelectorAll("#modal .cl-row[data-tr]").forEach((row) => {
@@ -209,6 +210,7 @@ function applyChecklist() {
   });
   n += applyOwnRows(ch);
   actions._cl = null;
+  applyChecklist.hp = hpFollow(ch, hb, true);
   commit(); if (window.LINK) LINK.schedulePush(ch);
   return n;
 }
@@ -233,19 +235,25 @@ function applyOwnRows(ch) {
 }
 
 /* the checklist on its own: everything up to your current class levels */
-actions.classChecklist = async () => {
-  const ch = Store.active();
+actions.classChecklist = async (el) => {
+  const ch = Store.active(); if (!ch) return;
+  const create = !!(el && el.dataset && el.dataset.create); // a brand-new character: everything pre-ticked
   const feats = await loadClassFeatures(ch.edition === "2024" ? "2024" : "2014");
   const ranges = Calc.classList(ch).map((c) => ({ cls: c.cls, prev: 0, to: c.level }));
-  const rows = checklistRows(ch, ranges, "anytime", feats);
+  const rows = checklistRows(ch, ranges, create ? "levelup" : "anytime", feats);
   actions._cl = { rows };
-  modal("Class features & trackers", `
-    <p class="muted small">Everything your classes get up to now (${ch.edition} rules). Tick what you want on your sheet — nothing changes unless it's ticked, so your homebrew stays as it is.</p>
+  modal(create ? "Your class features" : "Class features & trackers", `
+    <p class="muted small">${create ? `What a level-${ch.level} ${esc(ch.cls)} gets (${ch.edition} rules) — all ticked. Untick anything your table does differently; you can open this again from the character menu.` : `Everything your classes get up to now (${ch.edition} rules). Tick what you want on your sheet — nothing changes unless it's ticked, so your homebrew stays as it is.`}</p>
+    <div class="cl-all"><button class="mini" data-act="clTickAll" data-on="1">Tick all</button><button class="mini" data-act="clTickAll" data-on="">Untick all</button></div>
     ${checklistHtml(ch, rows, ranges.some((g) => feats[g.cls]))}
-    <div class="modal-btns"><button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="clSave">Add ticked</button></div>`,
+    <div class="modal-btns"><button class="btn" data-act="closeModal">${create ? "Skip" : "Cancel"}</button><button class="btn primary" data-act="clSave">Add ticked</button></div>`,
     (wrap) => checklistWire(wrap, ch));
 };
-actions.clSave = () => { const n = applyChecklist(); closeModal(); render(); toast(n ? `Added/updated ${n} thing${n === 1 ? "" : "s"}.` : "Nothing ticked — no changes."); };
+actions.clTickAll = (el) => { document.querySelectorAll("#modal .cl-row[data-tr] .cl-on, #modal .cl-row[data-ft] .cl-on").forEach((c) => (c.checked = !!el.dataset.on)); };
+actions.clSave = () => {
+  applyChecklist.hp = 0; const n = applyChecklist(); const dHp = applyChecklist.hp; closeModal(); render();
+  toast((n ? `Added/updated ${n} thing${n === 1 ? "" : "s"}.` : "Nothing ticked — no changes.") + (dHp ? ` Max HP ${sign(dHp)} — now ${Calc.maxHP(Store.active())}.` : ""), dHp ? 4500 : 2600);
+};
 
 /* one-time data fixes, run at boot and after a restore */
 function fixupChars() {

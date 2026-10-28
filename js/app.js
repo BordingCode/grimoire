@@ -67,8 +67,8 @@ function dmOn(key) { return DM.settings[key] !== false; } // default on
 
 async function loadSpells() {
   const [a, b, idx, sl, ci] = await Promise.all([
-    fetch("data/spells-2014.json?v=33").then((r) => r.json()),
-    fetch("data/spells-2024.json?v=33").then((r) => r.json()),
+    fetch("data/spells-2014.json?v=92").then((r) => r.json()),
+    fetch("data/spells-2024.json?v=92").then((r) => r.json()),
     fetch("data/spell-index.json?v=42").then((r) => r.json()).catch(() => []),
     fetch("data/summons.json?v=86").then((r) => r.json()).catch(() => []),
     fetch("data/creature-index.json?v=44").then((r) => r.json()).catch(() => []),
@@ -173,11 +173,21 @@ const actions = {
     ch.combat.hpCur = ch.combat.hpMax;
     ch.subclass = get("f-sub").value || "";
     const race = get("f-race") ? get("f-race").value : ""; // read before render() swaps the form away
+    if (race && race !== "__custom") ch.race = { name: race, ed: ch.edition }; // kept even if the race sheet is closed
     Store.add(ch);
     ui.screen = "sheet"; ui.tab = "stats"; ui.spellFilter.list = defaultSpellList(Store.active()); render();
-    if (race) actions.speciesOpen({ dataset: { pre: race } }); // straight on to its traits (all optional)
+    // a new character: the race's traits (ability bonuses pre-ticked), then the class features up to
+    // this level — all pre-ticked, all optional
+    if (race) actions.speciesOpen({ dataset: { pre: race, create: "1" } });
+    else actions.classChecklist({ dataset: { create: "1" } });
   },
-  newClsChange(el) { const sub = $("#f-sub"); if (sub) sub.innerHTML = newSubOptions(el.value); },
+  newClsChange(el) { const sub = $("#f-sub"); if (sub) sub.innerHTML = newSubOptions(el.value, $("#f-ed").value); },
+  // 2014 and 2024 have different races and subclasses — rebuild both lists, keeping a pick that still exists
+  newEdChange(el) {
+    const ed = el.value, race = $("#f-race"), sub = $("#f-sub");
+    if (race) { const v = race.value; race.innerHTML = newRaceOptions(ed); if ([...race.options].some((o) => o.value === v)) race.value = v; }
+    if (sub) { const v = sub.value; sub.innerHTML = newSubOptions($("#f-cls").value, ed); if ([...sub.options].some((o) => o.value === v)) sub.value = v; }
+  },
 
   override(el) {
     const ch = Store.active(); const key = el.dataset.key;
@@ -202,7 +212,7 @@ const actions = {
   addFeature() { featureForm(null); },
   featureOptions(el) { const f = (Store.active().features || []).find((x) => x.id === el.dataset.id); optionsMenu(f ? f.name : "Feature", "feature", `data-id="${el.dataset.id}"`); },
   featureEdit(el) { featureForm((Store.active().features || []).find((x) => x.id === el.dataset.id)); },
-  featureDel(el) { const ch = Store.active(); ch.features = (ch.features || []).filter((x) => x.id !== el.dataset.id); closeModal(); commit(); toast("Feature deleted."); },
+  featureDel(el) { const ch = Store.active(); const hb = hpBase(ch); ch.features = (ch.features || []).filter((x) => x.id !== el.dataset.id); closeModal(); toast("Feature deleted."); hpFollow(ch, hb); commit(); },
   featBonusAdd() { const meta = featCapture(); actions._featBonuses.push({ target: "ac", value: "" }); renderFeatureForm(meta.name, meta.desc); },
   featBonusRemove(el) { const meta = featCapture(); actions._featBonuses.splice(+el.dataset.i, 1); renderFeatureForm(meta.name, meta.desc); },
   featAdvAdd() { const meta = featCapture(); actions._featAdv.push("save.all"); renderFeatureForm(meta.name, meta.desc); },
@@ -217,21 +227,24 @@ const actions = {
     const desc = $("#ft-desc").value.trim();
     if (!ch.features) ch.features = [];
     const ed = actions._featEditId ? ch.features.find((x) => x.id === actions._featEditId) : null;
+    const hb = hpBase(ch);
     if (ed) { ed.name = name; ed.desc = desc; ed.bonuses = bonuses; ed.adv = adv; } else ch.features.push({ id: Gx.uid(), name, desc, bonuses, adv });
-    actions._featEditId = null; actions._featBonuses = []; actions._featAdv = []; closeModal(); commit();
+    actions._featEditId = null; actions._featBonuses = []; actions._featAdv = []; closeModal(); hpFollow(ch, hb); commit();
   },
 
   /* combat */
-  hp(el) { const ch = Store.active(); const d = +el.dataset.d; const c = ch.combat;
-    if (d < 0 && c.hpTemp > 0) { const fromTemp = Math.min(c.hpTemp, -d); c.hpTemp -= fromTemp; const rest = -d - fromTemp; c.hpCur = Math.max(0, c.hpCur - rest); }
+  hp(el) { const ch = Store.active(); const d = +el.dataset.d; const c = ch.combat; const prev = c.hpCur; let rest = -d;
+    if (d < 0 && c.hpTemp > 0) { const fromTemp = Math.min(c.hpTemp, -d); c.hpTemp -= fromTemp; rest = -d - fromTemp; c.hpCur = Math.max(0, c.hpCur - rest); }
     else c.hpCur = Math.max(0, Math.min(Calc.maxHP(ch), c.hpCur + d));
+    const up = hpAfter(ch, prev, d < 0 ? rest : 0);
     commit();
-    if (d < 0) maybeConcentration(ch, -d);
+    if (d < 0 && up) maybeConcentration(ch, -d);
   },
   hpDamage() { amountPrompt("Take damage", "How much damage?", (n) => applyDamage(n)); },
   hpHeal() { amountPrompt("Heal", "How much healing?", (n) => applyHeal(n)); },
   hpEdit() { const ch = Store.active(); modal("Set current HP", `<input id="hp-in" type="number" value="${ch.combat.hpCur}"><div class="modal-btns"><button class="btn primary" data-act="hpSet">Set</button></div>`, () => $("#hp-in").focus()); },
-  hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal(); commit(); if (next < prev) maybeConcentration(ch, prev - next); },
+  hpSet() { const ch = Store.active(); const prev = ch.combat.hpCur; const next = Math.max(0, Math.min(Calc.maxHP(ch), +$("#hp-in").value || 0)); ch.combat.hpCur = next; closeModal();
+    const up = hpAfter(ch, prev, Math.max(0, prev - next)); commit(); if (next < prev && up) maybeConcentration(ch, prev - next); },
   death(el) { const ch = Store.active(); const t = el.dataset.t, i = +el.dataset.i; const cur = ch.combat.death[t]; ch.combat.death[t] = cur > i ? i : i + 1; commit(); },
 
   shortRest() { const ch = Store.active(); ch.combat.reactionUsed = false; ch.combat.shieldSpell = false; const p = Calc.pactMagic(ch); if (p) ch.spells.pact.used = 0; (ch.resources || []).forEach((r) => { if (r.resetOn === "short") r.used = 0; else if (r.regain) r.used = Math.max(0, r.used - r.regain); }); commit(); toast(`Short rest — ${p ? "pact slots & " : ""}short-rest trackers restored. Spend hit dice to heal.`); },
@@ -256,8 +269,14 @@ const actions = {
       concentratingOn: ch.spells.concentratingOn,
     };
 
+    // exhaustion drops a level first (2014 HP max is halved at level 4+, so it changes max HP)
+    const exh = (ch.conditions || []).find((x) => x.name === "Exhaustion"); const exhBefore = exh ? (+exh.level || 1) : 0;
+    if (exh) { if (exhBefore <= 1) ch.conditions = ch.conditions.filter((x) => x !== exh); else exh.level = exhBefore - 1; }
+    ch.conditions = (ch.conditions || []).filter((x) => !(x.name === "Unconscious" && x.auto));
+    const wasRaging = c.raging; c.raging = false;
     c.hpCur = Calc.maxHP(ch); c.hpTemp = 0; c.death = { succ: 0, fail: 0 }; c.reactionUsed = false; c.shieldSpell = false;
-    const diceRestore = Math.max(1, Math.floor(Calc.totalLevel(ch) / 2));
+    // 2014: regain up to half your hit dice (min 1). 2024: regain all of them.
+    const diceRestore = ch.edition === "2024" ? Calc.totalLevel(ch) : Math.max(1, Math.floor(Calc.totalLevel(ch) / 2));
     const diceRestored = Math.min(before.hitDiceUsed, diceRestore);
     restoreHitDice(ch, diceRestore);
     for (let i = 1; i <= 9; i++) ch.spells.slots[i].used = 0;
@@ -278,12 +297,32 @@ const actions = {
     const resRestored = before.resourcesUsed.filter((r) => r.used > 0);
     if (resRestored.length) lines.push(`<b>Resources restored:</b> ${resRestored.map((r) => esc(r.name)).join(", ")}.`);
     if (before.concentratingOn) { const sp = findSpell(ch, before.concentratingOn); lines.push(`Concentration on <b>${esc(sp ? sp.name : "a spell")}</b> ended.`); }
+    if (exhBefore) lines.push(exhBefore > 1 ? `<b>Exhaustion</b> ${exhBefore} → ${exhBefore - 1}.` : `<b>Exhaustion</b> gone.`);
+    if (wasRaging) lines.push(`Rage ended.`);
 
     modal("Long rest", `
       <p>Eight hours pass. ${ch.name ? esc(ch.name) : "Your character"} wakes rested.</p>
       <ul class="lvl-sum">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
       <div class="modal-btns"><button class="btn primary" data-act="closeModal">Done</button></div>`,
       () => render());
+  },
+
+  rageEnd() { const ch = Store.active(); ch.combat.raging = false; closeModal(); commit(); toast("Rage ended."); },
+  rageInfo() {
+    const ch = Store.active(); const n = rageDamage(ch);
+    modal("Raging", `<ul class="lvl-sum">
+      <li><b>${sign(n)} damage</b> on weapon attacks that use Strength${ch.edition === "2024" ? " (or unarmed strikes)" : " (melee)"}.</li>
+      <li><b>Resistance</b> to bludgeoning, piercing and slashing damage — halve it before you tap Take damage.</li>
+      <li><b>Advantage</b> on Strength checks and Strength saving throws.</li>
+      <li>You can't cast spells or concentrate on them.</li>
+      <li>${ch.edition === "2024" ? "Lasts until the end of your next turn; keep it going by attacking, forcing a save, or a bonus action. Up to 10 minutes." : "Lasts 1 minute. It ends early if your turn ends without you attacking or taking damage since your last turn, or if you're knocked out."}</li>
+    </ul><div class="modal-btns"><button class="btn danger" data-act="rageEnd">End rage</button><button class="btn primary" data-act="closeModal">OK</button></div>`);
+  },
+  exhaustion(el) {
+    const ch = Store.active(); const c = (ch.conditions || []).find((x) => x.name === "Exhaustion"); if (!c) return;
+    const lv = Math.max(0, Math.min(6, (+c.level || 1) + (+el.dataset.d)));
+    if (!lv) ch.conditions = ch.conditions.filter((x) => x !== c); else c.level = lv;
+    commit(); if (lv >= 6) toast("Exhaustion 6 — your character dies.", 5000);
   },
 
   /* conditions */
@@ -295,12 +334,18 @@ const actions = {
       <label class="fld"><span>Duration (rounds, optional)</span><input id="cond-rounds" type="number" min="1" placeholder="∞"></label>
       <div class="modal-btns"><button class="btn primary" data-act="condAdd">Add</button></div>`, (wrap) => {
         const sel = wrap.querySelector("#cond-name"), desc = wrap.querySelector("#cond-desc");
-        const upd = () => (desc.textContent = RULES.CONDITION_INFO[sel.value] || "");
+        const upd = () => (desc.textContent = RULES.conditionInfo(sel.value, Store.active().edition));
         sel.addEventListener("change", upd); upd();
       });
   },
-  condInfo(el) { const name = el.dataset.name; modal(name, `<p>${esc(RULES.CONDITION_INFO[name] || "No description.")}</p>`); },
-  condAdd() { const ch = Store.active(); const r = $("#cond-rounds").value; ch.conditions.push({ name: $("#cond-name").value, rounds: r ? +r : null }); closeModal(); commit(); },
+  condInfo(el) { const name = el.dataset.name; const ch = Store.active(); modal(name, `<p>${esc(RULES.conditionInfo(name, ch && ch.edition) || "No description.")}</p>`); },
+  condAdd() {
+    const ch = Store.active(); const r = $("#cond-rounds").value; const name = $("#cond-name").value;
+    const ex = name === "Exhaustion" && ch.conditions.find((x) => x.name === "Exhaustion");
+    if (ex) { ex.level = Math.min(6, (+ex.level || 1) + 1); toast(`Exhaustion is now level ${ex.level}.`); }
+    else ch.conditions.push({ name, rounds: r ? +r : null, ...(name === "Exhaustion" ? { level: 1 } : {}) });
+    closeModal(); commit();
+  },
   condTick(el) { const ch = Store.active(); const i = +el.dataset.i; const c = ch.conditions[i]; if (c.rounds != null) { c.rounds -= 1; if (c.rounds <= 0) ch.conditions.splice(i, 1); } commit(); },
   condRemove(el) { const ch = Store.active(); ch.conditions.splice(+el.dataset.i, 1); commit(); },
 
@@ -323,6 +368,7 @@ const actions = {
   },
   resUse(el) {
     const ch = Store.active(); const r = ch.resources.find((x) => x.id === el.dataset.id); if (!r) return;
+    if (isRage(r)) { if (r.used < r.max) { r.used++; startRage(ch); } else toast("No rages left — a long rest brings them back."); commit(); return; }
     if (!isPool(r)) { if (r.used < r.max) r.used++; commit(); return; }
     amountPrompt(`Use ${r.name}`, `How many? (${r.max - r.used} left)`, (n) => {
       const take = Math.min(n, r.max - r.used); if (take <= 0) return;
@@ -574,7 +620,9 @@ const actions = {
       </div>`).join("");
     const avail = Object.keys(RULES.CLASSES).filter((c) => !taken.includes(c));
     const subOpts = [];
-    list.forEach((c) => { const m = RULES.SUBCLASSES[c.cls]; if (m) Object.keys(m).forEach((sc) => subOpts.push({ name: sc, spells: !!m[sc] })); });
+    list.forEach((c) => { const m = RULES.subclassesFor(ch.edition, c.cls); Object.keys(m).forEach((sc) => subOpts.push({ name: sc, spells: !!m[sc] })); });
+    // a subclass picked earlier (other edition, or typed) stays selectable
+    if (ch.subclass && !subOpts.some((s) => s.name === ch.subclass)) subOpts.push({ name: ch.subclass, spells: list.some((c) => !!RULES.subclassTable(ch.edition, c.cls, ch.subclass)) });
     modal("Classes & levels", `
       <p class="muted small">Total level ${Calc.totalLevel(ch)}. Proficiency bonus & spell slots combine across classes; saving-throw proficiencies come from your <b>first</b> class only. Set HP yourself on the Combat tab after changing classes.</p>
       <div class="cls-list">${rows}</div>
@@ -620,9 +668,11 @@ const actions = {
     if (!target) { closeModal(); return; }
     if (target.level >= 20) { toast("That class is already level 20."); return; }
 
-    // snapshot BEFORE so we can show the diff
-    const before = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
+    // snapshot BEFORE so we can show the diff (and undo the whole level-up)
+    const before = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch), lim: Calc.spellLimits(ch, target.cls, target.level) };
     const prevClsLevel = target.level;
+    actions._lvlUndo = { id: ch.id, json: JSON.stringify(ch) };
+    const hb = hpBase(ch);
 
     // apply the level to the right place (primary class or a multiclass entry)
     if (idx === 0) ch.level += 1;
@@ -637,6 +687,7 @@ const actions = {
     const gain = Math.max(1, rolled + con);
     ch.combat.hpMax = (ch.combat.hpMax || 0) + gain;
     ch.combat.hpCur = Math.min(Calc.maxHP(ch), (ch.combat.hpCur || 0) + gain);
+    const traitHp = hpFollow(ch, hb, true); // +1 for Dwarven Toughness / Draconic Resilience
 
     commit(); if (window.LINK) LINK.schedulePush(ch);
 
@@ -644,7 +695,7 @@ const actions = {
     const after = { prof: Calc.prof(ch), slots: Calc.spellSlots(ch), pact: Calc.pactMagic(ch) };
     const lines = [];
     const hpHow = manual ? `rolled ${rolled}` : `average ${rolled}`;
-    lines.push(`<b>+${gain} HP</b> (${hpHow} ${sign(con)} CON) — max HP now ${Calc.maxHP(ch)}.`);
+    lines.push(`<b>+${gain + traitHp} HP</b> (${hpHow} ${sign(con)} CON${traitHp ? ` ${sign(traitHp)} ${Calc.hasFeature(ch, "dwarven toughness") ? "Dwarven Toughness" : "Draconic Resilience"}` : ""}) — max HP now ${Calc.maxHP(ch)}.`);
     if (after.prof > before.prof) lines.push(`<b>Proficiency bonus</b> rises to ${sign(after.prof)}.`);
     const slotGains = [];
     for (let i = 1; i <= 9; i++) { const d = after.slots[i].max - before.slots[i].max; if (d > 0) slotGains.push(`${d}× level-${i}`); }
@@ -657,21 +708,34 @@ const actions = {
     if (asiLevels.includes(newClsLevel)) lines.push(`<b>Ability Score Improvement / feat</b> available — edit your abilities or add a feature.`);
 
     const reminders = [];
-    if (Calc.isCaster(ch)) reminders.push(`Review your spellbook — newly available spell levels can now be learned/prepared.`);
+    const lim = Calc.spellLimits(ch, target.cls, newClsLevel);
+    if ((lim.cantrips || 0) > (before.lim.cantrips || 0)) lines.push(`<b>+${lim.cantrips - (before.lim.cantrips || 0)} cantrip</b> — ${lim.cantrips} in total.`);
+    if (lim.known != null && lim.known > (before.lim.known || 0)) lines.push(`<b>+${lim.known - (before.lim.known || 0)} spell${lim.known - (before.lim.known || 0) === 1 ? "" : "s"} known</b> — ${lim.known} in total (you may also swap one).`);
+    if (lim.prep != null && lim.prep > (before.lim.prep || 0)) lines.push(`<b>Prepared spells:</b> ${before.lim.prep || 0} → ${lim.prep}.`);
+    const newTop = [9, 8, 7, 6, 5, 4, 3, 2, 1].find((i) => after.slots[i].max > 0 && !before.slots[i].max);
+    if (newTop) reminders.push(`You can now ${lim.known != null ? "learn" : "prepare"} level-${newTop} spells.`);
 
     // checklist of what this level brings (features + trackers), pre-ticked, all editable
     const feats = await loadClassFeatures(ch.edition === "2024" ? "2024" : "2014");
     const rows = checklistRows(ch, [{ cls: target.cls, prev: prevClsLevel, to: newClsLevel }], "levelup", feats);
     actions._cl = { rows };
     render();
-    modal("Leveled up", `
+    modal(`Leveled up: ${target.cls} ${prevClsLevel} → ${newClsLevel}`, `
       <p>${esc(target.cls)} is now <b>level ${newClsLevel}</b> (total ${Calc.totalLevel(ch)}).</p>
       <ul class="lvl-sum">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
       ${reminders.length ? `<ul class="lvl-sum muted">${reminders.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
       <p class="muted small">New at this level — untick anything your table does differently, change the numbers, or add your own.</p>
       ${checklistHtml(ch, rows, !!feats[target.cls])}
-      <div class="modal-btns"><button class="btn primary" data-act="clSave">Save</button></div>`,
-      (wrap) => checklistWire(wrap, ch));
+      <div class="modal-btns"><button class="btn ghost" data-act="levelUndo">Undo level-up</button><button class="btn primary" data-act="clSave">Save</button></div>`,
+      (wrap) => checklistWire(wrap, ch),
+      // closing with ✕ or the backdrop keeps what's ticked (it used to silently drop it)
+      () => { if (actions._cl) { applyChecklist.hp = 0; const n = applyChecklist(); if (n) toast(`Saved the ${n} ticked thing${n === 1 ? "" : "s"} from your level-up.`); } });
+  },
+  levelUndo() {
+    const u = actions._lvlUndo, ch = Store.active(); if (!u || !ch || ch.id !== u.id) { closeModal(); return; }
+    actions._cl = null; actions._lvlUndo = null; closeModal();
+    const old = JSON.parse(u.json); for (const k of Object.keys(ch)) delete ch[k]; Object.assign(ch, old);
+    commit(); if (window.LINK) LINK.schedulePush(ch); toast("Level-up undone.");
   },
   async deleteChar() { const ch = Store.active(); if (confirm(`Delete ${ch.name}? This can't be undone (export first to keep a copy).`)) { if (window.Media) { try { for (const m of await Media.forChar(ch.id)) { try { await Media.del(m.id); } catch (e) {} } } catch (e) {} } Store.remove(ch.id); closeModal(); ui.screen = "home"; render(); } },
 
@@ -920,7 +984,7 @@ function spendHitDieManual(die) {
   const ch = Store.active(); const con = Calc.abilityMod(ch, "con");
   amountPrompt(`Spend a d${die}`, `You rolled the d${die} — enter it (CON ${sign(con)} is added)`, (n) => {
     const c = Store.active().combat; const heal = Math.max(1, (n || 0) + con);
-    const by = hitDiceUsedBy(Store.active()); by[die] = (by[die] || 0) + 1; c.hitDiceUsed++; c.hpCur = Math.min(Calc.maxHP(Store.active()), c.hpCur + heal); commit();
+    const by = hitDiceUsedBy(Store.active()); by[die] = (by[die] || 0) + 1; c.hitDiceUsed++; const prev = c.hpCur; c.hpCur = Math.min(Calc.maxHP(Store.active()), c.hpCur + heal); hpAfter(Store.active(), prev, 0); commit();
     toast(`Spent d${die}: healed ${heal} (${n || 0} ${sign(con)} CON).`);
   });
 }
@@ -1296,7 +1360,7 @@ function openSpell(ch, id) {
         <div class="cast-info">
           ${s.attack && atk != null ? `<span class="cast-pill">Spell attack ${sign(atk)}</span>` : ""}
           ${s.save ? `<span class="save-pill">Save: ${esc(s.save.toUpperCase())} vs DC ${dc}</span>` : ""}
-          ${s.damage ? `<span class="cast-pill">Damage ${esc(s.damage)}${s.damageType ? " " + esc(s.damageType) : ""}${s.upcast ? " (+upcast)" : ""}</span>` : ""}
+          ${s.damage ? `<span class="cast-pill">${s.heal ? "Healing" : "Damage"} ${esc(s.damage)}${s.damageType ? " " + esc(s.damageType) : ""}${s.upcast ? " (+upcast)" : ""}</span>` : ""}
         </div>
         ${s.level > 0 && Calc.isCaster(ch) ? `<button class="btn primary" data-act="castSpell" data-id="${esc(id)}" data-lvl="${s.level}">Cast (spend a slot)</button>` : ""}
         ${s.concentration ? `<button class="btn ghost" data-act="startConc" data-id="${esc(id)}">Concentrate</button>` : ""}
@@ -1308,11 +1372,98 @@ function openSpell(ch, id) {
 /* HP take-damage / heal with an amount prompt (temp HP absorbs damage; heal caps at max) */
 function applyDamage(n) {
   n = Math.max(0, n | 0); if (!n) return;
-  const ch = Store.active(); const c = ch.combat;
+  const ch = Store.active(); const c = ch.combat; const prev = c.hpCur;
   const fromTemp = Math.min(c.hpTemp, n); c.hpTemp -= fromTemp;
   c.hpCur = Math.max(0, c.hpCur - (n - fromTemp));
-  commit(); toast(`Took ${n} damage.`); maybeConcentration(ch, n);
+  toast(`Took ${n} damage.`);
+  const up = hpAfter(ch, prev, n - fromTemp);
+  commit(); if (up) maybeConcentration(ch, n);
 }
+/* After current HP changes (prev → now; dmg = damage that got past temp HP):
+   back above 0 → death saves reset, Unconscious goes; damage while at 0 → a failed death save
+   (or instant death from massive damage); dropping to 0 → Unconscious, concentration and rage end
+   (Relentless Endurance is offered first if you have uses). Returns false if you're down. */
+function hpAfter(ch, prev, dmg) {
+  const c = ch.combat, max = Calc.maxHP(ch);
+  if (!c.death) c.death = { succ: 0, fail: 0 };
+  const dropUncon = () => { ch.conditions = (ch.conditions || []).filter((x) => !(x.name === "Unconscious" && x.auto)); };
+  if (c.hpCur > 0) {
+    if (prev === 0) { c.death = { succ: 0, fail: 0 }; dropUncon(); toast("Back on your feet — death saves reset."); }
+    return true;
+  }
+  if (prev === 0) {
+    if (dmg <= 0) return false;
+    if (dmg >= max) { toast("Massive damage at 0 HP (≥ your max HP) — that's instant death.", 6000); return false; }
+    c.death.fail = Math.min(3, (c.death.fail || 0) + 1);
+    toast(c.death.fail >= 3 ? "Third failed death save — your character dies." : `Hit at 0 HP: 1 failed death save (${c.death.fail}/3). A critical hit counts as 2 — tap another ✗.`, 6000);
+    return false;
+  }
+  // just dropped to 0
+  const over = dmg - prev;
+  if (dmg > 0 && over >= max) { toast(`Massive damage: ${over} left over ≥ your max HP — instant death.`, 6000); }
+  const re = (ch.resources || []).find((r) => /relentless endurance/i.test(r.name) && r.used < r.max);
+  if (re && dmg > 0 && over < max) {
+    actions._relentless = re.id;
+    setTimeout(() => modal("Relentless Endurance", `<p>You dropped to 0 HP. Use <b>Relentless Endurance</b> to drop to <b>1 HP</b> instead?</p>
+      <div class="modal-btns"><button class="btn" data-act="relentlessNo">No, I go down</button><button class="btn primary" data-act="relentlessYes" data-d="${dmg}">Use it — 1 HP</button></div>`), 0);
+    return false;
+  }
+  goDown(ch);
+  return false;
+}
+/* Rage (Barbarian): using the Rage tracker turns on ch.combat.raging — a chip on the Combat tab,
+   rage damage on Strength weapons, advantage on STR checks/saves (Calc.advSources). It ends with
+   the chip's End rage, a long rest or dropping to 0 HP. Not in the fast DM sync (LINK.dmSig). */
+const isRage = (r) => r.auto === "barbarian.rage" || /^rage\b/i.test(r.name || "");
+function rageDamage(ch) { const l = (Calc.classList(ch).find((c) => c.cls === "Barbarian") || {}).level || 1; return l >= 16 ? 4 : l >= 9 ? 3 : 2; }
+function startRage(ch) {
+  ch.combat.raging = true;
+  let extra = "";
+  if (ch.spells.concentratingOn) { const sp = findSpell(ch, ch.spells.concentratingOn); extra = ` Concentration on ${esc(sp ? sp.name : "your spell")} ended.`; ch.spells.concentratingOn = null; }
+  toast(`RAGE! ${sign(rageDamage(ch))} Strength damage, resistance to bludgeoning/piercing/slashing, advantage on STR checks & saves.${extra}`, 5000);
+}
+// does this weapon get rage damage? (worked-out weapons only: Strength, not a ranged weapon)
+function rageWeapon(ch, w) {
+  if (!ch.combat.raging || !w.auto) return false;
+  const p = " " + (w.auto.props || "") + " ";
+  if (w.auto.ab && w.auto.ab !== "str" && w.auto.ab !== "auto" && w.auto.ab !== "") return false;
+  if (p.includes(" a ")) return false;
+  if (p.includes(" f ") && (!w.auto.ab || w.auto.ab === "auto") && Calc.abilityMod(ch, "dex") > Calc.abilityMod(ch, "str")) return false;
+  return true;
+}
+
+/* Max HP follows "+1 HP per level" traits (Dwarven Toughness, Draconic Resilience) and CON
+   changes: take hpBase() before a change, hpFollow() after — the difference goes onto combat.hpMax
+   (so it syncs like level-up HP) and a toast says why. Hand-typed HP is still yours to edit. */
+function hpBase(ch) { return { trait: Calc.hpTraitBonus(ch), con: Calc.abilityMod(ch, "con"), lvl: Calc.totalLevel(ch) }; }
+function hpFollow(ch, before, quiet) {
+  const a = hpBase(ch);
+  const dT = a.trait - before.trait, dC = (a.con - before.con) * a.lvl, d = dT + dC;
+  if (!d) return 0;
+  // a shape-shift link shares HP but not abilities — CON there belongs to the other form
+  const conOk = !(ch.link && ch.link.groups && ch.link.groups.physical && !ch.link.groups.mental);
+  const delta = conOk ? d : dT; if (!delta) return 0;
+  ch.combat.hpMax = Math.max(1, (ch.combat.hpMax || 0) + delta);
+  ch.combat.hpCur = Math.max(0, Math.min(Calc.maxHP(ch), (ch.combat.hpCur || 0) + Math.max(0, delta)));
+  const why = [dT ? `${sign(dT)} from ${Calc.hasFeature(ch, "dwarven toughness") && Calc.hasFeature(ch, "draconic resilience") ? "your HP traits" : Calc.hasFeature(ch, "dwarven toughness") ? "Dwarven Toughness" : Calc.hasFeature(ch, "draconic resilience") ? "Draconic Resilience" : "removing an HP trait"}` : "", conOk && dC ? `${sign(dC)} from your CON modifier × ${a.lvl} levels` : ""].filter(Boolean).join(", ");
+  if (!quiet) toast(`Max HP ${sign(delta)} (${why}) — now ${Calc.maxHP(ch)}. You can still edit it on the Combat tab.`, 5000);
+  return delta;
+}
+let _conEdit = null; // {id, base} while the CON box on the Stats tab is being typed in
+function goDown(ch) {
+  if (!(ch.conditions || []).some((x) => x.name === "Unconscious")) (ch.conditions = ch.conditions || []).push({ name: "Unconscious", rounds: null, auto: true });
+  const lost = [];
+  if (ch.spells.concentratingOn) { const sp = findSpell(ch, ch.spells.concentratingOn); lost.push(`concentration on ${esc(sp ? sp.name : "your spell")}`); ch.spells.concentratingOn = null; }
+  if (ch.combat.raging) { ch.combat.raging = false; lost.push("your rage"); }
+  toast(`Down to 0 HP — Unconscious. Make death saves on your turns.${lost.length ? " Ended: " + lost.join(", ") + "." : ""}`, 6000);
+}
+actions.relentlessYes = (el) => {
+  const ch = Store.active(); const re = (ch.resources || []).find((r) => r.id === actions._relentless);
+  if (re) re.used = Math.min(re.max, re.used + 1);
+  ch.combat.hpCur = 1; closeModal(); commit(); toast("Relentless Endurance — you stay up at 1 HP.");
+  maybeConcentration(ch, +el.dataset.d || 0);
+};
+actions.relentlessNo = () => { const ch = Store.active(); closeModal(); goDown(ch); commit(); };
 const POTION_RE = /\b(potion|elixir|philter)\b/i;
 function healPotionDice(name) {
   if (!/potion/i.test(name) || !/heal/i.test(name)) return null; // "Potion of Healing", "Greater healing potion"…
@@ -1325,8 +1476,8 @@ function consumeItem(ch, it) {
 }
 function applyHeal(n) {
   n = Math.max(0, n | 0); if (!n) return;
-  const ch = Store.active(); ch.combat.hpCur = Math.min(Calc.maxHP(ch), ch.combat.hpCur + n);
-  commit(); toast(`Healed ${n}.`);
+  const ch = Store.active(); const prev = ch.combat.hpCur; ch.combat.hpCur = Math.min(Calc.maxHP(ch), ch.combat.hpCur + n);
+  toast(`Healed ${n}.`); hpAfter(ch, prev, 0); commit();
 }
 function amountPrompt(title, label, cb) {
   // the title doubles as the button ("Take damage") unless it's a question or a "X — name" heading
@@ -1360,6 +1511,7 @@ actions.sumConcToggle = () => { const k = "conc-spell"; if (ui.sumCollapsed.has(
 actions.concDrop = () => { const ch = Store.active(); ch.spells.concentratingOn = null; closeModal(); commit(); toast("Concentration lost."); };
 actions.castSpell = (el) => {
   const ch = Store.active(); const min = +el.dataset.lvl; const slots = Calc.spellSlots(ch);
+  if (ch.combat.raging) toast("Heads-up: you can't cast spells while raging (rules) — casting anyway.", 4000);
   actions._castId = el.dataset.id;
   const avail = []; for (let i = min; i <= 9; i++) if (slots[i].max - slots[i].used > 0) avail.push(i);
   // Warlock Pact Magic slots are a separate pool (always cast at the pact level)
@@ -2004,7 +2156,7 @@ actions.shapeDmg = () => {
 actions.shapeRevert = () => { revertShape(Store.active(), 0); };
 function revertShape(ch, carry) {
   ch.shape.active = null;
-  if (carry > 0) { const c = ch.combat; const fromTemp = Math.min(c.hpTemp, carry); c.hpTemp -= fromTemp; c.hpCur = Math.max(0, c.hpCur - (carry - fromTemp)); }
+  if (carry > 0) { const c = ch.combat; const prev = c.hpCur; const fromTemp = Math.min(c.hpTemp, carry); c.hpTemp -= fromTemp; c.hpCur = Math.max(0, c.hpCur - (carry - fromTemp)); hpAfter(ch, prev, carry - fromTemp); }
   ui.screen = "sheet"; ui.tab = "combat"; commit();
   toast(carry > 0 ? `Reverted — ${carry} leftover damage carried to you.` : "Reverted to your normal form.");
 }
@@ -2355,7 +2507,7 @@ actions.dmAddCharGo = (el) => { const c = Store.characters.find((x) => x.id === 
 /* live link-pull: a player who uses the app shares their link code; the tracker pulls
    their real HP/AC (and conditions) and can refresh anytime — read-only, never pushes back */
 function dmComputeAC(p) {
-  try { if (!p.abilities || !p.combat) return null; return Calc.armorClass({ combat: p.combat, abilities: p.abilities, inventory: p.inventory || [], features: p.features || [], overrides: p.overrides || {}, cls: p.cls || "", multiclass: p.multiclass || [], level: p.level || 1 }); } catch (e) { return null; }
+  try { if (!p.abilities || !p.combat) return null; return Calc.armorClass({ combat: p.combat, abilities: p.abilities, inventory: p.inventory || [], features: p.features || [], overrides: p.overrides || {}, cls: p.cls || "", multiclass: p.multiclass || [], level: p.level || 1, edition: p.edition || "2014" }); } catch (e) { return null; }
 }
 // "yzd3nrv3" / "YZD3 NRV3" → "YZD3-NRV3"; null if it isn't a link code
 function normLinkCode(s) { const c = String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); return c.length === 8 ? c.slice(0, 4) + "-" + c.slice(4) : null; }
@@ -2549,7 +2701,28 @@ actions.dmAddCustom = () => {
     <div class="modal-btns"><button class="btn primary" data-act="dmAddCustomGo">Add</button></div>`, () => $("#dmc-name").focus());
 };
 actions.dmAddCustomGo = () => { const n = ($("#dmc-name").value || "").trim(); if (!n) { toast("Name required."); return; } DM.active.combatants.push(dmCustomCombatant(n, +$("#dmc-hp").value, +$("#dmc-ac").value)); DM.save(); closeModal(); render(); };
-actions.dmRemoveCb = (el) => { const id = el.dataset.id; DM.active.combatants = DM.active.combatants.filter((c) => c.id !== id); if (DM.active.turnId === id) DM.active.turnId = null; DM.save(); closeModal(); render(); };
+actions.dmRemoveCb = (el) => {
+  const id = el.dataset.id, a = DM.active;
+  // removing whoever's turn it is passes the turn on (it used to reset the round counter to 1)
+  if (a.turnId === id) { const nx = dmStep(a, 1, id); if (nx) { if (nx.wrap) a.round = (a.round || 1) + 1; a.turnId = nx.id; } else a.turnId = null; }
+  a.combatants = a.combatants.filter((c) => c.id !== id); DM.save(); closeModal(); render();
+};
+/* the next (dir 1) or previous (-1) combatant whose turn it is. Defeated monsters and custom foes are
+   skipped (they're out of the fight); player characters at 0 HP keep their turn for death saves.
+   skip = an id to pass over too (one being removed). Returns {id, wrap} or null. */
+function dmStep(a, dir, skip) {
+  const order = dmSorted(a); if (!order.length) return null;
+  const out = (c) => c.id === skip || (dmCbDown(c) && c.kind !== "char" && c.kind !== "link" && c.kind !== "lair");
+  if (order.every(out)) return null;
+  let i = order.findIndex((c) => c.id === a.turnId), wrap = false;
+  if (i < 0) i = dir > 0 ? -1 : 0;
+  for (let n = 0; n < order.length; n++) {
+    i += dir;
+    if (i >= order.length) { i = 0; wrap = true; } else if (i < 0) { i = order.length - 1; wrap = true; }
+    if (!out(order[i])) return { id: order[i].id, wrap };
+  }
+  return null;
+}
 actions.dmCbMenu = (el) => {
   const cb = dmFindCb(el.dataset.id); if (!cb) return;
   modal(cb.name, `<div class="menu-list">
@@ -2596,8 +2769,8 @@ actions.dmCondRemove = (el) => { const cb = dmFindCb(el.dataset.id); if (!cb) re
 actions.dmNext = () => {
   const a = DM.active; if (!a) return; const order = dmSorted(a); if (!order.length) return;
   if (!a.turnId && a.combatants.some((c) => c.kind !== "lair" && c.init == null)) { actions.dmInitSheet(null, true); return; }
-  if (!a.turnId) { a.turnId = order[0].id; a.round = 1; }
-  else { const i = order.findIndex((c) => c.id === a.turnId); if (i < 0 || i + 1 >= order.length) { a.round = (a.round || 1) + 1; a.turnId = order[0].id; } else a.turnId = order[i + 1].id; }
+  if (!a.turnId) { const f = dmStep(a, 1); a.turnId = f ? f.id : order[0].id; a.round = 1; }
+  else { const nx = dmStep(a, 1); if (!nx) return; if (nx.wrap) a.round = (a.round || 1) + 1; a.turnId = nx.id; }
   const cur = a.combatants.find((c) => c.id === a.turnId); // tick this combatant's conditions (until your next turn)
   if (cur) cur.conditions = (cur.conditions || []).filter((cd) => { if (cd.rounds == null) return true; cd.rounds -= 1; return cd.rounds > 0; });
   if (cur && cur.la) cur.la.left = cur.la.max;
@@ -2605,11 +2778,10 @@ actions.dmNext = () => {
 };
 // step back one turn (to fix a mis-tap); condition timers that already ticked are not restored
 actions.dmPrev = () => {
-  const a = DM.active; if (!a || !a.turnId) return; const order = dmSorted(a);
-  const i = order.findIndex((c) => c.id === a.turnId);
-  if (i > 0) a.turnId = order[i - 1].id;
-  else if ((a.round || 1) > 1) { a.round -= 1; a.turnId = order[order.length - 1].id; }
-  else return;
+  const a = DM.active; if (!a || !a.turnId) return;
+  const pv = dmStep(a, -1); if (!pv) return;
+  if (pv.wrap) { if ((a.round || 1) <= 1) return; a.round -= 1; }
+  a.turnId = pv.id;
   DM.save(); render();
 };
 /* one sheet to type everyone's initiative (players roll their own dice; monsters show their Dex bonus) */
@@ -2822,6 +2994,7 @@ document.addEventListener("input", (e) => {
   const ch = Store.active(); if (!ch) return;
   let v = t.type === "checkbox" ? t.checked : t.value;
   if (t.type === "number") v = (t.value === "" ? (t.dataset.bind === "combat.armorBaseAC" ? null : 0) : Number(t.value));
+  if (t.dataset.bind === "abilities.con" && (!_conEdit || _conEdit.id !== ch.id)) _conEdit = { id: ch.id, base: hpBase(ch) };
   setPath(ch, t.dataset.bind, v); syncDerived(ch); Store.touch(); if (window.LINK) LINK.schedulePush(ch);
   // live-update small computed readouts without rebuilding inputs
   if (t.dataset.bind.startsWith("abilities.")) { const card = t.closest(".ab-card"); if (card) card.querySelector(".ab-mod").textContent = sign(Calc.abilityMod(ch, t.dataset.bind.split(".")[1])); }
@@ -2832,6 +3005,12 @@ document.addEventListener("search", (e) => {
   if (a && actions[a.dataset.act]) actions[a.dataset.act](a);
 });
 document.addEventListener("change", (e) => {
+  // CON box finished (blur/enter): max HP follows the new modifier once, not on every keystroke
+  if (_conEdit && e.target.dataset && e.target.dataset.bind === "abilities.con") {
+    const ch = Store.active(), ce = _conEdit; _conEdit = null;
+    if (ch && ch.id === ce.id && hpFollow(ch, ce.base)) { Store.touch(); if (window.LINK) LINK.schedulePush(ch); render(); }
+    return;
+  }
   // data-act selects (e.g. spell level filter) — fire on change
   const a = e.target.closest("[data-act]");
   // text/search boxes already ran on "input"; re-running on blur redraws the list under the

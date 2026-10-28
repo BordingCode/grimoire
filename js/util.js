@@ -42,7 +42,9 @@ function unlockScroll() {
   b.position = ""; b.top = ""; b.left = ""; b.right = ""; b.width = "";
   window.scrollTo(0, y);
 }
-function modal(title, bodyHtml, onMount) {
+let _modalOnClose = null;
+// onClose runs once when this modal goes away by any route (✕, backdrop, a button, another modal)
+function modal(title, bodyHtml, onMount, onClose) {
   closeModal(); // unlocks; we re-lock below (swapping modals keeps the same frozen position)
   const wrap = document.createElement("div");
   wrap.id = "modal"; wrap.className = "modal-back";
@@ -51,8 +53,14 @@ function modal(title, bodyHtml, onMount) {
   document.body.appendChild(wrap);
   lockScroll();
   if (onMount) onMount(wrap);
+  _modalOnClose = onClose || null;
 }
-function closeModal() { const m = $("#modal"); if (m) { m.remove(); unlockScroll(); } }
+function closeModal() {
+  const m = $("#modal"); const f = _modalOnClose; _modalOnClose = null;
+  if (!m) return;
+  if (f) { try { f(); } catch (e) { console.error(e); } }
+  if (m.isConnected) { m.remove(); unlockScroll(); } // f may already have swapped in another modal
+}
 
 /* ---------- object path get/set (used by data-bind & link sync) ---------- */
 function setPath(obj, path, val) { const k = path.split("."); let o = obj; for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = val; }

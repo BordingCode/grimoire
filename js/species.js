@@ -37,6 +37,8 @@ actions.speciesOpen = async (el) => {
   const ch = Store.active(); const ed = ch.edition === "2024" ? "2024" : "2014";
   const list = await loadSpecies(ed);
   const pre = el && el.dataset && el.dataset.pre ? speciesMatch(list, el.dataset.pre) : "";
+  const create = !!(el && el.dataset && el.dataset.create);
+  actions._spCreate = create;
   modal("Race / species", `
     <p class="muted small">${ed} rules. Pick a race to see its traits — tick what you want on your sheet. Nothing is locked: change any number, untick traits your table doesn't use, or add your own.</p>
     <label class="fld"><span>Race / species</span><select id="sp-pick" data-act="speciesPick">${speciesOptions(list)}</select></label>
@@ -49,7 +51,9 @@ actions.speciesOpen = async (el) => {
     (wrap) => {
       checklistWire(wrap, ch);
       if (pre) { const sel = wrap.querySelector("#sp-pick"); sel.value = pre; actions.speciesPick(sel); }
-    });
+    },
+    // new character: on to the class features whether the race was saved or skipped
+    create ? () => { actions._spCreate = false; setTimeout(() => actions.classChecklist({ dataset: { create: "1" } }), 0); } : null);
 };
 
 actions.speciesPick = (el) => {
@@ -83,8 +87,8 @@ actions.speciesPick = (el) => {
   body.innerHTML = `${oldRow}
     <div class="cl-row"><label class="cl-chk"><input type="checkbox" class="cl-on" id="sp-speed-on" checked><span><b>Base walking speed</b> <em class="cl-tag">${esc(r.size || "")}</em></span></label>
       <div class="cl-edit"><label>Speed <input type="number" id="sp-speed" min="0" step="5" value="${r.speed}"> ft</label></div></div>
-    ${asiTxt ? `<div class="cl-row"><label class="cl-chk"><input type="checkbox" class="cl-on" id="sp-asi"><span><b>Ability score bonuses</b> <em class="cl-tag">${esc(asiTxt)}</em></span></label>
-      <div class="cl-sub muted small">Leave unticked if your scores already include them.</div></div>` : ""}
+    ${asiTxt ? `<div class="cl-row"><label class="cl-chk"><input type="checkbox" class="cl-on" id="sp-asi"${actions._spCreate ? " checked" : ""}><span><b>Ability score bonuses</b> <em class="cl-tag">${esc(asiTxt)}</em></span></label>
+      <div class="cl-sub muted small">${actions._spCreate ? "Ticked: added to the scores you typed. Untick if you already included them." : "Leave unticked if your scores already include them."}</div></div>` : ""}
     <h3 class="sec">Traits</h3>
     <div class="cl-list">${traits.map((t, i) => `<div class="cl-row" data-sp-tr="${i}">
       <label class="cl-chk"><input type="checkbox" class="cl-on" checked><span><b>${esc(t.n)}</b></span></label>
@@ -99,6 +103,7 @@ actions.speciesSave = () => {
   const name = ($("#sp-name").value || "").trim() || sp.name;
   if (!name) { toast("Pick a race or type a name."); return; }
   if (!ch.features) ch.features = []; if (!ch.resources) ch.resources = [];
+  const hb = hpBase(ch);
   const rm = $("#sp-remove");
   if (rm && rm.checked) { ch.features = ch.features.filter((f) => !(f.src || "").startsWith("race:")); ch.resources = ch.resources.filter((r) => !(r.src || "").startsWith("race:")); }
   const speedOn = $("#sp-speed-on");
@@ -119,6 +124,6 @@ actions.speciesSave = () => {
   });
   applyOwnRows(ch);
   ch.race = { name, ed };
-  closeModal(); commit(); if (window.LINK) LINK.schedulePush(ch);
-  toast(`Race set to ${name}.`);
+  closeModal(); const dHp = hpFollow(ch, hb, true); commit(); if (window.LINK) LINK.schedulePush(ch);
+  toast(`Race set to ${esc(name)}.${dHp ? ` Max HP ${sign(dHp)} — now ${Calc.maxHP(ch)}.` : ""}`, dHp ? 4500 : 2600);
 };

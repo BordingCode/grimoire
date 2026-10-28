@@ -41,6 +41,8 @@ const Calc = {
     for (const it of (ch.inventory || [])) if (it.equipped) for (const t of (it.adv || [])) {
       if (t === target || (wild && t === wild)) out.push(it.name);
     }
+    // Rage: advantage on Strength checks and saves (same in 2014 and 2024)
+    if (ch.combat && ch.combat.raging && (target === "save.str" || target === "skill.Athletics")) out.push("Rage");
     return [...new Set(out)];
   },
 
@@ -69,7 +71,15 @@ const Calc = {
 
   passivePerception(ch) { return ov(ch, "passivePerception", 10 + this.skillBonus(ch, "Perception") + this.featBonus(ch, "passivePerception")); },
   initiative(ch) { return ov(ch, "initiative", this.abilityMod(ch, "dex") + this.featBonus(ch, "initiative")); },
-  speed(ch) { return ov(ch, "speed", (ch.combat.speed || 30) + this.classSpeed(ch) + this.featBonus(ch, "speed")); },
+  speed(ch) {
+    let s = (ch.combat.speed || 30) + this.classSpeed(ch) + this.featBonus(ch, "speed");
+    const ex = this.exhaustion(ch);
+    if (ex && ch.edition === "2024") s = Math.max(0, s - 5 * ex);          // 2024: −5 ft per level
+    else if (ex >= 5) s = 0; else if (ex >= 2) s = Math.floor(s / 2);     // 2014: halved at 2, 0 at 5
+    return ov(ch, "speed", s);
+  },
+  // exhaustion level 0–6 (stored on the Exhaustion condition)
+  exhaustion(ch) { const c = (ch.conditions || []).find((x) => x.name === "Exhaustion"); return c ? Math.max(1, Math.min(6, +c.level || 1)) : 0; },
   // Monk Unarmored Movement (no armor or shield) and Barbarian Fast Movement (no heavy armor) — same in 2014 and 2024
   classSpeed(ch) {
     const lv = (cls) => (this.classList(ch).find((c) => c.cls === cls) || {}).level || 0;
@@ -80,13 +90,32 @@ const Calc = {
     if (lv("Barbarian") >= 5 && !heavy) bonus += 10;
     return bonus;
   },
-  maxHP(ch) { return Math.max(0, (ch.combat.hpMax || 0) + this.featBonus(ch, "hpMax")); },
+  maxHP(ch) {
+    const m = Math.max(0, (ch.combat.hpMax || 0) + this.featBonus(ch, "hpMax"));
+    return ch.edition !== "2024" && this.exhaustion(ch) >= 4 ? Math.floor(m / 2) : m;   // 2014 exhaustion 4: HP max halved
+  },
+  /* traits that raise max HP by 1 per level. The bonus is added to combat.hpMax when the trait
+     arrives / on level-up (so it syncs like any HP); this says how big it should be now.
+     Dwarven Toughness: +1 per character level. Draconic Resilience: +1 per Sorcerer level
+     (2024: +3 at Sorcerer 3, then +1 per level = Sorcerer level). */
+  hpTraitBonus(ch) {
+    let n = 0;
+    for (const f of ch.features || []) {
+      const nm = String(f.name || "").toLowerCase();
+      if (nm.startsWith("dwarven toughness")) n += this.totalLevel(ch);
+      else if (nm.startsWith("draconic resilience")) n += (this.classList(ch).find((c) => c.cls === "Sorcerer") || {}).level || 0;
+    }
+    return n;
+  },
+  hasFeature(ch, name) { return (ch.features || []).some((f) => String(f.name || "").toLowerCase().startsWith(name)); },
 
   unarmoredAC(ch) {
     // class unarmored defense from the PRIMARY class: Barbarian 10+Dex+Con, Monk 10+Dex+Wis
     const dex = this.abilityMod(ch, "dex");
     if (ch.cls === "Barbarian") return 10 + dex + this.abilityMod(ch, "con");
-    if (ch.cls === "Monk") return 10 + dex + this.abilityMod(ch, "wis");
+    if (ch.cls === "Monk" && !ch.combat.shield) return 10 + dex + this.abilityMod(ch, "wis");   // no shield for a monk
+    // Draconic Resilience (Sorcerer): 2014 13 + Dex, 2024 10 + Dex + Cha
+    if (this.hasFeature(ch, "draconic resilience")) return ch.edition === "2024" ? 10 + dex + this.abilityMod(ch, "cha") : 13 + dex;
     return 10 + dex;
   },
 
@@ -171,6 +200,22 @@ const Calc = {
     return { max: p.n, level: p.l, used: Math.min(ch.spells.pact.used || 0, p.n) };
   },
 
+  /* How many spells a class gets, per edition (warn-only — the sheet never blocks):
+     prep = prepared spells, known = spells known (2014 Bard/Sorcerer/Warlock/Ranger), cantrips.
+     2014 from SRD 5.1 (dnd5eapi class levels), 2024 from the SRD 5.2 class tables (open5e). */
+  spellLimits(ch, cls, level) {
+    const info = RULES.CLASSES[cls] || {};
+    if (!info.ability) return { prep: null, known: null, cantrips: null };
+    const T = RULES.SPELL_TABLES[ch.edition === "2024" ? "2024" : "2014"][cls] || {};
+    const at = (arr) => (arr ? arr[Math.max(1, Math.min(20, level)) - 1] : null);
+    let prep = at(T.prep);
+    if (prep == null && info.prepares) {
+      // 2014 preparers: ability mod + class level (Paladin/Artificer: half level), min 1
+      prep = (cls === "Paladin" && level < 2) ? 0 : Math.max(1, this.abilityMod(ch, info.ability) + Math.floor(level * (info.prepFactor || 1)));
+    }
+    return { prep: prep ?? null, known: at(T.known) ?? null, cantrips: at(T.cantrips) || null };
+  },
+
   // Per spellcasting class: ability, DC, attack, prepared allowance. Used by the
   // Spells tab (one row for single-class, several when multiclassed).
   castingClasses(ch) {
@@ -183,18 +228,27 @@ const Calc = {
         cls: c.cls, level: c.level, ability: info.ability, caster: info.caster,
         dc: 8 + prof + abMod,
         attack: prof + abMod,
-        prepares: !!info.prepares,
-        prepared: info.prepares ? Math.max(1, abMod + Math.floor(c.level * (info.prepFactor || 1))) : null,
+        prepares: this.spellLimits(ch, c.cls, c.level).prep != null,
+        prepared: this.spellLimits(ch, c.cls, c.level).prep,
+        known: this.spellLimits(ch, c.cls, c.level).known,
       };
     }).filter(Boolean);
   },
 
   preparedCount(ch) {
-    const info = RULES.CLASSES[ch.cls] || {};
-    if (!info.prepares) return null;
-    const abMod = this.abilityMod(ch, info.ability);
-    return ov(ch, "preparedCount", Math.max(1, abMod + Math.floor(ch.level * (info.prepFactor || 1))));
+    const p = this.spellLimits(ch, ch.cls, ch.level).prep;
+    return p == null ? null : ov(ch, "preparedCount", p);
   },
+  knownCount(ch) {
+    const k = this.spellLimits(ch, ch.cls, ch.level).known;
+    return k == null ? null : ov(ch, "knownCount", k);
+  },
+  cantripCount(ch) {
+    const k = this.spellLimits(ch, ch.cls, ch.level).cantrips;
+    return k == null ? null : ov(ch, "cantripCount", k);
+  },
+  // does this character prepare spells (2024: every caster) or know a fixed list (2014 Bard/Sorc/Warlock/Ranger)?
+  prepares(ch) { return this.spellLimits(ch, ch.cls, ch.level).prep != null; },
 
   // Hit dice grouped by die size, e.g. {10: 5, 6: 1} for Fighter5/Wizard1.
   hitDicePool(ch) {
