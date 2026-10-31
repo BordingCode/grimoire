@@ -2984,11 +2984,14 @@ function applySortOrder(listName) {
 /* ===================================================================== */
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]"); if (!t) return;
+  // data-act selects run on "change" — acting on the tap re-renders and kills the open dropdown
+  if (t.tagName === "SELECT" || t.tagName === "OPTION") return;
   const fn = actions[t.dataset.act]; if (fn) { e.preventDefault(); fn(t); }
 });
 document.addEventListener("input", (e) => {
   // data-act inputs (e.g. spell search) — fire as you type
   const a = e.target.closest("[data-act]");
+  if (a && a.tagName === "SELECT") return; // selects fire once, on "change"
   if (a && actions[a.dataset.act]) { actions[a.dataset.act](a); return; }
   const t = e.target.closest("[data-bind]"); if (!t) return;
   const ch = Store.active(); if (!ch) return;
